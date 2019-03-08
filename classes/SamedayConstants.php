@@ -22,6 +22,6 @@ final class SamedayConstants
     const INFO = 1;
     const WARNING = 2;
     const ERROR = 3;
-    const SYNC = 'sameday/sync';
-    const AJAX = 'sameday/ajax';
+    const SYNC = 'samedaycourier/sync';
+    const AJAX = 'samedaycourier/ajax';
 }

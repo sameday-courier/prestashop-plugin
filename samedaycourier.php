@@ -63,7 +63,7 @@ class SamedayCourier extends CarrierModule
         $this->logger = new FileLogger(0);
         $this->logger->setFilename(dirname(__FILE__) . '/log/' . date('Ymd') . '_sameday.log');
         $this->messages = array();
-        $this->ajaxRoute = _PS_BASE_URL_._MODULE_DIR_.'sameday/ajax.php?token='
+        $this->ajaxRoute = _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/ajax.php?token='
             .Tools::substr(Tools::encrypt(SamedayConstants::AJAX), 0, 10);
     }
 
@@ -134,7 +134,7 @@ class SamedayCourier extends CarrierModule
         $this->renderPickupPointsList();
 
         $this->addMessage('info', $this->l('Use this url for cron status sync ') .' ' .
-            _PS_BASE_URL_._MODULE_DIR_.'sameday/sync.php?token='
+            _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/sync.php?token='
             .Tools::substr(Tools::encrypt(SamedayConstants::SYNC), 0, 10));
 
         if (Configuration::get('SAMEDAY_LIVE_MODE', 0) == 0) {
