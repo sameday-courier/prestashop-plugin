@@ -22,7 +22,7 @@ include(dirname(__FILE__) . '/classes/SamedayAwbParcelHistory.php');
 include(dirname(__FILE__) . '/classes/SamedayConstants.php');
 
 if (Tools::substr(Tools::encrypt(SamedayConstants::AJAX), 0, 10) != Tools::getValue('token') ||
-    !Module::isInstalled('sameday')
+    !Module::isInstalled('samedaycourier')
 ) {
     die('Bad token');
 }
