@@ -20,7 +20,7 @@ include(dirname(__FILE__).'/../../init.php');
 include(dirname(__FILE__) . '/classes/SamedayAwbParcel.php');
 include(dirname(__FILE__) . '/classes/SamedayConstants.php');
 
-if (Tools::substr(Tools::encrypt(SamedayConstants::SYNC), 0, 10) != Tools::getValue('token') ||
+if (Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10) != Tools::getValue('token') ||
     !Module::isInstalled('sameday')
 ) {
     die('Bad token');

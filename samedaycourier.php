@@ -64,7 +64,7 @@ class SamedayCourier extends CarrierModule
         $this->logger->setFilename(dirname(__FILE__) . '/log/' . date('Ymd') . '_sameday.log');
         $this->messages = array();
         $this->ajaxRoute = _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/ajax.php?token='
-            .Tools::substr(Tools::encrypt(SamedayConstants::AJAX), 0, 10);
+            .Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10);
     }
 
     /**
@@ -80,6 +80,7 @@ class SamedayCourier extends CarrierModule
         }
 
         Configuration::updateValue('SAMEDAY_LIVE_MODE', 0);
+        Configuration::updateValue('SAMEDAY_CRON_TOKEN', uniqid());
 
         include(dirname(__FILE__) . '/sql/install.php');
 
@@ -96,6 +97,7 @@ class SamedayCourier extends CarrierModule
         Configuration::deleteByName('SAMEDAY_DELIVERY_FEE');
         Configuration::deleteByName('SAMEDAY_ACCOUNT_PASSWORD');
         Configuration::deleteByName('SAMEDAY_ACCOUNT_USER');
+        Configuration::deleteByName('SAMEDAY_CRON_TOKEN');
         // Configuration::deleteByName('SAMEDAY_ORDER_STATUS_AWB');
         Configuration::deleteByName('SAMEDAY_DEBUG_MODE');
 
@@ -135,7 +137,7 @@ class SamedayCourier extends CarrierModule
 
         $this->addMessage('info', $this->l('Use this url for cron status sync ') .' ' .
             _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/sync.php?token='
-            .Tools::substr(Tools::encrypt(SamedayConstants::SYNC), 0, 10));
+            .Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10));
 
         if (Configuration::get('SAMEDAY_LIVE_MODE', 0) == 0) {
             $this->addMessage('warning', $this->l('Module Sameday Courier is working in testing mode'));
