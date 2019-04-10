@@ -14,6 +14,10 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
+use Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject;
+use Sameday\Objects\Types\AwbPaymentType;
+use Sameday\Objects\Types\PackageType;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -80,7 +84,7 @@ class SamedayCourier extends CarrierModule
         }
 
         Configuration::updateValue('SAMEDAY_LIVE_MODE', 0);
-        Configuration::updateValue('SAMEDAY_CRON_TOKEN', uniqid());
+        Configuration::updateValue('SAMEDAY_CRON_TOKEN', uniqid('', ''));
 
         include(dirname(__FILE__) . '/sql/install.php');
 
@@ -315,6 +319,24 @@ class SamedayCourier extends CarrierModule
                     // ),
                     array(
                         'type'    => 'switch',
+                        'label'   => $this->l('Use estimated cost'),
+                        'name'    => 'SAMEDAY_ESTIMATED_COST',
+                        'is_bool' => true,
+                        'values'  => array(
+                            array(
+                                'id'    => 'active_on',
+                                'value' => true,
+                                'label' => $this->l('Enabled'),
+                            ),
+                            array(
+                                'id'    => 'active_off',
+                                'value' => false,
+                                'label' => $this->l('Disabled'),
+                            ),
+                        ),
+                    ),
+                    array(
+                        'type'    => 'switch',
                         'label'   => $this->l('Delivery method enabled'),
                         'name'    => 'SAMEDAY_STATUS_MODE',
                         'is_bool' => true,
@@ -388,6 +410,10 @@ class SamedayCourier extends CarrierModule
             'SAMEDAY_ACCOUNT_PASSWORD' => Tools::getValue(
                 'SAMEDAY_ACCOUNT_PASSWORD',
                 Configuration::get('SAMEDAY_ACCOUNT_PASSWORD', null)
+            ),
+            'SAMEDAY_ESTIMATED_COST' => Tools::getValue(
+                'SAMEDAY_ESTIMATED_COST',
+                Configuration::get('SAMEDAY_ESTIMATED_COST', null)
             ),
             'SAMEDAY_DEBUG_MODE'       => Tools::getValue(
                 'SAMEDAY_DEBUG_MODE',
@@ -649,7 +675,7 @@ class SamedayCourier extends CarrierModule
             'price'                   => $service->price,
             'free_delivery'           => $service->free_delivery,
             'free_shipping_threshold' => $service->free_shipping_threshold,
-            'working_days'            => unserialize($service->working_days),
+            'working_days'            => unserialize($service->working_days, ''),
             'status'                  => $service->status,
         );
 
@@ -738,19 +764,79 @@ class SamedayCourier extends CarrierModule
         }
     }
 
+    /**
+     * @param $params
+     *
+     * @param $shipping_cost
+     *
+     * @return bool
+     *
+     * @throws Exception
+     */
     public function getOrderShippingCost($params, $shipping_cost)
     {
-        if (!Configuration::get('SAMEDAY_STATUS_MODE') || !$this->carrierDeliveryAvailable($this->id_carrier)) {
+        $service = SamedayService::findByCarrierId($this->id_carrier);
+
+        if (!Configuration::get('SAMEDAY_STATUS_MODE') || !$this->carrierDeliveryAvailable($service)) {
             return false;
+        }
+
+        if (Configuration::get('SAMEDAY_ESTIMATED_COST', 0)) {
+            $pickupPoint = SamedayPickupPoint::getDefaultPickupPoint();
+            $address_delivery_id = $params->id_address_delivery;
+            $address = new Address($address_delivery_id);
+            $weight = $params->getTotalWeight() < 1 ? 1 : $params->getTotalWeight();
+
+            $sameday = new \Sameday\Sameday($this->getSamedayClient());
+            $request = new \Sameday\Requests\SamedayPostAwbEstimationRequest(
+                $pickupPoint['id_pickup_point'],
+                null,
+                new Sameday\Objects\Types\PackageType(
+                    0
+                ),
+                [new \Sameday\Objects\ParcelDimensionsObject($weight)],
+                $service['id_service'],
+                new Sameday\Objects\Types\AwbPaymentType(
+                    1
+                ),
+                new Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
+                    ucwords($address->city) !== 'Bucuresti' ? $address->city : 'Sector 1',
+                    State::getNameById($address->id_state),
+                    ltrim($address->address1) . $address->address2,
+                    null,
+                    null,
+                    null,
+                    null
+                ),
+                0,
+                $params->getOrderTotal(true, 4),
+                null,
+                array()
+            );
+
+            try {
+                $estimation = $sameday->postAwbEstimation($request);
+                $estimated_cost = $estimation->getCost();
+            } catch (\Sameday\Exceptions\SamedayBadRequestException $exception) {
+                $estimated_cost = null;
+            }
+
+
+            if ($estimated_cost !== null) {
+                $shipping_cost = $estimated_cost;
+            }
         }
 
         return $shipping_cost;
     }
 
-    private function carrierDeliveryAvailable($id_carrier)
+    /**
+     * @param $id_carrier
+     * @return bool
+     * @throws Exception
+     */
+    private function carrierDeliveryAvailable($service)
     {
-        $service = SamedayService::findByCarrierId($id_carrier);
-
         if ($service &&
             $service['status'] != SamedayService::STATUS_INTERVAL_ACTIVE &&
             $service['live_mode'] == Configuration::get('SAMEDAY_LIVE_MODE', 0)
@@ -758,7 +844,7 @@ class SamedayCourier extends CarrierModule
             return true;
         }
 
-        $workingTime = unserialize($service['working_days']);
+        $workingTime = unserialize($service['working_days'], '');
         $now = new \DateTime();
         $weekDay = $now->format("w");
         if (!empty($workingTime['days'][$weekDay]) &&

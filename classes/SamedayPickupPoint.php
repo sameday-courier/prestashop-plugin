@@ -58,6 +58,15 @@ class SamedayPickupPoint extends ObjectModel
         ),
     );
 
+    public static function getDefaultPickupPoint()
+    {
+        $liveMode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
+        return Db::getInstance()->getRow(
+            "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME .
+            " s WHERE s.live_mode = '{$liveMode}' AND s.is_default = " . (int) 1
+        );
+    }
+
     public static function getPickupPoints()
     {
         $liveMode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
