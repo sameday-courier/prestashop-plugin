@@ -1009,18 +1009,9 @@ class SamedayCourier extends CarrierModule
     public function hookDisplayAdminOrderContentShip($params)
     {
         $order = $params['order'];
+
         if (Tools::isSubmit('addAwb')) {
-//            if (Configuration::get('SAMEDAY_ORDER_STATUS_AWB')
-//                && $order->current_state == Configuration::get('SAMEDAY_ORDER_STATUS_AWB')
-//            ) {
                 $this->addAwb($order);
-            //} else {
-            //    $state = new OrderState(Configuration::get('SAMEDAY_ORDER_STATUS_AWB'));
-//                $this->addMessage(
-//                    'danger',
-//                    $this->l('You can generate AWB only for orders with status ') .
-//                    ($state->name[(int)$this->context->language->id]));
-            //}
         }
 
         if (Tools::isSubmit('addParcel')) {
@@ -1053,6 +1044,7 @@ class SamedayCourier extends CarrierModule
             array(
                 'pickup_points' => $pickupPoints,
                 'package_types' => $packageTypes,
+                'ramburs'       => number_format($order->total_paid, 2),
                 'awb'           => $awb,
                 'allowParcel'   => $allowParcel,
                 'ajaxRoute'     => $this->ajaxRoute
@@ -1124,7 +1116,7 @@ class SamedayCourier extends CarrierModule
                 $company
             ),
             $insuredValue,
-            $order->total_paid,
+            Tools::getValue('sameday_ramburs'),
             new \Sameday\Objects\Types\CodCollectorType(\Sameday\Objects\Types\CodCollectorType::CLIENT),
             null,
             array(),

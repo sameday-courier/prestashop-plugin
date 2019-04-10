@@ -280,7 +280,16 @@
                             <label class="col-sm-3 control-label"
                                    for="input-key">{l s='Observation' mod='sameday'}</label>
                             <div class="col-sm-9">
-                                <input type="text" name="sameday_observation" value="" class="form-control">
+                                <input type="text" name="sameday_observation" class="form-control">
+                            </div>
+                        </div>
+
+                        <!-- Ramburs //-->
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label"
+                                   for="input-key">{l s='Ramburs' mod='sameday'}</label>
+                            <div class="col-sm-9">
+                                <input type="text" name="sameday_ramburs" value="{$ramburs|escape:'html':'UTF-8'}" class="form-control">
                             </div>
                         </div>
 
