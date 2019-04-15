@@ -46,6 +46,8 @@ class SamedayCourier extends CarrierModule
 
     public $id_carrier;
 
+    protected $servicePriceCache = array();
+
     public function __construct()
     {
         $this->name = 'samedaycourier';
@@ -781,6 +783,10 @@ class SamedayCourier extends CarrierModule
             return false;
         }
 
+        if (array_key_exists($service['id'], $this->servicePriceCache)) {
+            return $this->servicePriceCache[$service['id']];
+        }
+
         if (Configuration::get('SAMEDAY_ESTIMATED_COST', 0)) {
             $pickupPoint = SamedayPickupPoint::getDefaultPickupPoint();
             $address_delivery_id = $params->id_address_delivery;
@@ -791,14 +797,10 @@ class SamedayCourier extends CarrierModule
             $request = new \Sameday\Requests\SamedayPostAwbEstimationRequest(
                 $pickupPoint['id_pickup_point'],
                 null,
-                new Sameday\Objects\Types\PackageType(
-                    0
-                ),
+                new Sameday\Objects\Types\PackageType(Sameday\Objects\Types\PackageType::PARCEL),
                 [new \Sameday\Objects\ParcelDimensionsObject($weight)],
                 $service['id_service'],
-                new Sameday\Objects\Types\AwbPaymentType(
-                    1
-                ),
+                new Sameday\Objects\Types\AwbPaymentType(Sameday\Objects\Types\AwbPaymentType::CLIENT),
                 new Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
                     ucwords($address->city) !== 'Bucuresti' ? $address->city : 'Sector 1',
                     State::getNameById($address->id_state),
@@ -814,17 +816,18 @@ class SamedayCourier extends CarrierModule
                 array()
             );
 
+            $estimated_cost = null;
             try {
                 $estimation = $sameday->postAwbEstimation($request);
                 $estimated_cost = $estimation->getCost();
             } catch (\Sameday\Exceptions\SamedayBadRequestException $exception) {
-                $estimated_cost = null;
             }
-
 
             if ($estimated_cost !== null) {
                 $shipping_cost = $estimated_cost;
             }
+
+            $this->servicePriceCache[$service['id']] = $estimated_cost;
         }
 
         return $shipping_cost;
