@@ -369,6 +369,14 @@
                     $('#calculated-weight').val((parseFloat($('#calculated-weight').val()) || 0) + weight);
                 });
             });
+
+            $('form#form-shipping').submit(function () {
+                if ($(this).attr('submitted')) {
+                    return false;
+                }
+
+                $(this).attr('submitted', true);
+            });
         });
     </script>
 {/if}
