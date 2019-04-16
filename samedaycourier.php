@@ -787,50 +787,46 @@ class SamedayCourier extends CarrierModule
             return $this->servicePriceCache[$service['id']];
         }
 
-        if (Configuration::get('SAMEDAY_ESTIMATED_COST', 0)) {
-            $pickupPoint = SamedayPickupPoint::getDefaultPickupPoint();
-            $address_delivery_id = $params->id_address_delivery;
-            $address = new Address($address_delivery_id);
-            $weight = $params->getTotalWeight() < 1 ? 1 : $params->getTotalWeight();
-
-            $sameday = new \Sameday\Sameday($this->getSamedayClient());
-            $request = new \Sameday\Requests\SamedayPostAwbEstimationRequest(
-                $pickupPoint['id_pickup_point'],
-                null,
-                new Sameday\Objects\Types\PackageType(Sameday\Objects\Types\PackageType::PARCEL),
-                [new \Sameday\Objects\ParcelDimensionsObject($weight)],
-                $service['id_service'],
-                new Sameday\Objects\Types\AwbPaymentType(Sameday\Objects\Types\AwbPaymentType::CLIENT),
-                new Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
-                    ucwords($address->city) !== 'Bucuresti' ? $address->city : 'Sector 1',
-                    State::getNameById($address->id_state),
-                    ltrim($address->address1) . $address->address2,
-                    null,
-                    null,
-                    null,
-                    null
-                ),
-                0,
-                $params->getOrderTotal(true, 4),
-                null,
-                array()
-            );
-
-            $estimated_cost = null;
-            try {
-                $estimation = $sameday->postAwbEstimation($request);
-                $estimated_cost = $estimation->getCost();
-            } catch (\Sameday\Exceptions\SamedayBadRequestException $exception) {
-            }
-
-            if ($estimated_cost !== null) {
-                $shipping_cost = $estimated_cost;
-            }
-
-            $this->servicePriceCache[$service['id']] = $estimated_cost;
+        if (!Configuration::get('SAMEDAY_ESTIMATED_COST', 0)) {
+            return $shipping_cost;
         }
 
-        return $shipping_cost;
+        $pickupPoint = SamedayPickupPoint::getDefaultPickupPoint();
+        $address_delivery_id = $params->id_address_delivery;
+        $address = new Address($address_delivery_id);
+        $weight = $params->getTotalWeight() < 1 ? 1 : $params->getTotalWeight();
+
+        $sameday = new \Sameday\Sameday($this->getSamedayClient());
+        $request = new \Sameday\Requests\SamedayPostAwbEstimationRequest(
+            $pickupPoint['id_pickup_point'],
+            null,
+            new Sameday\Objects\Types\PackageType(Sameday\Objects\Types\PackageType::PARCEL),
+            [new \Sameday\Objects\ParcelDimensionsObject($weight)],
+            $service['id_service'],
+            new Sameday\Objects\Types\AwbPaymentType(Sameday\Objects\Types\AwbPaymentType::CLIENT),
+            new Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
+                ucwords($address->city) !== 'Bucuresti' ? $address->city : 'Sector 1',
+                State::getNameById($address->id_state),
+                ltrim($address->address1) . $address->address2,
+                null,
+                null,
+                null,
+                null
+            ),
+            0,
+            $params->getOrderTotal(true, 4),
+            null,
+            array()
+        );
+
+        try {
+            $estimation = $sameday->postAwbEstimation($request);
+            $this->servicePriceCache[$service['id']] = $estimation->getCost();
+        } catch (\Exception $exception) {
+            $this->servicePriceCache[$service['id']] = $shipping_cost;
+        }
+
+        return $this->servicePriceCache[$service['id']];
     }
 
     /**
