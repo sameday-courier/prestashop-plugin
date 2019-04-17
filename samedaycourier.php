@@ -106,6 +106,10 @@ class SamedayCourier extends CarrierModule
         Configuration::deleteByName('SAMEDAY_CRON_TOKEN');
         // Configuration::deleteByName('SAMEDAY_ORDER_STATUS_AWB');
         Configuration::deleteByName('SAMEDAY_DEBUG_MODE');
+        Configuration::deleteByName('SAMEDAY_ESTIMATED_COST');
+        Configuration::deleteByName('SAMEDAY_AWB_PDF_FORMAT');
+        Configuration::deleteByName('SAMEDAY_LAST_SYNC');
+        Configuration::deleteByName('SAMEDAY_STATUS_MODE');
 
         $services = SamedayService::getAllServices();
         foreach ($services as $service) {
@@ -870,7 +874,11 @@ class SamedayCourier extends CarrierModule
                 $carrier = new Carrier($carrier_id);
                 $carrier->active = false;
                 $carrier->deleted = true;
-                $carrier->save();
+                try {
+                    $carrier->save();
+                } catch (PrestaShopException $e) {
+                    // Ignore exception.
+                }
             }
 
             if (!$service['disabled'] && $service['status'] > 0) {
