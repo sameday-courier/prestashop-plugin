@@ -56,6 +56,7 @@ class SamedayCourier extends CarrierModule
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
+        $this->module_key = 'db5f332a6ba61a4cc18c00b74c78137d';
 
         parent::__construct();
 
