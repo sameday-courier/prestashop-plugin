@@ -52,7 +52,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.0.2';
+        $this->version = '1.0.3';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -681,7 +681,7 @@ class SamedayCourier extends CarrierModule
             'price'                   => $service->price,
             'free_delivery'           => $service->free_delivery,
             'free_shipping_threshold' => $service->free_shipping_threshold,
-            'working_days'            => unserialize($service->working_days, ''),
+            'working_days'            => unserialize($service->working_days),
             'status'                  => $service->status,
         );
 
