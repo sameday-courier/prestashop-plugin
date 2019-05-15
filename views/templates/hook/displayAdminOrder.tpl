@@ -29,30 +29,30 @@
             {if $allowParcel}
                 <div class="col-md-3">
                     <button class="btn btn-success" data-toggle="modal" data-target="#addParcel"><i
-                                class="icon-plus"></i> {l s='Add Parcel' mod='sameday'}</button>
+                                class="icon-plus"></i> {l s='Add Parcel' mod='samedaycourier'}</button>
                 </div>
                 <div class="col-md-3">
                     <form action="" method="post" id="form-cancel-awb" class="form-horizontal">
                         <button type="submit" name="cancelAwb" class="btn btn-danger"><i
-                                    class="icon-remove"></i> {l s='Cancel AWB' mod='sameday'}</button>
+                                    class="icon-remove"></i> {l s='Cancel AWB' mod='samedaycourier'}</button>
                     </form>
                 </div>
             {/if}
             <div class="col-md-3">
                 <button name="history_awb" id="btn-history" class="btn btn-warning" data-awb="{$awb.id|escape:'html':'UTF-8'}">
-                    <i class="icon-time"></i> {l s='AWB History' mod='sameday'}</button>
+                    <i class="icon-time"></i> {l s='AWB History' mod='samedaycourier'}</button>
             </div>
 
             <div class="col-md-3">
                 <form action="" method="post" id="form-download-awb" class="form-horizontal">
                     <button type="submit" name="downloadAwb" class="btn btn-primary" id="downloadAwb"><i
-                                class="icon-file"></i> {l s='Download AWB' mod='sameday'}</button>
+                                class="icon-file"></i> {l s='Download AWB' mod='samedaycourier'}</button>
                 </form>
             </div>
         {else}
             <div class="col-md-3">
                 <button class="btn btn-success" data-toggle="modal" data-target="#addAwb"><i
-                            class="icon-plus"></i> {l s='Add AWB' mod='sameday'}</button>
+                            class="icon-plus"></i> {l s='Add AWB' mod='samedaycourier'}</button>
             </div>
         {/if}
     </div>
@@ -64,7 +64,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">×</button>
-                    <h4 class="modal-title">{l s='Add Parcel' mod='sameday'}</h4>
+                    <h4 class="modal-title">{l s='Add Parcel' mod='samedaycourier'}</h4>
                 </div>
                 <form action="" method="post" id="form-add-parcels" class="form-horizontal">
                     <div class="modal-body">
@@ -72,7 +72,7 @@
                         <div class="form-group package_dimension_field">
                             <div class="parcel row">
                                 <label class="col-sm-3 control-label"
-                                       for="input-length">{l s='Package dimension' mod='sameday'}</label>
+                                       for="input-length">{l s='Package dimension' mod='samedaycourier'}</label>
                                 <div class="col-sm-8" style="padding-bottom: 5px;">
                                     <div class="row">
                                         <div class="col-sm-3">
@@ -103,7 +103,7 @@
                         <!-- Observation //-->
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Observation' mod='sameday'}</label>
+                                   for="input-key">{l s='Observation' mod='samedaycourier'}</label>
                             <div class="col-sm-8">
                                 <input type="text" name="sameday_observation" value="" class="form-control">
                             </div>
@@ -111,7 +111,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="submit" name="addParcel" class="btn btn-success"><i
-                                    class="icon-plus"></i> {l s='Add Parcel' mod='sameday'}</button>
+                                    class="icon-plus"></i> {l s='Add Parcel' mod='samedaycourier'}</button>
                         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                     </div>
                 </form>
@@ -126,13 +126,13 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">{l s='AWB History' mod='sameday'}</h4>
+                    <h4 class="modal-title">{l s='AWB History' mod='samedaycourier'}</h4>
                 </div>
                 <div class="modal-body" id="awb-history">
                     <table class="table table-bordered">
                         <thead>
                         <tr>
-                            <td> {l s='Summary' mod='sameday'} </td>
+                            <td> {l s='Summary' mod='samedaycourier'} </td>
                         </tr>
                         </thead>
                         <tbody>
@@ -141,16 +141,16 @@
                                 <table class="table table-bordered">
                                     <thead>
                                     <tr>
-                                        <th> {l s='Parcel number' mod='sameday'} </th>
-                                        <th> {l s='Parcel weight' mod='sameday'} </th>
-                                        <th> {l s='Delivered' mod='sameday'} </th>
-                                        <th> {l s='Delivery attempts' mod='sameday'} </th>
-                                        <th> {l s='Is picked up' mod='sameday'} </th>
-                                        <th> {l s='Picked up at' mod='sameday'} </th>
+                                        <th> {l s='Parcel number' mod='samedaycourier'} </th>
+                                        <th> {l s='Parcel weight' mod='samedaycourier'} </th>
+                                        <th> {l s='Delivered' mod='samedaycourier'} </th>
+                                        <th> {l s='Delivery attempts' mod='samedaycourier'} </th>
+                                        <th> {l s='Is picked up' mod='samedaycourier'} </th>
+                                        <th> {l s='Picked up at' mod='samedaycourier'} </th>
                                     </tr>
                                     </thead>
                                     <tbody id="awb-summary">
-                                        <tr><td colspan="6">{l s='No records' mod='sameday'}</td></tr>
+                                        <tr><td colspan="6">{l s='No records' mod='samedaycourier'}</td></tr>
                                     </tbody>
                                 </table>
                             </td>
@@ -160,7 +160,7 @@
                     <table class="table table-bordered">
                         <thead>
                             <tr>
-                                <td> {l s='History' mod='sameday'} </td>
+                                <td> {l s='History' mod='samedaycourier'} </td>
                             </tr>
                         </thead>
                         <tbody>
@@ -169,18 +169,18 @@
                                 <table class="table table-bordered">
                                     <thead>
                                         <tr>
-                                            <th>{l s='Parcel number' mod='sameday'}</th>
-                                            <th>{l s='Status' mod='sameday'}</th>
-                                            <th>{l s='Label' mod='sameday'}</th>
-                                            <th>{l s='State' mod='sameday'}</th>
-                                            <th>{l s='Date' mod='sameday'}</th>
-                                            <th>{l s='County' mod='sameday'}</th>
-                                            <th>{l s='Transit location' mod='sameday'}</th>
-                                            <th>{l s='Reason' mod='sameday'}</th>
+                                            <th>{l s='Parcel number' mod='samedaycourier'}</th>
+                                            <th>{l s='Status' mod='samedaycourier'}</th>
+                                            <th>{l s='Label' mod='samedaycourier'}</th>
+                                            <th>{l s='State' mod='samedaycourier'}</th>
+                                            <th>{l s='Date' mod='samedaycourier'}</th>
+                                            <th>{l s='County' mod='samedaycourier'}</th>
+                                            <th>{l s='Transit location' mod='samedaycourier'}</th>
+                                            <th>{l s='Reason' mod='samedaycourier'}</th>
                                         </tr>
                                     </thead>
                                         <tbody id="awb-histories">
-                                            <tr><td colspan="8">{l s='No records' mod='sameday'}</td></tr>
+                                            <tr><td colspan="8">{l s='No records' mod='samedaycourier'}</td></tr>
                                         </tbody>
                                 </table>
                             </td>
@@ -189,7 +189,7 @@
                     </table>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">{l s='Close' mod='sameday'}</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">{l s='Close' mod='samedaycourier'}</button>
                 </div>
             </div>
         </div>
@@ -201,12 +201,12 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">×</button>
-                    <h4 class="modal-title">{l s='Add AWB' mod='sameday'}</h4>
+                    <h4 class="modal-title">{l s='Add AWB' mod='samedaycourier'}</h4>
                 </div>
                 <form action="" method="post" id="form-shipping" class="form-horizontal">
                     <div class="modal-body">
                         <div class="form-group">
-                            <label class="col-sm-3 control-label" for="input-key">{l s='Packages' mod='sameday'}</label>
+                            <label class="col-sm-3 control-label" for="input-key">{l s='Packages' mod='samedaycourier'}</label>
                             <div class="col-sm-4">
                                 <div class="input-group">
                                     <input type="text" name="sameday_package_number" class="form-control input-number"
@@ -220,7 +220,7 @@
                                 </div>
                             </div>
                             <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Calculated weight' mod='sameday'}</span></label>
+                                   for="input-key">{l s='Calculated weight' mod='samedaycourier'}</span></label>
                             <div class="col-sm-2">
                                 <div class="input-group">
                                     <input type="number" value="0" readonly="readonly" id="calculated-weight"
@@ -233,7 +233,7 @@
                         <div class="form-group package_dimension_field">
                             <div class="parcel row">
                                 <label class="col-sm-3 control-label"
-                                       for="input-length">{l s='Package dimension' mod='sameday'}</label>
+                                       for="input-length">{l s='Package dimension' mod='samedaycourier'}</label>
                                 <div class="col-sm-8" style="padding-bottom: 5px;">
                                     <div class="row">
                                         <div class="col-sm-3">
@@ -268,7 +268,7 @@
                         <!-- Insured Value //-->
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Insured value' mod='sameday'}</label>
+                                   for="input-key">{l s='Insured value' mod='samedaycourier'}</label>
                             <div class="col-sm-4">
                                 <input type="number" name="sameday_insured_value" value="0" min="0"
                                        class="form-control">
@@ -278,7 +278,7 @@
                         <!-- Observation //-->
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Observation' mod='sameday'}</label>
+                                   for="input-key">{l s='Observation' mod='samedaycourier'}</label>
                             <div class="col-sm-9">
                                 <input type="text" name="sameday_observation" class="form-control">
                             </div>
@@ -287,7 +287,7 @@
                         <!-- Ramburs //-->
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Ramburs' mod='sameday'}</label>
+                                   for="input-key">{l s='Ramburs' mod='samedaycourier'}</label>
                             <div class="col-sm-9">
                                 <input type="text" name="sameday_ramburs" value="{$ramburs|escape:'html':'UTF-8'}" class="form-control">
                             </div>
@@ -296,7 +296,7 @@
                         <!-- Package Type //-->
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
-                                   for="input-status-sameday_package_type">{l s='Package type' mod='sameday'}</label>
+                                   for="input-status-sameday_package_type">{l s='Package type' mod='samedaycourier'}</label>
                             <div class="col-sm-9">
                                 <select name="sameday_package_type" id="input-status-sameday-package-type"
                                         class="form-control">
@@ -310,7 +310,7 @@
                         <!-- Pickup Point //-->
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
-                                   for="input-status-sameday-pickup_point">{l s='Pickup point' mod='sameday'}</label>
+                                   for="input-status-sameday-pickup_point">{l s='Pickup point' mod='samedaycourier'}</label>
                             <div class="col-sm-9">
                                 <select name="sameday_pickup_point" id="input-status-sameday-pickup_point"
                                         class="form-control">
@@ -329,7 +329,7 @@
                             <div class="col-sm-9">
                                 <select name="sameday_awb_payment" id="input-status-sameday_awb_payment"
                                         class="form-control">
-                                    <option value="1"> {l s='Client' mod='sameday'}</option>
+                                    <option value="1"> {l s='Client' mod='samedaycourier'}</option>
                                 </select>
                             </div>
                         </div>
@@ -338,8 +338,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="submit" name="addAwb" class="btn btn-success"><i
-                                    class="icon-plus"></i> {l s='Add AWB' mod='sameday'}</button>
-                        <button type="button" class="btn btn-default" data-dismiss="modal">{l s='Close' mod='sameday'}</button>
+                                    class="icon-plus"></i> {l s='Add AWB' mod='samedaycourier'}</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">{l s='Close' mod='samedaycourier'}</button>
                     </div>
                 </form>
             </div>

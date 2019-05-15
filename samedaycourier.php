@@ -806,7 +806,7 @@ class SamedayCourier extends CarrierModule
             $pickupPoint['id_pickup_point'],
             null,
             new Sameday\Objects\Types\PackageType(Sameday\Objects\Types\PackageType::PARCEL),
-            [new \Sameday\Objects\ParcelDimensionsObject($weight)],
+            array(new \Sameday\Objects\ParcelDimensionsObject($weight)),
             $service['id_service'],
             new Sameday\Objects\Types\AwbPaymentType(Sameday\Objects\Types\AwbPaymentType::CLIENT),
             new Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
@@ -861,7 +861,7 @@ class SamedayCourier extends CarrierModule
         return false;
     }
 
-    public function getOrderShippingCostExternal($params)
+    public function getOrderShippingCostExternal()
     {
         return true;
     }

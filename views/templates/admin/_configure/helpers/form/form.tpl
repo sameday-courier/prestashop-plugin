@@ -13,13 +13,13 @@
                     <div class="checkbox">
                         <label>
                             <input type="checkbox" name="{$input.name|escape:'html':'UTF-8'}[days][{$k|escape:'html':'UTF-8'}]"
-                                   {if $fields_value[$input.name]['days'][$k]|default:0}checked{/if}> {l s=$v mod='sameday'}
+                                   {if $fields_value[$input.name]['days'][$k]|default:0}checked{/if}> {l s=$v mod='samedaycourier'}
                         </label>
                     </div>
                 </div>
                 <div class="col-lg-2">
                     <div class="input-group">
-                        <div class="input-group-addon">{l s='From' mod='sameday'}</div>
+                        <div class="input-group-addon">{l s='From' mod='samedaycourier'}</div>
                         <input
                                 id="{if isset($input.id)}{$input.id|escape:'html':'UTF-8'}{else}{$input.name|escape:'html':'UTF-8'}{/if}_from_{$k}"
                                 type="text"
@@ -35,7 +35,7 @@
                 </div>
                 <div class="col-lg-2">
                     <div class="input-group">
-                        <div class="input-group-addon">{l s='To' mod='sameday'}</div>
+                        <div class="input-group-addon">{l s='To' mod='samedaycourier'}</div>
                         <input
                                 id="{if isset($input.id)}{$input.id|escape:'html':'UTF-8'}{else}{$input.name|escape:'html':'UTF-8'}{/if}_to_{$k}"
                                 type="text"
