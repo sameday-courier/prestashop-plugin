@@ -14,10 +14,6 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
-use Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject;
-use Sameday\Objects\Types\AwbPaymentType;
-use Sameday\Objects\Types\PackageType;
-
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -861,7 +857,7 @@ class SamedayCourier extends CarrierModule
         return false;
     }
 
-    public function getOrderShippingCostExternal()
+    public function getOrderShippingCostExternal($params)
     {
         return true;
     }
@@ -1283,10 +1279,14 @@ class SamedayCourier extends CarrierModule
     {
         $client = $this->getSamedayClient();
 
-        if ($client->login()) {
-            $this->addMessage('success', $this->l('Connection successfully established'));
-        } else {
-            $this->addMessage('danger', $this->l('Connection could not be established.'));
+        try {
+            if ($client->login()) {
+                $this->addMessage('success', $this->l('Connection successfully established'));
+            } else {
+                $this->addMessage('danger', $this->l('Connection could not be established.'));
+            }
+        } catch (\Sameday\Exceptions\SamedaySDKException $e) {
+            return;
         }
     }
 
