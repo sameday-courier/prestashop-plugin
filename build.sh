@@ -1,5 +1,5 @@
 #!/bin/sh
-
+rm -rf samedaycourier.zip
 rm -rf samedaycourier
 mkdir samedaycourier
 cp -r ./ ./samedaycourier/
