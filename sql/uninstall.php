@@ -15,11 +15,13 @@
  */
 
 $sql = array(
-    "DROP TABLE "._DB_PREFIX_. SamedayService::TABLE_NAME,
-    "DROP TABLE "._DB_PREFIX_. SamedayPickupPoint::TABLE_NAME,
-    "DROP TABLE "._DB_PREFIX_. SamedayAwb::TABLE_NAME,
-    "DROP TABLE "._DB_PREFIX_. SamedayAwbParcel::TABLE_NAME,
-    "DROP TABLE "._DB_PREFIX_. SamedayAwbParcelHistory::TABLE_NAME,
+    'DROP TABLE '._DB_PREFIX_. SamedayService::TABLE_NAME,
+    'DROP TABLE '._DB_PREFIX_. SamedayPickupPoint::TABLE_NAME,
+    'DROP TABLE '._DB_PREFIX_. SamedayAwb::TABLE_NAME,
+    'DROP TABLE '._DB_PREFIX_. SamedayAwbParcel::TABLE_NAME,
+    'DROP TABLE '._DB_PREFIX_. SamedayAwbParcelHistory::TABLE_NAME,
+    'DROP TABLE '._DB_PREFIX_. SamedayLocker::TABLE_NAME,
+    'DROP TABLE '._DB_PREFIX_. SamedayOrderLocker::TABLE_NAME,
 );
 
 foreach ($sql as $query) {

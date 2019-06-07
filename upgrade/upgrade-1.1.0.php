@@ -20,15 +20,42 @@ if (!defined('_PS_VERSION_')) {
 
 /**
  * This function updates your module from previous versions to the version 1.1,
- * usefull when you modify your database, or register a new hook ...
+ * useful when you modify your database, or register a new hook ...
  * Don't forget to create one file per version.
  */
-function upgrade_module_1_1_0()
+function upgrade_module_1_1_0($object)
 {
-    /*
-     * Do everything you want right there,
-     * You could add a column in one of your module's tables
-     */
+    $sql = array(
+        'CREATE TABLE `'. _DB_PREFIX_ . SamedayLocker::TABLE_NAME . "` (
+          `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+          `id_locker` int(11) unsigned NOT NULL,
+          `name` varchar(100) NOT NULL DEFAULT '',
+          `county` varchar(100) NOT NULL DEFAULT '',
+          `city` varchar(100) NOT NULL DEFAULT '',
+          `address` varchar(255) NOT NULL DEFAULT '',
+          `postal_code` varchar(16) NOT NULL DEFAULT '',
+          `lat` varchar(32) NOT NULL DEFAULT '',
+          `long` varchar(32) NOT NULL DEFAULT '',
+          `live_mode` tinyint(1) NOT NULL DEFAULT '0',
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;",
+        'CREATE TABLE `'. _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '` (
+          `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+          `id_order` int(11) unsigned NOT NULL,
+          `id_locker` int(11) unsigned NOT NULL,
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB;'
+    );
 
-    return true;
+    foreach ($sql as $query) {
+        if (Db::getInstance()->execute($query) === false) {
+            return false;
+        }
+    }
+
+    return (version_compare(_PS_VERSION_, '1.7.0.0') < 0
+        ? $object->registerHook('extraCarrier')
+        : $object->registerHook('displayCarrierExtraContent')) &&
+        $object->registerHook('actionValidateOrder') &&
+        $object->registerHook('actionCarrierProcess');
 }

@@ -322,6 +322,13 @@
                             </div>
                         </div>
 
+                        {if $allowLocker}
+                        <!-- Locker !-->
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label"><strong>{l s='Deliver to locker' mod='samedaycourier'}</strong></label>
+                        </div>
+                        {/if}
+
                         <!-- Awb Payment //-->
                         <div class="form-group hidden">
                             <label class="col-sm-3 control-label" for="input-status-sameday_awb_payment">Awb
