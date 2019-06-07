@@ -21,6 +21,8 @@ if (!defined('_PS_VERSION_')) {
 include(dirname(__FILE__). '/libs/sameday-php-sdk/src/Sameday/autoload.php');
 include(dirname(__FILE__). '/classes/SamedayService.php');
 include(dirname(__FILE__). '/classes/SamedayPickupPoint.php');
+include(dirname(__FILE__). '/classes/SamedayLocker.php');
+include(dirname(__FILE__). '/classes/SamedayOrderLocker.php');
 include(dirname(__FILE__). '/classes/SamedayAwb.php');
 include(dirname(__FILE__). '/classes/SamedayAwbParcel.php');
 include(dirname(__FILE__). '/classes/SamedayAwbParcelHistory.php');
@@ -48,7 +50,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.0.3';
+        $this->version = '1.1.0';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -89,8 +91,13 @@ class SamedayCourier extends CarrierModule
 
         return parent::install() &&
             $this->registerHook('actionCarrierUpdate') &&
+            (version_compare(_PS_VERSION_, '1.7.0.0') < 0
+                ? $this->registerHook('extraCarrier')
+                : $this->registerHook('displayCarrierExtraContent')) &&
             $this->registerHook('displayAdminAfterHeader') &&
-            $this->registerHook('displayAdminOrderContentShip');
+            $this->registerHook('displayAdminOrderContentShip') &&
+            $this->registerHook('actionValidateOrder') &&
+            $this->registerHook('actionCarrierProcess');
     }
 
     public function uninstall()
@@ -107,6 +114,7 @@ class SamedayCourier extends CarrierModule
         Configuration::deleteByName('SAMEDAY_AWB_PDF_FORMAT');
         Configuration::deleteByName('SAMEDAY_LAST_SYNC');
         Configuration::deleteByName('SAMEDAY_STATUS_MODE');
+        Configuration::deleteByName('SAMEDAY_LAST_LOCKERS');
 
         $services = SamedayService::getAllServices();
         foreach ($services as $service) {
@@ -141,6 +149,7 @@ class SamedayCourier extends CarrierModule
         $this->renderForm();
         $this->renderServicesList();
         $this->renderPickupPointsList();
+        $this->renderLockersList();
 
         $this->addMessage('info', $this->l('Use this url for cron status sync ') .' ' .
             _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/sync.php?token='
@@ -557,6 +566,69 @@ class SamedayCourier extends CarrierModule
         $this->html .= $helper->generateList($pickupPoints, $fields);
     }
 
+    private function renderLockersList()
+    {
+        $lockers = SamedayLocker::getLockers(true);
+        $fields = array(
+            'id_locker' => array(
+                'title' => $this->l('Sameday Id'),
+                'orderby' => true,
+                'search' => false,
+            ),
+            'name' => array(
+                'title' => $this->l('Name'),
+                'orderby' => true,
+                'search' => false,
+            ),
+            'county' => array(
+                'title' => $this->l('County'),
+                'orderby' => true,
+                'search' => false,
+            ),
+            'city' => array(
+                'title' => $this->l('City'),
+                'orderby' => false,
+                'search' => false,
+            ),
+            'address' => array(
+                'title' => $this->l('Address'),
+                'orderby' => false,
+                'search' => false,
+            ),
+            'postal_code' => array(
+                'title' => $this->l('Postal code'),
+                'orderby' => false,
+                'search' => false,
+            ),
+            'lat' => array(
+                'title' => $this->l('Latitude'),
+                'orderby' => false,
+                'search' => false,
+            ),
+            'long' => array(
+                'title' => $this->l('Longitude'),
+                'orderby' => false,
+                'search' => false,
+            ),
+        );
+
+        $helper = new HelperList();
+        $helper->toolbar_btn = array();
+        $helper->simple_header = false;
+        $helper->listTotal = count($lockers);
+        $helper->identifier = 'id_locker';
+        $helper->table = SamedayLocker::TABLE_NAME;
+        $helper->actions = array();
+        $helper->show_toolbar = true;
+        $helper->module = $this;
+        $helper->title = $this->l('Lockers');
+        $helper->shopLinkType = '';
+        $helper->token = Tools::getAdminTokenLite('AdminModules');
+        $helper->currentIndex = $this->currentIndex;
+
+        $this->html .= $helper->generateList($lockers, $fields);
+    }
+
     private function renderServiceForm()
     {
         $id = (int)Tools::getValue('id');
@@ -714,6 +786,7 @@ class SamedayCourier extends CarrierModule
             }
 
             $this->importPickupPoints();
+            $this->importLockers();
         }
 
         if (Tools::isSubmit('import_services')) {
@@ -734,36 +807,132 @@ class SamedayCourier extends CarrierModule
 
     private function importPickupPoints()
     {
-        try {
-            $client = $this->getSamedayClient();
+        $client = $this->getSamedayClient();
+        $sameday = new \Sameday\Sameday($client);
 
+        $remotePickupPoints = [];
+        $page = 1;
+        do {
             $request = new \Sameday\Requests\SamedayGetPickupPointsRequest();
+            $request->setPage($page++);
 
             if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
                 $this->log('Import pickup points', SamedayConstants::DEBUG);
                 $this->log($request, SamedayConstants::DEBUG);
             }
 
-            $sameday = new \Sameday\Sameday($client);
-
-            $response = $sameday->getPickupPoints($request);
-
-            foreach ($response->getPickupPoints() as $pickupPointObject) {
-                if (empty(SamedayPickupPoint::findBySamedayId($pickupPointObject->getId()))) {
-                    $pickupPoint = new SamedayPickupPoint();
-                    $pickupPoint->id_pickup_point = $pickupPointObject->getId();
-                    $pickupPoint->sameday_alias = $pickupPointObject->getAlias();
-                    $pickupPoint->county = $pickupPointObject->getCounty()->getName();
-                    $pickupPoint->city = $pickupPointObject->getCity()->getName();
-                    $pickupPoint->address = $pickupPointObject->getAddress();
-                    $pickupPoint->is_default = $pickupPointObject->isDefault();
-                    $pickupPoint->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
-                    $pickupPoint->save();
-                }
+            try {
+                $pickupPoints = $sameday->getPickupPoints($request);
+            } catch (\Exception $e) {
+                $this->addMessage('danger', $e->getMessage());
+                $this->log($e->getMessage(), SamedayConstants::ERROR);
+                break;
             }
+
+            foreach ($pickupPoints->getPickupPoints() as $pickupPointObject) {
+                $pickupPoint = SamedayPickupPoint::findBySamedayId($pickupPointObject->getId());
+                if (!$pickupPoint) {
+                    // Pickup point not found, add it.
+                    $pickupPoint = new SamedayPickupPoint();
+                } else {
+                    $pickupPoint = new SamedayPickupPoint($pickupPoint['id']);
+                }
+
+                $pickupPoint->id_pickup_point = $pickupPointObject->getId();
+                $pickupPoint->sameday_alias = $pickupPointObject->getAlias();
+                $pickupPoint->county = $pickupPointObject->getCounty()->getName();
+                $pickupPoint->city = $pickupPointObject->getCity()->getName();
+                $pickupPoint->address = $pickupPointObject->getAddress();
+                $pickupPoint->is_default = $pickupPointObject->isDefault();
+                $pickupPoint->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
+                $pickupPoint->save();
+
+                // Save as current pickup points.
+                $remotePickupPoints[] = $pickupPointObject->getId();
+            }
+        } while ($page <= $pickupPoints->getPages());
+
+        // Build array of local pickup points.
+        $localPickupPoints = array_map(
+            function ($pickupPoint) {
+                return array(
+                    'id' => $pickupPoint['id'],
+                    'sameday_id' => $pickupPoint['id_pickup_point']
+                );
+            },
+            SamedayPickupPoint::getPickupPoints()
+        );
+
+        // Delete local pickup points that aren't present in remote pickup points anymore.
+        foreach ($localPickupPoints as $localPickupPoint) {
+            if (!in_array($localPickupPoint['sameday_id'], $remotePickupPoints)) {
+                $toDelete = new SamedayPickupPoint($localPickupPoint['id']);
+                $toDelete->delete();
+            }
+        }
+    }
+
+    public function importLockers()
+    {
+        $client = $this->getSamedayClient();
+        $sameday = new \Sameday\Sameday($client);
+
+        $remoteLockers = [];
+        $request = new \Sameday\Requests\SamedayGetLockersRequest();
+
+        if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
+            $this->log('Import lockers', SamedayConstants::DEBUG);
+            $this->log($request, SamedayConstants::DEBUG);
+        }
+
+        try {
+            $lockers = $sameday->getLockers($request);
         } catch (\Exception $e) {
             $this->addMessage('danger', $e->getMessage());
             $this->log($e->getMessage(), SamedayConstants::ERROR);
+        }
+
+        foreach ($lockers->getLockers() as $lockerObject) {
+            $locker = SamedayLocker::findBySamedayId($lockerObject->getId());
+            if (!$locker) {
+                // Locker not found, add it.
+                $locker = new SamedayLocker();
+            } else {
+                $locker = new SamedayLocker($locker['id']);
+            }
+
+            $locker->id_locker = $lockerObject->getId();
+            $locker->name = $lockerObject->getName();
+            $locker->county = $lockerObject->getCounty();
+            $locker->city = $lockerObject->getCity();
+            $locker->address = $lockerObject->getAddress();
+            $locker->postal_code = $lockerObject->getPostalCode();
+            $locker->lat = $lockerObject->getLat();
+            $locker->long = $lockerObject->getLong();
+            $locker->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
+            $locker->save();
+
+            // Save as current lockers.
+            $remoteLockers[] = $lockerObject->getId();
+        }
+
+        // Build array of local lockers.
+        $localLockers = array_map(
+            function ($locker) {
+                return array(
+                    'id' => $locker['id'],
+                    'sameday_id' => $locker['id_locker']
+                );
+            },
+            SamedayLocker::getLockers(true)
+        );
+
+        // Delete local lockers that aren't present in remote lockers anymore.
+        foreach ($localLockers as $localLocker) {
+            if (!in_array($localLocker['sameday_id'], $remoteLockers)) {
+                $toDelete = new SamedayLocker($localLocker['id']);
+                $toDelete->delete();
+            }
         }
     }
 
@@ -781,6 +950,11 @@ class SamedayCourier extends CarrierModule
         $service = SamedayService::findByCarrierId($this->id_carrier);
 
         if (!Configuration::get('SAMEDAY_STATUS_MODE') || !$this->carrierDeliveryAvailable($service)) {
+            return false;
+        }
+
+        if ($service['code'] === 'LN' && $params->nbProducts() > 1) {
+            // Allow only one product in locker.
             return false;
         }
 
@@ -844,7 +1018,7 @@ class SamedayCourier extends CarrierModule
             return true;
         }
 
-        $workingTime = unserialize($service['working_days'], '');
+        $workingTime = unserialize($service['working_days']);
         $now = new \DateTime();
         $weekDay = $now->format("w");
         if (!empty($workingTime['days'][$weekDay]) &&
@@ -925,23 +1099,27 @@ class SamedayCourier extends CarrierModule
             // Associate carrier to all zones
             $zones = Zone::getZones(true);
             foreach ($zones as $zone) {
-                Db::getInstance()->insert(
-                    'carrier_zone',
-                    array(
-                        'id_carrier' => (int)$carrier->id,
-                        'id_zone' => (int)$zone['id_zone']
-                    )
-                );
-                Db::getInstance()->insert(
-                    'delivery',
-                    array(
-                        'id_carrier' => (int)$carrier->id,
-                        'id_range_price' => (int)$rangePrice->id,
-                        'id_range_weight' => null,
-                        'id_zone' => (int)$zone['id_zone'],
-                        'price' => $price
-                    )
-                );
+                try {
+                    Db::getInstance()->insert(
+                        'carrier_zone',
+                        array(
+                            'id_carrier' => (int)$carrier->id,
+                            'id_zone' => (int)$zone['id_zone']
+                        )
+                    );
+                    Db::getInstance()->insert(
+                        'delivery',
+                        array(
+                            'id_carrier' => (int)$carrier->id,
+                            'id_range_price' => (int)$rangePrice->id,
+                            'id_range_weight' => null,
+                            'id_zone' => (int)$zone['id_zone'],
+                            'price' => $price
+                        )
+                    );
+                } catch (\Exception $e) {
+                    continue;
+                }
             }
         }
     }
@@ -1051,6 +1229,7 @@ class SamedayCourier extends CarrierModule
                 'ramburs'       => number_format($order->total_paid, 2),
                 'awb'           => $awb,
                 'allowParcel'   => $allowParcel,
+                'allowLocker'   => ((int) SamedayOrderLocker::getLockerForOrder($order->id)) > 0,
                 'ajaxRoute'     => $this->ajaxRoute
             )
         );
@@ -1071,6 +1250,43 @@ class SamedayCourier extends CarrierModule
                 Configuration::updateValue($carrier_key, $newCarrier);
             }
         }
+    }
+
+    public function hookExtraCarrier($params)
+    {
+        $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
+        if (!$service || $service['code'] !== 'LN') {
+            return '';
+        }
+
+        //$this->smarty->assign('messages', $this->messages);
+        $this->smarty->assign('lockers', SamedayLocker::getLockers());
+        $this->smarty->assign('lockerId', $params['cookie']->samedaycourier_locker_id);
+
+        return $this->display(__FILE__, 'checkout_lockers.tpl');
+    }
+
+    public function hookDisplayCarrierExtraContent($params)
+    {
+        $k = 1;
+    }
+
+    public function hookActionValidateOrder($params)
+    {
+        $lockerId = (int) $params['cookie']->samedaycourier_locker_id;
+        if ($lockerId <= 0) {
+            return;
+        }
+
+        $orderLocker = new SamedayOrderLocker();
+        $orderLocker->id_order = $params['order']->id;
+        $orderLocker->id_locker = $lockerId;
+        $orderLocker->save();
+    }
+
+    public function hookActionCarrierProcess($params)
+    {
+        $params['cookie']->samedaycourier_locker_id = Tools::getValue('samedaycourier_locker_id');
     }
 
     private function addAwb($order)
@@ -1103,6 +1319,36 @@ class SamedayCourier extends CarrierModule
             );
         }
 
+        $recipient = new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
+            $address->city,
+            $state->name,
+            trim($address->address1 . ' ' . $address->address2),
+            $address->firstname . ' ' . $address->lastname,
+            !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone,
+            $customer->email,
+            $company
+        );
+
+        $lockerId = (int) SamedayOrderLocker::getLockerForOrder($order->id);
+        $locker = null;
+        if ($lockerId > 0) {
+            $locker = SamedayLocker::findBySamedayId($lockerId);
+        }
+
+        if ($locker) {
+            $recipient = new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
+                $locker['city'],
+                $locker['county'],
+                $locker['address'],
+                $address->firstname . ' ' . $address->lastname,
+                !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone,
+                $customer->email,
+                $company
+            );
+        } else {
+            $lockerId = null;
+        }
+
         $request = new \Sameday\Requests\SamedayPostAwbRequest(
             Tools::getValue('sameday_pickup_point'),
             null,
@@ -1110,15 +1356,7 @@ class SamedayCourier extends CarrierModule
             $parcelDimensions,
             $service['id_service'],
             new \Sameday\Objects\Types\AwbPaymentType(Tools::getValue('sameday_awb_payment')),
-            new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
-                $address->city,
-                $state->name,
-                trim($address->address1 . ' ' . $address->address2),
-                $address->firstname . ' ' . $address->lastname,
-                !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone,
-                $customer->email,
-                $company
-            ),
+            $recipient,
             $insuredValue,
             Tools::getValue('sameday_ramburs'),
             new \Sameday\Objects\Types\CodCollectorType(\Sameday\Objects\Types\CodCollectorType::CLIENT),
@@ -1126,7 +1364,10 @@ class SamedayCourier extends CarrierModule
             array(),
             null,
             $order->reference + time(),
-            Tools::getValue('sameday_observation')
+            Tools::getValue('sameday_observation'),
+            '',
+            '',
+            $lockerId
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
@@ -1227,6 +1468,11 @@ class SamedayCourier extends CarrierModule
                     $this->log($request, SamedayConstants::DEBUG);
                 }
                 $sameday->deleteAwb($request);
+                $orderEntity = new Order((int) $order);
+                $orderCarrier = new OrderCarrier((int)$orderEntity->getIdOrderCarrier());
+                $orderCarrier->tracking_number = null;
+                $orderCarrier->update();
+
                 $this->addMessage('success', $this->l('AWB was canceled'));
             }
         } catch (\Sameday\Exceptions\SamedayOtherException $e) {

@@ -73,6 +73,27 @@ $sql[] = "CREATE TABLE `". _DB_PREFIX_ . SamedayAwbParcelHistory::TABLE_NAME . "
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
 
+$sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayLocker::TABLE_NAME . "` (
+          `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+          `id_locker` int(11) unsigned NOT NULL,
+          `name` varchar(100) NOT NULL DEFAULT '',
+          `county` varchar(100) NOT NULL DEFAULT '',
+          `city` varchar(100) NOT NULL DEFAULT '',
+          `address` varchar(255) NOT NULL DEFAULT '',
+          `postal_code` varchar(16) NOT NULL DEFAULT '',
+          `lat` varchar(32) NOT NULL DEFAULT '',
+          `long` varchar(32) NOT NULL DEFAULT '',
+          `live_mode` tinyint(1) NOT NULL DEFAULT '0',
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+
+$sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '` (
+          `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+          `id_order` int(11) unsigned NOT NULL,
+          `id_locker` int(11) unsigned NOT NULL,
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB;';
+
 foreach ($sql as $query) {
     if (Db::getInstance()->execute($query) == false) {
         return false;
