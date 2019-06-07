@@ -1259,16 +1259,23 @@ class SamedayCourier extends CarrierModule
             return '';
         }
 
-        //$this->smarty->assign('messages', $this->messages);
         $this->smarty->assign('lockers', SamedayLocker::getLockers());
         $this->smarty->assign('lockerId', $params['cookie']->samedaycourier_locker_id);
 
-        return $this->display(__FILE__, 'checkout_lockers.tpl');
+        return $this->display(__FILE__, 'checkout_lockers.v16.tpl');
     }
 
     public function hookDisplayCarrierExtraContent($params)
     {
-        $k = 1;
+        $service = SamedayService::findByCarrierId($params['carrier']['id']);
+        if (!$service || $service['code'] !== 'LN') {
+            return '';
+        }
+
+        $this->smarty->assign('lockers', SamedayLocker::getLockers());
+        $this->smarty->assign('lockerId', $params['cookie']->samedaycourier_locker_id);
+
+        return $this->display(__FILE__, 'checkout_lockers.v17.tpl', null);
     }
 
     public function hookActionValidateOrder($params)
@@ -1286,7 +1293,9 @@ class SamedayCourier extends CarrierModule
 
     public function hookActionCarrierProcess($params)
     {
-        $params['cookie']->samedaycourier_locker_id = Tools::getValue('samedaycourier_locker_id');
+        if (Tools::isSubmit('delivery_option')) {
+            $params['cookie']->samedaycourier_locker_id = Tools::getValue('samedaycourier_locker_id');
+        }
     }
 
     private function addAwb($order)
