@@ -30,7 +30,7 @@
     <div class="col-sm-10">
         <select name="samedaycourier_locker_id" class="form-control">
             {foreach from=$lockers item=locker}
-                <option value="{$locker.id}" {if $locker.id==$lockerId}selected="selected"{/if}>{$locker.name|escape:'html':'UTF-8'} - {$locker.county|escape:'html':'UTF-8'} - {$locker.city|escape:'html':'UTF-8'} - {$locker.address|escape:'html':'UTF-8'}</option>
+                <option value="{$locker.id}" {if $locker.id==$lockerId}selected="selected"{/if}>{$locker.name|escape:'htmlall':'UTF-8'} - {$locker.county|escape:'htmlall':'UTF-8'} - {$locker.city|escape:'htmlall':'UTF-8'} - {$locker.address|escape:'htmlall':'UTF-8'}</option>
             {/foreach}
         </select>
     </div>
