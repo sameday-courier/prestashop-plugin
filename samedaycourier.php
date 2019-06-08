@@ -826,7 +826,7 @@ class SamedayCourier extends CarrierModule
             } catch (\Exception $e) {
                 $this->addMessage('danger', $e->getMessage());
                 $this->log($e->getMessage(), SamedayConstants::ERROR);
-                break;
+                return;
             }
 
             foreach ($pickupPoints->getPickupPoints() as $pickupPointObject) {
@@ -890,6 +890,7 @@ class SamedayCourier extends CarrierModule
         } catch (\Exception $e) {
             $this->addMessage('danger', $e->getMessage());
             $this->log($e->getMessage(), SamedayConstants::ERROR);
+            return;
         }
 
         foreach ($lockers->getLockers() as $lockerObject) {
