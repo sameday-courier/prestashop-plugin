@@ -322,6 +322,23 @@
                             </div>
                         </div>
 
+                        <!-- Services //-->
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label"
+                                   for="input-status-sameday-service">{l s='Service' mod='samedaycourier'}</label>
+                            <div class="col-sm-9">
+                                <select name="sameday_service" id="input-status-sameday-service"
+                                        class="form-control">
+                                    {foreach from=$services item=service}
+                                            {if $service.status > 0}
+                                                <option value="{$service.id_service|escape:'html':'UTF-8'}"
+                                                {if $service.id_service == $current_service}selected="selected"{/if}>{$service.name|escape:'html':'UTF-8'}</option>
+                                            {/if}
+                                    {/foreach}
+                                </select>
+                            </div>
+                        </div>
+
                         {if $allowLocker}
                         <!-- Locker !-->
                         <div class="form-group">
