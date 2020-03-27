@@ -50,7 +50,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.1.1';
+        $this->version = '1.3.0';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -201,6 +201,7 @@ class SamedayCourier extends CarrierModule
                     $samedayService->delivery_type = $service->getDeliveryType()->getId();
                     $samedayService->delivery_type_name = $service->getDeliveryType()->getName();
                     $samedayService->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
+                    $samedayService->service_optional_taxes = null !== $service->getOptionalTaxes() ? serialize($service->getOptionalTaxes()) : null;
                     $samedayService->save();
                 } else {
                     SamedayService::activateService($oldService['id']);

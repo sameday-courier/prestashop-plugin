@@ -60,7 +60,11 @@ class SamedayService extends ObjectModel
     /** @var int */
     public $disabled = 0;
 
+    /** @var bool */
     public $live_mode = false;
+
+    /** @var string */
+    public $service_optional_taxes;
 
     /** @var array */
     public static $definition = array(
@@ -107,6 +111,9 @@ class SamedayService extends ObjectModel
             ),
             'live_mode'               => array(
                 'type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true
+            ),
+            'service_optional_taxes'  => array(
+                'type' => self::TYPE_STRING, 'validate' => 'isCleanHtml', 'required' => false
             ),
         ),
     );
