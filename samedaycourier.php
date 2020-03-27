@@ -111,6 +111,8 @@ class SamedayCourier extends CarrierModule
         // Configuration::deleteByName('SAMEDAY_ORDER_STATUS_AWB');
         Configuration::deleteByName('SAMEDAY_DEBUG_MODE');
         Configuration::deleteByName('SAMEDAY_ESTIMATED_COST');
+        Configuration::deleteByName('SAMEDAY_OPEN_PACKAGE');
+        Configuration::deleteByName('SAMEDAY_OPEN_PACKAGE_LABEL');
         Configuration::deleteByName('SAMEDAY_AWB_PDF_FORMAT');
         Configuration::deleteByName('SAMEDAY_LAST_SYNC');
         Configuration::deleteByName('SAMEDAY_STATUS_MODE');
@@ -367,6 +369,32 @@ class SamedayCourier extends CarrierModule
                     ),
                     array(
                         'type'    => 'switch',
+                        'label'   => $this->l('Open package'),
+                        'name'    => 'SAMEDAY_OPEN_PACKAGE',
+                        'is_bool' => true,
+                        'desc'    => $this->l('Enable this option if you want your client to open the package at delivery'),
+                        'values'  => array(
+                            array(
+                                'id'    => 'active_on',
+                                'value' => true,
+                                'label' => $this->l('Enabled'),
+                            ),
+                            array(
+                                'id'    => 'active_off',
+                                'value' => false,
+                                'label' => $this->l('Disabled'),
+                            ),
+                        ),
+                    ),
+                    array(
+                        'col'    => 2,
+                        'type'   => 'text',
+                        'name'   => 'SAMEDAY_OPEN_PACKAGE_LABEL',
+                        'desc'   => $this->l('This will be shown on checkout page'),
+                        'label'  => $this->l('Open package label'),
+                    ),
+                    array(
+                        'type'    => 'switch',
                         'label'   => $this->l('Debug'),
                         'name'    => 'SAMEDAY_DEBUG_MODE',
                         'is_bool' => true,
@@ -426,6 +454,14 @@ class SamedayCourier extends CarrierModule
             'SAMEDAY_ESTIMATED_COST' => Tools::getValue(
                 'SAMEDAY_ESTIMATED_COST',
                 Configuration::get('SAMEDAY_ESTIMATED_COST', null)
+            ),
+            'SAMEDAY_OPEN_PACKAGE' => Tools::getValue(
+                'SAMEDAY_OPEN_PACKAGE',
+                Configuration::get('SAMEDAY_OPEN_PACKAGE', null)
+            ),
+            'SAMEDAY_OPEN_PACKAGE_LABEL' => Tools::getValue(
+                'SAMEDAY_OPEN_PACKAGE_LABEL',
+                Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL', null)
             ),
             'SAMEDAY_DEBUG_MODE'       => Tools::getValue(
                 'SAMEDAY_DEBUG_MODE',
