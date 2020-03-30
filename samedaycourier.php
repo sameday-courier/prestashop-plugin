@@ -14,6 +14,10 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
+use Sameday\Objects\ParcelDimensionsObject;
+use Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject;
+use Sameday\Objects\Types\AwbPaymentType;
+use Sameday\Objects\Types\PackageType;
 use Sameday\Requests\SamedayGetServicesRequest;
 use Sameday\Sameday;
 
@@ -1048,11 +1052,11 @@ class SamedayCourier extends CarrierModule
         $request = new \Sameday\Requests\SamedayPostAwbEstimationRequest(
             $pickupPoint['id_pickup_point'],
             null,
-            new Sameday\Objects\Types\PackageType(Sameday\Objects\Types\PackageType::PARCEL),
-            array(new \Sameday\Objects\ParcelDimensionsObject($weight)),
+            new PackageType(PackageType::PARCEL),
+            array(new ParcelDimensionsObject($weight)),
             $service['id_service'],
-            new Sameday\Objects\Types\AwbPaymentType(Sameday\Objects\Types\AwbPaymentType::CLIENT),
-            new Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
+            new AwbPaymentType(AwbPaymentType::CLIENT),
+            new AwbRecipientEntityObject(
                 ucwords($address->city) !== 'Bucuresti' ? $address->city : 'Sector 1',
                 State::getNameById($address->id_state),
                 ltrim($address->address1) . $address->address2,
@@ -1383,7 +1387,7 @@ class SamedayCourier extends CarrierModule
             $height = !empty($packagesHeight[$key]) ? $packagesHeight[$key] : 0;
             $width = !empty($packagesWidth[$key]) ? $packagesWidth[$key] : 0;
             $length = !empty($packagesLength[$key]) ? $packagesLength[$key] : 0;
-            $parcelDimensions[] = new \Sameday\Objects\ParcelDimensionsObject($weight, $width, $length, $height);
+            $parcelDimensions[] = new ParcelDimensionsObject($weight, $width, $length, $height);
         }
 
         $service = SamedayService::findByCarrierId($order->id_carrier);
@@ -1401,7 +1405,7 @@ class SamedayCourier extends CarrierModule
             );
         }
 
-        $recipient = new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
+        $recipient = new AwbRecipientEntityObject(
             $address->city,
             $state->name,
             trim($address->address1 . ' ' . $address->address2),
@@ -1418,7 +1422,7 @@ class SamedayCourier extends CarrierModule
         }
 
         if ($locker) {
-            $recipient = new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
+            $recipient = new AwbRecipientEntityObject(
                 $locker['city'],
                 $locker['county'],
                 $locker['address'],
@@ -1434,10 +1438,10 @@ class SamedayCourier extends CarrierModule
         $request = new \Sameday\Requests\SamedayPostAwbRequest(
             Tools::getValue('sameday_pickup_point'),
             null,
-            new \Sameday\Objects\Types\PackageType(Tools::getValue('sameday_package_type')),
+            new PackageType(Tools::getValue('sameday_package_type')),
             $parcelDimensions,
             $service['id_service'],
-            new \Sameday\Objects\Types\AwbPaymentType(Tools::getValue('sameday_awb_payment')),
+            new AwbPaymentType(Tools::getValue('sameday_awb_payment')),
             $recipient,
             $insuredValue,
             Tools::getValue('sameday_ramburs'),
@@ -1510,7 +1514,7 @@ class SamedayCourier extends CarrierModule
 
         $request = new \Sameday\Requests\SamedayPostParcelRequest(
             $awb['awb_number'],
-            new \Sameday\Objects\ParcelDimensionsObject($weight, $width, $length, $height),
+            new ParcelDimensionsObject($weight, $width, $length, $height),
             $position,
             $observation
         );
