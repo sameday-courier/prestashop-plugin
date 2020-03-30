@@ -14,6 +14,8 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
+use Sameday\Objects\Service\ServiceObject;
+
 class SamedayService extends ObjectModel
 {
     const TABLE_NAME = "sameday_services";
@@ -138,15 +140,42 @@ class SamedayService extends ObjectModel
         return Db::getInstance()->executeS('SELECT * FROM ' . _DB_PREFIX_ . self::TABLE_NAME);
     }
 
-    public static function activateService($id)
+    /**
+     * @param ServiceObject $service
+     * @param int $id
+     *
+     * @return bool
+     */
+    public static function updateService(ServiceObject $service, $id)
     {
-        return Db::getInstance()->update(self::TABLE_NAME, array('disabled' => 0), 'id = ' . (int)$id);
+        return Db::getInstance()->update(
+            self::TABLE_NAME,
+            array(
+                'disabled' => 0,
+                'code' => $service->getCode(),
+                'service_optional_taxes' => !empty($service->getOptionalTaxes()) ? serialize($service->getOptionalTaxes()) : null
+            ),
+            'id =' . (int) $id
+        );
+    }
+
+    /**
+     * @param $id
+     *
+     * @return bool
+     */
+    public static function deleteService($id)
+    {
+        return Db::getInstance()->delete(
+            self::TABLE_NAME,
+            'id = ' . $id
+        );
     }
 
     public static function deactivateAllServices($liveMode = false)
     {
-        $liveMode = Configuration::get('SAMEDAY_LIVE_MODE', 0);
-        return Db::getInstance()->update(self::TABLE_NAME, array('disabled' => 1), 'live_mode = '. (int)$liveMode);
+        $liveMode = (int) Configuration::get('SAMEDAY_LIVE_MODE', 0);
+        return Db::getInstance()->update(self::TABLE_NAME, array('disabled' => 1), 'live_mode = '. $liveMode);
     }
 
     public static function findByCode($code)

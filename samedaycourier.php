@@ -14,6 +14,9 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
+use Sameday\Requests\SamedayGetServicesRequest;
+use Sameday\Sameday;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -181,34 +184,66 @@ class SamedayCourier extends CarrierModule
     {
         $client = $this->getSamedayClient();
 
-        $servicesRequest = new \Sameday\Requests\SamedayGetServicesRequest();
-        if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
-            $this->log('Import services', SamedayConstants::DEBUG);
-            $this->log($servicesRequest, SamedayConstants::DEBUG);
-        }
-        $sameday = new \Sameday\Sameday($client);
+        $remoteServices = [];
+        $page = 1;
 
-        try {
-            $response = $sameday->getServices($servicesRequest);
-            SamedayService::deactivateAllServices();
-            foreach ($response->getServices() as $service) {
-                $oldService = SamedayService::findByCode($service->getCode());
-                if (!$oldService) {
-                    $samedayService = new SamedayService();
-                    $samedayService->id_service = $service->getId();
-                    $samedayService->name = $service->getName();
-                    $samedayService->code = $service->getCode();
-                    $samedayService->delivery_type = $service->getDeliveryType()->getId();
-                    $samedayService->delivery_type_name = $service->getDeliveryType()->getName();
-                    $samedayService->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
-                    $samedayService->service_optional_taxes = null !== $service->getOptionalTaxes() ? serialize($service->getOptionalTaxes()) : null;
-                    $samedayService->save();
-                } else {
-                    SamedayService::activateService($oldService['id']);
-                }
+        do {
+            $servicesRequest = new SamedayGetServicesRequest();
+            $servicesRequest->setPage($page++);
+
+            if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
+                $this->log('Import services', SamedayConstants::DEBUG);
+                $this->log($servicesRequest, SamedayConstants::DEBUG);
             }
-        } catch (\Exception $e) {
-            $this->log($e->getMessage(), SamedayConstants::ERROR);
+
+            $sameday = new Sameday($client);
+
+            try {
+                $response = $sameday->getServices($servicesRequest);
+                SamedayService::deactivateAllServices();
+
+                foreach ($response->getServices() as $service) {
+                    $oldService = SamedayService::findByCode($service->getCode());
+                    if (!$oldService) {
+                        $samedayService = new SamedayService();
+                        $samedayService->id_service = $service->getId();
+                        $samedayService->name = $service->getName();
+                        $samedayService->code = $service->getCode();
+                        $samedayService->delivery_type = $service->getDeliveryType()->getId();
+                        $samedayService->delivery_type_name = $service->getDeliveryType()->getName();
+                        $samedayService->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
+                        $samedayService->service_optional_taxes = !empty($service->getOptionalTaxes()) ? serialize($service->getOptionalTaxes()) : null;
+                        $samedayService->save();
+                    } else {
+                        SamedayService::updateService($service, $oldService['id']);
+                    }
+
+                    // Save as current sameday service.
+                    $remoteServices[] = $service->getId();
+                }
+
+            } catch (\Exception $e) {
+                $this->log($e->getMessage(), SamedayConstants::ERROR);
+            }
+        } while ($page <= $response->getPages());
+
+        // Build array of local services.
+        $localServices = array_map(
+            function ($oldService) {
+                return array(
+                    'id' => $oldService['id'],
+                    'id_service' => $oldService['id_service']
+                );
+            },
+
+            SamedayService::getServices()
+        );
+
+        // Delete local services that aren't present in remote services anymore.
+        foreach ($localServices as $localService) {
+            if (!in_array((int) $localService['id_service'], $remoteServices, true)) {
+                SamedayService::deleteService($localService['id']);
+            }
         }
     }
 
@@ -845,7 +880,7 @@ class SamedayCourier extends CarrierModule
     private function importPickupPoints()
     {
         $client = $this->getSamedayClient();
-        $sameday = new \Sameday\Sameday($client);
+        $sameday = new Sameday($client);
 
         $remotePickupPoints = [];
         $page = 1;
@@ -912,7 +947,7 @@ class SamedayCourier extends CarrierModule
     public function importLockers()
     {
         $client = $this->getSamedayClient();
-        $sameday = new \Sameday\Sameday($client);
+        $sameday = new Sameday($client);
 
         $remoteLockers = [];
         $request = new \Sameday\Requests\SamedayGetLockersRequest();
@@ -1009,7 +1044,7 @@ class SamedayCourier extends CarrierModule
         $address = new Address($address_delivery_id);
         $weight = $params->getTotalWeight() < 1 ? 1 : $params->getTotalWeight();
 
-        $sameday = new \Sameday\Sameday($this->getSamedayClient());
+        $sameday = new Sameday($this->getSamedayClient());
         $request = new \Sameday\Requests\SamedayPostAwbEstimationRequest(
             $pickupPoint['id_pickup_point'],
             null,
@@ -1423,7 +1458,7 @@ class SamedayCourier extends CarrierModule
         }
 
         try {
-            $sameday = new \Sameday\Sameday($this->getSamedayClient());
+            $sameday = new Sameday($this->getSamedayClient());
             $response = $sameday->postAwb($request);
             $samedayAwb = new SamedayAwb();
             $samedayAwb->id_order = $order->id;
@@ -1471,7 +1506,7 @@ class SamedayCourier extends CarrierModule
         $width = Tools::getValue('sameday_package_width');
         $observation = Tools::getValue('sameday_observation');
 
-        $sameday = new \Sameday\Sameday($this->getSamedayClient());
+        $sameday = new Sameday($this->getSamedayClient());
 
         $request = new \Sameday\Requests\SamedayPostParcelRequest(
             $awb['awb_number'],
@@ -1505,7 +1540,7 @@ class SamedayCourier extends CarrierModule
     {
         try {
             $awb = SamedayAwb::getOrderAwb($order);
-            $sameday = new \Sameday\Sameday($this->getSamedayClient());
+            $sameday = new Sameday($this->getSamedayClient());
 
             if (SamedayAwb::cancelAwbByOrderId($order)) {
                 SamedayAwbParcel::deleteAwbParcels($awb['id']);
@@ -1535,7 +1570,7 @@ class SamedayCourier extends CarrierModule
     private function downloadAwb($order)
     {
         $awb = SamedayAwb::getOrderAwb($order);
-        $sameday = new \Sameday\Sameday($this->getSamedayClient());
+        $sameday = new Sameday($this->getSamedayClient());
         $request = new \Sameday\Requests\SamedayGetAwbPdfRequest(
             $awb['awb_number'],
             new \Sameday\Objects\Types\AwbPdfType(Configuration::get('SAMEDAY_AWB_PDF_FORMAT'))
