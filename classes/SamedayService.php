@@ -14,6 +14,7 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
+use Sameday\Objects\Service\OptionalTaxObject;
 use Sameday\Objects\Service\ServiceObject;
 
 class SamedayService extends ObjectModel
@@ -115,7 +116,7 @@ class SamedayService extends ObjectModel
                 'type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true
             ),
             'service_optional_taxes'  => array(
-                'type' => self::TYPE_STRING, 'validate' => 'isCleanHtml', 'required' => false
+                'type' => self::TYPE_STRING, 'required' => false
             ),
         ),
     );
@@ -142,18 +143,21 @@ class SamedayService extends ObjectModel
 
     /**
      * @param ServiceObject $service
-     * @param int $id
      *
+     * @param $id
      * @return bool
      */
     public static function updateService(ServiceObject $service, $id)
     {
+        /** @var OptionalTaxObject[] $optionalTaxes **/
+        $optionalTaxes = !empty($service->getOptionalTaxes()) ? serialize($service->getOptionalTaxes()) : '';
+
         return Db::getInstance()->update(
             self::TABLE_NAME,
             array(
                 'disabled' => 0,
                 'code' => $service->getCode(),
-                'service_optional_taxes' => !empty($service->getOptionalTaxes()) ? serialize($service->getOptionalTaxes()) : null
+                'service_optional_taxes' => $optionalTaxes
             ),
             'id =' . (int) $id
         );
