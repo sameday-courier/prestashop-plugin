@@ -25,11 +25,21 @@ if (!defined('_PS_VERSION_')) {
  */
 function upgrade_module_1_3_0($object)
 {
-    $sql = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayService::TABLE_NAME . '
-            ADD `service_optional_taxes` TEXT ';
+    $sql = array(
+        'ALTER TABLE ' . _DB_PREFIX_ . SamedayService::TABLE_NAME . '
+            ADD `service_optional_taxes` TEXT',
+        'CREATE TABLE `' . _DB_PREFIX_ . SamedayOpenPackage::TABLE_NAME ."` (
+          `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+          `id_order` int(11) unsigned NOT NULL,
+          `is_open_package` tinyint(1) NOT NULL DEFAULT '0',
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;"
+    );
 
-    if (Db::getInstance()->execute($sql) === false) {
-        return false;
+    foreach ($sql as $query) {
+        if (Db::getInstance()->execute($query) === false) {
+            return false;
+        }
     }
 
     return (version_compare(_PS_VERSION_, '1.7.0.0') < 0
