@@ -179,7 +179,8 @@ class SamedayService extends ObjectModel
     public static function deactivateAllServices($liveMode = false)
     {
         $liveMode = (int) Configuration::get('SAMEDAY_LIVE_MODE', 0);
-        return Db::getInstance()->update(self::TABLE_NAME, array('disabled' => 1), 'live_mode = '. $liveMode);
+
+        return Db::getInstance()->update(self::TABLE_NAME, array('disabled' => 1), 'live_mode = '. (int) $liveMode);
     }
 
     public static function findByCode($code)
@@ -202,8 +203,19 @@ class SamedayService extends ObjectModel
 
     public static function findByCarrierId($id_carrier)
     {
+        $liveMode = Configuration::get('SAMEDAY_LIVE_MODE', 0);
+
         return Db::getInstance()->getRow(
-            "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME . " s WHERE s.id_carrier = " . (int)$id_carrier
+            "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME . " s WHERE s.live_mode = '{$liveMode}' AND s.id_carrier = " . (int)$id_carrier
+        );
+    }
+
+    public static function findByIdService($id_service)
+    {
+        $liveMode = Configuration::get('SAMEDAY_LIVE_MODE', 0);
+
+        return Db::getInstance()->getRow(
+            "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME . " s WHERE s.live_mode = '{$liveMode}' AND s.id_service = " . (int)$id_service
         );
     }
 }

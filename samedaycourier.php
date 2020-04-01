@@ -58,6 +58,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
+
         $this->version = '1.3.0';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
@@ -1289,6 +1290,7 @@ class SamedayCourier extends CarrierModule
         }
 
         $pickupPoints = SamedayPickupPoint::getPickupPoints();
+        $services = SamedayService::getServices(true);
         $packageTypes = array(
             0 => $this->l('Package'),
             1 => $this->l('Envelope'),
@@ -1302,9 +1304,16 @@ class SamedayCourier extends CarrierModule
             $allowParcel =
                 DateTime::createFromFormat('Y-m-d H:i:s', $awb['created'])->format('Ymd') == $now->format('Ymd');
         }
+        $service = SamedayService::findByCarrierId($order->id_carrier);
+        if ($service) {
+            $service = $service['id_service'];
+        }
+
         $this->smarty->assign(
             array(
                 'pickup_points' => $pickupPoints,
+                'services'      => $services,
+                'current_service' => $service,
                 'package_types' => $packageTypes,
                 'ramburs'       => number_format($order->total_paid, 2),
                 'awb'           => $awb,
@@ -1420,7 +1429,7 @@ class SamedayCourier extends CarrierModule
             $parcelDimensions[] = new ParcelDimensionsObject($weight, $width, $length, $height);
         }
 
-        $service = SamedayService::findByCarrierId($order->id_carrier);
+        $service = SamedayService::findByIdService(Tools::getValue('sameday_service'));
         $customer = new Customer($order->id_customer);
         $address = new Address($order->id_address_delivery);
         $state = new State($address->id_state);
@@ -1512,6 +1521,9 @@ class SamedayCourier extends CarrierModule
             $orderCarrier = new OrderCarrier((int)$order->getIdOrderCarrier());
             $orderCarrier->tracking_number = $response->getAwbNumber();
             $orderCarrier->update();
+
+            $order->id_carrier = $service['id_carrier'];
+            $order->update();
 
             $this->addMessage('success', $this->l('AWB was generated.'));
 
