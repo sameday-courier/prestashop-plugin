@@ -24,7 +24,7 @@ class SamedayOpenPackage extends ObjectModel
     /** @var integer */
     public $id_order;
 
-    /** @var bool */
+    /** @var integer */
     public $is_open_package;
 
     /** @var array */

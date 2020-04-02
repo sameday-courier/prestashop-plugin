@@ -14,9 +14,9 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
-use Sameday\Objects\Service\OptionalTaxObject;
-use Sameday\Objects\Service\ServiceObject;
-
+/**
+ * Class SamedayService
+ */
 class SamedayService extends ObjectModel
 {
     const TABLE_NAME = "sameday_services";
@@ -142,21 +142,19 @@ class SamedayService extends ObjectModel
     }
 
     /**
-     * @param ServiceObject $service
-     *
+     * @param $code
+     * @param $optionalTaxes
      * @param $id
+     *
      * @return bool
      */
-    public static function updateService(ServiceObject $service, $id)
+    public static function updateService($code, $optionalTaxes, $id)
     {
-        /** @var OptionalTaxObject[] $optionalTaxes **/
-        $optionalTaxes = !empty($service->getOptionalTaxes()) ? serialize($service->getOptionalTaxes()) : '';
-
         return Db::getInstance()->update(
             self::TABLE_NAME,
             array(
                 'disabled' => 0,
-                'code' => $service->getCode(),
+                'code' => $code,
                 'service_optional_taxes' => $optionalTaxes
             ),
             'id =' . (int) $id

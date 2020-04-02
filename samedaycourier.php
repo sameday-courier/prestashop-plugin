@@ -16,10 +16,12 @@
 
 use Sameday\Objects\ParcelDimensionsObject;
 use Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject;
+use Sameday\Objects\Service as ServiceOjbect;
 use Sameday\Objects\Service\OptionalTaxObject;
 use Sameday\Objects\Types\AwbPaymentType;
 use Sameday\Objects\Types\PackageType;
 use Sameday\Requests\SamedayGetServicesRequest;
+use Sameday\Requests\SamedayPostAwbRequest;
 use Sameday\Sameday;
 
 if (!defined('_PS_VERSION_')) {
@@ -31,6 +33,7 @@ include(dirname(__FILE__). '/classes/SamedayService.php');
 include(dirname(__FILE__). '/classes/SamedayPickupPoint.php');
 include(dirname(__FILE__). '/classes/SamedayLocker.php');
 include(dirname(__FILE__). '/classes/SamedayOrderLocker.php');
+include(dirname(__FILE__). '/classes/SamedayOpenPackage.php');
 include(dirname(__FILE__). '/classes/SamedayAwb.php');
 include(dirname(__FILE__). '/classes/SamedayAwbParcel.php');
 include(dirname(__FILE__). '/classes/SamedayAwbParcelHistory.php');
@@ -210,8 +213,19 @@ class SamedayCourier extends CarrierModule
 
                 foreach ($response->getServices() as $service) {
                     $oldService = SamedayService::findByCode($service->getCode());
-                    /** @var OptionalTaxObject[] $optionalTaxes */
-                    $optionalTaxes = !empty($service->getOptionalTaxes()) ? serialize($service->getOptionalTaxes()) : '';
+                    $optionalTaxes = null;
+                    if (!empty($service->getOptionalTaxes())) {
+                        foreach ($service->getOptionalTaxes() as $optionalTaxObject) {
+                            $optionalTaxes[] = array(
+                                'id' => $optionalTaxObject->getId(),
+                                'type' => $optionalTaxObject->getPackageType()->getType(),
+                                'code' => $optionalTaxObject->getCode()
+                            );
+                        }
+                    }
+
+                    $optionalTaxes = null !== $optionalTaxes ? serialize($optionalTaxes) : '';
+
                     if (!$oldService) {
                         $samedayService = new SamedayService();
                         $samedayService->id_service = $service->getId();
@@ -223,7 +237,7 @@ class SamedayCourier extends CarrierModule
                         $samedayService->service_optional_taxes = $optionalTaxes;
                         $samedayService->save();
                     } else {
-                        SamedayService::updateService($service, $oldService['id']);
+                        SamedayService::updateService($service->getCode(), $optionalTaxes, $oldService['id']);
                     }
 
                     // Save as current sameday service.
@@ -1319,6 +1333,7 @@ class SamedayCourier extends CarrierModule
                 'awb'           => $awb,
                 'allowParcel'   => $allowParcel,
                 'allowLocker'   => ((int) SamedayOrderLocker::getLockerForOrder($order->id)) > 0,
+                'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
                 'ajaxRoute'     => $this->ajaxRoute
             )
         );
@@ -1394,22 +1409,39 @@ class SamedayCourier extends CarrierModule
         return '';
     }
 
+    /**
+     * @param $params
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     *
+     * @return void
+     */
     public function hookActionValidateOrder($params)
     {
         $lockerId = (int) $params['cookie']->samedaycourier_locker_id;
-        if ($lockerId <= 0) {
-            return;
+
+        if ($lockerId > 0) {
+            $orderLocker = new SamedayOrderLocker();
+
+            $orderLocker->id_order = $params['order']->id;
+            $orderLocker->id_locker = $lockerId;
+            $orderLocker->save();
         }
 
-        $orderLocker = new SamedayOrderLocker();
-        $orderLocker->id_order = $params['order']->id;
-        $orderLocker->id_locker = $lockerId;
-        $orderLocker->save();
+        $openPackage = $params['cookie']->samedaycourier_open_package;
+        if ($openPackage === 'yes') {
+            $SamedayOpenPackage = new SamedayOpenPackage();
+
+            $SamedayOpenPackage->id_order = $params['order']->id;
+            $SamedayOpenPackage->is_open_package = 1;
+            $SamedayOpenPackage->save();
+        }
     }
 
     public function hookActionCarrierProcess($params)
     {
         if (Tools::isSubmit('delivery_option')) {
+            $params['cookie']->samedaycourier_open_package = Tools::getValue('samedaycourier_open_package');
             $params['cookie']->samedaycourier_locker_id = Tools::getValue('samedaycourier_locker_id');
         }
     }
@@ -1474,7 +1506,18 @@ class SamedayCourier extends CarrierModule
             $lockerId = null;
         }
 
-        $request = new \Sameday\Requests\SamedayPostAwbRequest(
+        $serviceTaxIds = array();
+        if (!empty(Tools::getValue('sameday_open_package'))) {
+            $optionalTaxIds = unserialize($service['service_optional_taxes']);
+            foreach ($optionalTaxIds as $optionalService) {
+                if ($optionalService['code'] === 'OPCG' && $optionalService['type'] === (int) Tools::getValue('sameday_package_type')) {
+                    $serviceTaxIds[] = $optionalService['id'];
+                    break;
+                }
+            }
+        }
+
+        $request = new SamedayPostAwbRequest(
             Tools::getValue('sameday_pickup_point'),
             null,
             new PackageType(Tools::getValue('sameday_package_type')),
@@ -1486,7 +1529,7 @@ class SamedayCourier extends CarrierModule
             Tools::getValue('sameday_ramburs'),
             new \Sameday\Objects\Types\CodCollectorType(\Sameday\Objects\Types\CodCollectorType::CLIENT),
             null,
-            array(),
+            $serviceTaxIds,
             null,
             $order->reference + time(),
             Tools::getValue('sameday_observation'),
