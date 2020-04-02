@@ -57,6 +57,17 @@ class SamedayCourier extends CarrierModule
 
     protected $servicePriceCache = array();
 
+    const TEMPLATE_VERSION = [
+        '1.6' => [
+            'locker_options' => 'checkout_lockers.v16.tpl',
+            'open_package_option' => 'checkout_open_package.v16.tpl'
+        ],
+        '1.7' => [
+            'locker_options' => 'checkout_lockers.v17.tpl',
+            'open_package_option' => 'checkout_open_package.v17.tpl'
+        ]
+    ];
+
     public function __construct()
     {
         $this->name = 'samedaycourier';
@@ -1356,6 +1367,11 @@ class SamedayCourier extends CarrierModule
         }
     }
 
+    /**
+     * @param $params
+     *
+     * @return string
+     */
     public function hookExtraCarrier($params)
     {
         $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
@@ -1363,12 +1379,14 @@ class SamedayCourier extends CarrierModule
             return '';
         }
 
-        $this->smarty->assign('lockers', SamedayLocker::getLockers());
-        $this->smarty->assign('lockerId', $params['cookie']->samedaycourier_locker_id);
-
-        return $this->display(__FILE__, 'checkout_lockers.v16.tpl');
+        return $this->displayCarrierExtraContent($params, $service, '1.6');
     }
 
+    /**
+     * @param $params
+     *
+     * @return string
+     */
     public function hookDisplayCarrierExtraContent($params)
     {
         $service = SamedayService::findByCarrierId($params['carrier']['id']);
@@ -1376,11 +1394,23 @@ class SamedayCourier extends CarrierModule
             return '';
         }
 
+        return $this->displayCarrierExtraContent($params, $service, '1.7');
+    }
+
+    /**
+     * @param $params
+     * @param $service
+     * @param $templateFile
+     *
+     * @return string
+     */
+    private function displayCarrierExtraContent($params, $service, $fileVersion)
+    {
         if ($service['code'] === 'LN') {
             $this->smarty->assign('lockers', SamedayLocker::getLockers());
             $this->smarty->assign('lockerId', $params['cookie']->samedaycourier_locker_id);
 
-            return $this->display(__FILE__, 'checkout_lockers.v17.tpl', null);
+            return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options'], null);
         }
 
         if ((int) Configuration::get('SAMEDAY_OPEN_PACKAGE')) {
@@ -1392,8 +1422,8 @@ class SamedayCourier extends CarrierModule
 
                 foreach ($optionalServices as $optionalService) {
 
-                    if ($optionalService->getCode() === 'OPCG' && $optionalService->getPackageType()->getType() === PackageType::PARCEL) {
-                        $taxOpenPackage = $optionalService->getId();
+                    if ($optionalService['code'] === 'OPCG' && $optionalService['type'] === PackageType::PARCEL) {
+                        $taxOpenPackage = $optionalService['id'];
                         break;
                     }
                 }
@@ -1401,7 +1431,7 @@ class SamedayCourier extends CarrierModule
                 $this->smarty->assign('label', Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL'));
 
                 if ($taxOpenPackage) {
-                    return $this->display(__FILE__, 'checkout_open_package.v17.tpl', null);
+                    return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['open_package_option'], null);
                 }
             }
         }
