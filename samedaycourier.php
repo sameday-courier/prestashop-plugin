@@ -1428,9 +1428,10 @@ class SamedayCourier extends CarrierModule
                     }
                 }
 
-                $this->smarty->assign('label', Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL'));
-
                 if ($taxOpenPackage) {
+                    $this->smarty->assign('carrier_id', $params['carrier']['id']);
+                    $this->smarty->assign('label', Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL'));
+
                     return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['open_package_option'], null);
                 }
             }
@@ -1458,8 +1459,8 @@ class SamedayCourier extends CarrierModule
             $orderLocker->save();
         }
 
-        $openPackage = $params['cookie']->samedaycourier_open_package;
-        if ($openPackage === 'yes') {
+        $openPackage = (int) $params['cookie']->samedaycourier_open_package;
+        if ($openPackage === $params['order']->id_carrier) {
             $SamedayOpenPackage = new SamedayOpenPackage();
 
             $SamedayOpenPackage->id_order = $params['order']->id;

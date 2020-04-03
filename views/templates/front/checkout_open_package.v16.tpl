@@ -31,7 +31,7 @@
             <td>
                 <div class="col-sm-12">
                     <div class="form-control">
-                        <input name="samedaycourier_open_package" type="checkbox" value="yes" /> {$label|escape:'htmlall':'UTF-8'}
+                        <input name="samedaycourier_open_package" type="checkbox" value="{$carrier_id}" /> {$label|escape:'htmlall':'UTF-8'}
                     </div>
                 </div>
             </td>
