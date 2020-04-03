@@ -14,16 +14,6 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
-use Sameday\Objects\ParcelDimensionsObject;
-use Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject;
-use Sameday\Objects\Service as ServiceOjbect;
-use Sameday\Objects\Service\OptionalTaxObject;
-use Sameday\Objects\Types\AwbPaymentType;
-use Sameday\Objects\Types\PackageType;
-use Sameday\Requests\SamedayGetServicesRequest;
-use Sameday\Requests\SamedayPostAwbRequest;
-use Sameday\Sameday;
-
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -208,7 +198,7 @@ class SamedayCourier extends CarrierModule
         $page = 1;
 
         do {
-            $servicesRequest = new SamedayGetServicesRequest();
+            $servicesRequest = new \Sameday\Requests\SamedayGetServicesRequest();
             $servicesRequest->setPage($page++);
 
             if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
@@ -216,7 +206,7 @@ class SamedayCourier extends CarrierModule
                 $this->log($servicesRequest, SamedayConstants::DEBUG);
             }
 
-            $sameday = new Sameday($client);
+            $sameday = new \Sameday\Sameday($client);
 
             try {
                 $response = $sameday->getServices($servicesRequest);
@@ -913,7 +903,7 @@ class SamedayCourier extends CarrierModule
     private function importPickupPoints()
     {
         $client = $this->getSamedayClient();
-        $sameday = new Sameday($client);
+        $sameday = new \Sameday\Sameday($client);
 
         $remotePickupPoints = [];
         $page = 1;
@@ -980,7 +970,7 @@ class SamedayCourier extends CarrierModule
     public function importLockers()
     {
         $client = $this->getSamedayClient();
-        $sameday = new Sameday($client);
+        $sameday = new \Sameday\Sameday($client);
 
         $remoteLockers = [];
         $request = new \Sameday\Requests\SamedayGetLockersRequest();
@@ -1077,15 +1067,15 @@ class SamedayCourier extends CarrierModule
         $address = new Address($address_delivery_id);
         $weight = $params->getTotalWeight() < 1 ? 1 : $params->getTotalWeight();
 
-        $sameday = new Sameday($this->getSamedayClient());
+        $sameday = new \Sameday\Sameday($this->getSamedayClient());
         $request = new \Sameday\Requests\SamedayPostAwbEstimationRequest(
             $pickupPoint['id_pickup_point'],
             null,
-            new PackageType(PackageType::PARCEL),
-            array(new ParcelDimensionsObject($weight)),
+            new \Sameday\Objects\Types\PackageType(\Sameday\Objects\Types\PackageType::PARCEL),
+            array(new \Sameday\Objects\ParcelDimensionsObject($weight)),
             $service['id_service'],
-            new AwbPaymentType(AwbPaymentType::CLIENT),
-            new AwbRecipientEntityObject(
+            new \Sameday\Objects\Types\AwbPaymentType(\Sameday\Objects\Types\AwbPaymentType::CLIENT),
+            new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
                 ucwords($address->city) !== 'Bucuresti' ? $address->city : 'Sector 1',
                 State::getNameById($address->id_state),
                 ltrim($address->address1) . $address->address2,
@@ -1375,11 +1365,16 @@ class SamedayCourier extends CarrierModule
     public function hookExtraCarrier($params)
     {
         $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
-        if (!$service || $service['code'] !== 'LN') {
+        if (!$service) {
             return '';
         }
 
-        return $this->displayCarrierExtraContent($params, $service, '1.6');
+        return $this->displayCarrierExtraContent(
+            $params['cookie']->samedaycourier_locker_id,
+            $service,
+            $params['cart']->id_carrier,
+            '1.6'
+        );
     }
 
     /**
@@ -1394,7 +1389,12 @@ class SamedayCourier extends CarrierModule
             return '';
         }
 
-        return $this->displayCarrierExtraContent($params, $service, '1.7');
+        return $this->displayCarrierExtraContent(
+            $params['cookie']->samedaycourier_locker_id,
+            $service,
+            $params['carrier']['id'],
+            '1.7'
+        );
     }
 
     /**
@@ -1404,11 +1404,11 @@ class SamedayCourier extends CarrierModule
      *
      * @return string
      */
-    private function displayCarrierExtraContent($params, $service, $fileVersion)
+    private function displayCarrierExtraContent($samedaycourier_locker_id, $service, $carrierId, $fileVersion)
     {
         if ($service['code'] === 'LN') {
             $this->smarty->assign('lockers', SamedayLocker::getLockers());
-            $this->smarty->assign('lockerId', $params['cookie']->samedaycourier_locker_id);
+            $this->smarty->assign('lockerId', $samedaycourier_locker_id);
 
             return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options'], null);
         }
@@ -1417,19 +1417,19 @@ class SamedayCourier extends CarrierModule
             if ('' !== $service['service_optional_taxes']) {
                 $taxOpenPackage = 0;
 
-                /** @var OptionalTaxObject[]|false $optionalServices */
+                /** @var \Sameday\Objects\Service\OptionalTaxObject[]|false $optionalServices */
                 $optionalServices = unserialize($service['service_optional_taxes']);
 
                 foreach ($optionalServices as $optionalService) {
 
-                    if ($optionalService['code'] === 'OPCG' && $optionalService['type'] === PackageType::PARCEL) {
+                    if ($optionalService['code'] === 'OPCG' && $optionalService['type'] === \Sameday\Objects\Types\PackageType::PARCEL) {
                         $taxOpenPackage = $optionalService['id'];
                         break;
                     }
                 }
 
                 if ($taxOpenPackage) {
-                    $this->smarty->assign('carrier_id', $params['carrier']['id']);
+                    $this->smarty->assign('carrier_id', $carrierId);
                     $this->smarty->assign('label', Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL'));
 
                     return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['open_package_option'], null);
@@ -1489,7 +1489,7 @@ class SamedayCourier extends CarrierModule
             $height = !empty($packagesHeight[$key]) ? $packagesHeight[$key] : 0;
             $width = !empty($packagesWidth[$key]) ? $packagesWidth[$key] : 0;
             $length = !empty($packagesLength[$key]) ? $packagesLength[$key] : 0;
-            $parcelDimensions[] = new ParcelDimensionsObject($weight, $width, $length, $height);
+            $parcelDimensions[] = new \Sameday\Objects\ParcelDimensionsObject($weight, $width, $length, $height);
         }
 
         $service = SamedayService::findByIdService(Tools::getValue('sameday_service'));
@@ -1507,7 +1507,7 @@ class SamedayCourier extends CarrierModule
             );
         }
 
-        $recipient = new AwbRecipientEntityObject(
+        $recipient = new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
             $address->city,
             $state->name,
             trim($address->address1 . ' ' . $address->address2),
@@ -1524,7 +1524,7 @@ class SamedayCourier extends CarrierModule
         }
 
         if ($locker) {
-            $recipient = new AwbRecipientEntityObject(
+            $recipient = new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
                 $locker['city'],
                 $locker['county'],
                 $locker['address'],
@@ -1548,13 +1548,13 @@ class SamedayCourier extends CarrierModule
             }
         }
 
-        $request = new SamedayPostAwbRequest(
+        $request = new \Sameday\Requests\SamedayPostAwbRequest(
             Tools::getValue('sameday_pickup_point'),
             null,
-            new PackageType(Tools::getValue('sameday_package_type')),
+            new \Sameday\Objects\Types\PackageType(Tools::getValue('sameday_package_type')),
             $parcelDimensions,
             $service['id_service'],
-            new AwbPaymentType(Tools::getValue('sameday_awb_payment')),
+            new \Sameday\Objects\Types\AwbPaymentType(Tools::getValue('sameday_awb_payment')),
             $recipient,
             $insuredValue,
             Tools::getValue('sameday_ramburs'),
@@ -1575,7 +1575,7 @@ class SamedayCourier extends CarrierModule
         }
 
         try {
-            $sameday = new Sameday($this->getSamedayClient());
+            $sameday = new \Sameday\Sameday($this->getSamedayClient());
             $response = $sameday->postAwb($request);
             $samedayAwb = new SamedayAwb();
             $samedayAwb->id_order = $order->id;
@@ -1626,11 +1626,11 @@ class SamedayCourier extends CarrierModule
         $width = Tools::getValue('sameday_package_width');
         $observation = Tools::getValue('sameday_observation');
 
-        $sameday = new Sameday($this->getSamedayClient());
+        $sameday = new \Sameday\Sameday($this->getSamedayClient());
 
         $request = new \Sameday\Requests\SamedayPostParcelRequest(
             $awb['awb_number'],
-            new ParcelDimensionsObject($weight, $width, $length, $height),
+            new \Sameday\Objects\ParcelDimensionsObject($weight, $width, $length, $height),
             $position,
             $observation
         );
@@ -1660,7 +1660,7 @@ class SamedayCourier extends CarrierModule
     {
         try {
             $awb = SamedayAwb::getOrderAwb($order);
-            $sameday = new Sameday($this->getSamedayClient());
+            $sameday = new \Sameday\Sameday($this->getSamedayClient());
 
             if (SamedayAwb::cancelAwbByOrderId($order)) {
                 SamedayAwbParcel::deleteAwbParcels($awb['id']);
@@ -1690,7 +1690,7 @@ class SamedayCourier extends CarrierModule
     private function downloadAwb($order)
     {
         $awb = SamedayAwb::getOrderAwb($order);
-        $sameday = new Sameday($this->getSamedayClient());
+        $sameday = new \Sameday\Sameday($this->getSamedayClient());
         $request = new \Sameday\Requests\SamedayGetAwbPdfRequest(
             $awb['awb_number'],
             new \Sameday\Objects\Types\AwbPdfType(Configuration::get('SAMEDAY_AWB_PDF_FORMAT'))

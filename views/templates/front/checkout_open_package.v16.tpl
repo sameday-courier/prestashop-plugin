@@ -23,19 +23,23 @@
  * International Registered Trademark & Property of PrestaShop SA
  *}
 
-{if $lockers|count}
-    <table class="resume table table-bordered">
-        <tbody>
-        <tr>
-            <td>{l s='Open package' mod='samedaycourier'}</td>
-            <td>
-                <div class="col-sm-12">
-                    <div class="form-control">
-                        <input name="samedaycourier_open_package" type="checkbox" value="{$carrier_id}" /> {$label|escape:'htmlall':'UTF-8'}
+<table class="resume table table-bordered">
+    <tbody>
+    <tr>
+        <td>{l s='Open package' mod='samedaycourier'}</td>
+        <td>
+            <div class="checkbox">
+                <label>
+                    <div class="checker" id="uniform-samedaycourier_open_package">
+                        <span>
+                            <input type="checkbox" id="samedaycourier_open_package" name="samedaycourier_open_package" value="{$carrier_id}">
+                        </span>
                     </div>
-                </div>
-            </td>
-        </tr>
-        </tbody>
-    </table>
-{/if}
+                    {$label|escape:'htmlall':'UTF-8'}
+                </label>
+            </div>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
