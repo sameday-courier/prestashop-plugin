@@ -22,6 +22,7 @@ $sql = array(
     'DROP TABLE '._DB_PREFIX_. SamedayAwbParcelHistory::TABLE_NAME,
     'DROP TABLE '._DB_PREFIX_. SamedayLocker::TABLE_NAME,
     'DROP TABLE '._DB_PREFIX_. SamedayOrderLocker::TABLE_NAME,
+    'DROP TABLE '._DB_PREFIX_. SamedayOpenPackage::TABLE_NAME,
 );
 
 foreach ($sql as $query) {
