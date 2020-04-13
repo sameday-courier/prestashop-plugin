@@ -14,6 +14,9 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
+/**
+ * Class SamedayService
+ */
 class SamedayService extends ObjectModel
 {
     const TABLE_NAME = "sameday_services";
@@ -60,7 +63,11 @@ class SamedayService extends ObjectModel
     /** @var int */
     public $disabled = 0;
 
+    /** @var bool */
     public $live_mode = false;
+
+    /** @var string */
+    public $service_optional_taxes;
 
     /** @var array */
     public static $definition = array(
@@ -108,6 +115,9 @@ class SamedayService extends ObjectModel
             'live_mode'               => array(
                 'type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true
             ),
+            'service_optional_taxes'  => array(
+                'type' => self::TYPE_STRING, 'required' => false
+            ),
         ),
     );
 
@@ -131,13 +141,43 @@ class SamedayService extends ObjectModel
         return Db::getInstance()->executeS('SELECT * FROM ' . _DB_PREFIX_ . self::TABLE_NAME);
     }
 
-    public static function activateService($id)
+    /**
+     * @param $code
+     * @param $optionalTaxes
+     * @param $id
+     *
+     * @return bool
+     */
+    public static function updateService($code, $optionalTaxes, $id)
     {
-        return Db::getInstance()->update(self::TABLE_NAME, array('disabled' => 0), 'id = ' . (int)$id);
+        return Db::getInstance()->update(
+            self::TABLE_NAME,
+            array(
+                'disabled' => 0,
+                'code' => $code,
+                'service_optional_taxes' => $optionalTaxes
+            ),
+            'id =' . (int) $id
+        );
+    }
+
+    /**
+     * @param $id
+     *
+     * @return bool
+     */
+    public static function deleteService($id)
+    {
+        return Db::getInstance()->delete(
+            self::TABLE_NAME,
+            'id = ' . $id
+        );
     }
 
     public static function deactivateAllServices($liveMode = false)
     {
+        $liveMode = (int) Configuration::get('SAMEDAY_LIVE_MODE', 0);
+
         return Db::getInstance()->update(self::TABLE_NAME, array('disabled' => 1), 'live_mode = '. (int) $liveMode);
     }
 

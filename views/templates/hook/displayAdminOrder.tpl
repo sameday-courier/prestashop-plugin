@@ -339,6 +339,15 @@
                             </div>
                         </div>
 
+                        <!-- Open Package //-->
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label"
+                                   for="input-status-sameday-open-package">{l s='Open Package' mod='samedaycourier'}</label>
+                            <div class="col-sm-1">
+                                <input type="checkbox" name="sameday_open_package" {if $isOpenPackage} checked="checked" {/if} id="input-status-sameday-open-package" class="form-control">
+                            </div>
+                        </div>
+
                         {if $allowLocker}
                         <!-- Locker !-->
                         <div class="form-group">
