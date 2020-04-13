@@ -429,9 +429,8 @@ class SamedayCourier extends CarrierModule
                         'label'   => $this->l('Open package'),
                         'name'    => 'SAMEDAY_OPEN_PACKAGE',
                         'is_bool' => true,
-                        'desc'    => $this->l('
-                            Enable this option if you want your client to open the package at delivery'
-                        ),
+                        'desc'    => $this->l('Enable this option if you want your client to 
+                        open the package at delivery'),
                         'values'  => array(
                             array(
                                 'id'    => 'active_on',
@@ -1127,10 +1126,10 @@ class SamedayCourier extends CarrierModule
         return false;
     }
 
-    public function getOrderShippingCostExternal($params)
-    {
-        return true;
-    }
+//    public function getOrderShippingCostExternal($params)
+//    {
+//        return true;
+//    }
 
     private function updateCarriers($services)
     {
