@@ -1126,10 +1126,10 @@ class SamedayCourier extends CarrierModule
         return false;
     }
 
-//    public function getOrderShippingCostExternal($params)
-//    {
-//        return true;
-//    }
+    public function getOrderShippingCostExternal($params)
+    {
+        return true;
+    }
 
     private function updateCarriers($services)
     {
