@@ -1,5 +1,5 @@
 {**
- * 2007-2019 PrestaShop
+ * 2007-2020 PrestaShop
  *
  * NOTICE OF LICENSE
  *
@@ -18,7 +18,7 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  * @author    PrestaShop SA <contact@prestashop.com>
- * @copyright 2007-2019 PrestaShop SA
+ * @copyright 2007-2020 PrestaShop SA
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  * International Registered Trademark & Property of PrestaShop SA
  *}
@@ -32,7 +32,7 @@
                 <label>
                     <div class="checker" id="uniform-samedaycourier_open_package">
                         <span>
-                            <input type="checkbox" id="samedaycourier_open_package" name="samedaycourier_open_package" value="{$carrier_id}">
+                            <input type="checkbox" id="samedaycourier_open_package" name="samedaycourier_open_package" value="{$carrier_id|escape:'htmlall':'UTF-8'}">
                         </span>
                     </div>
                     {$label|escape:'htmlall':'UTF-8'}
