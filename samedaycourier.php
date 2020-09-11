@@ -1006,7 +1006,9 @@ class SamedayCourier extends CarrierModule
             $locker->lat = $lockerObject->getLat();
             $locker->long = $lockerObject->getLong();
             $locker->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
-            $locker->save();
+            if (!empty($locker->name)) {
+                $locker->save();
+            }
 
             // Save as current lockers.
             $remoteLockers[] = $lockerObject->getId();
@@ -1566,7 +1568,7 @@ class SamedayCourier extends CarrierModule
             Tools::getValue('sameday_observation'),
             '',
             '',
-            $lockerId
+            isset($locker['id_locker']) ? $locker['id_locker'] : null
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
