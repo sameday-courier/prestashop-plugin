@@ -1,6 +1,6 @@
 <?php
 /**
- * 2007-2019 PrestaShop
+ * 2007-2020 PrestaShop
  *
  * DISCLAIMER
  *
@@ -9,13 +9,12 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  * @author    PrestaShop SA <contact@prestashop.com>
- * @copyright 2007-2019 PrestaShop SA
+ * @copyright 2007-2020 PrestaShop SA
  * @license   http://addons.prestashop.com/en/content/12-terms-and-conditions-of-use
  * International Registered Trademark & Property of PrestaShop SA
  */
 
-$sql = array(
-    'DROP TABLE '._DB_PREFIX_. SamedayService::TABLE_NAME,
+$sql = array('DROP TABLE '._DB_PREFIX_. SamedayService::TABLE_NAME,
     'DROP TABLE '._DB_PREFIX_. SamedayPickupPoint::TABLE_NAME,
     'DROP TABLE '._DB_PREFIX_. SamedayAwb::TABLE_NAME,
     'DROP TABLE '._DB_PREFIX_. SamedayAwbParcel::TABLE_NAME,
@@ -26,7 +25,7 @@ $sql = array(
 );
 
 foreach ($sql as $query) {
-    if (Db::getInstance()->execute($query) == false) {
+    if (Db::getInstance()->execute($query) === false) {
         return false;
     }
 }

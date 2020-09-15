@@ -9,7 +9,7 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  * @author    PrestaShop SA <contact@prestashop.com>
- * @copyright 2007-2019 PrestaShop SA
+ * @copyright 2007-2020 PrestaShop SA
  * @license   http://addons.prestashop.com/en/content/12-terms-and-conditions-of-use
  * International Registered Trademark & Property of PrestaShop SA
  */
@@ -244,7 +244,6 @@ class SamedayCourier extends CarrierModule
                     // Save as current sameday service.
                     $remoteServices[] = $service->getId();
                 }
-
             } catch (\Exception $e) {
                 $this->log($e->getMessage(), SamedayConstants::ERROR);
             }
@@ -258,7 +257,6 @@ class SamedayCourier extends CarrierModule
                     'id_service' => $oldService['id_service']
                 );
             },
-
             SamedayService::getServices()
         );
 
@@ -431,7 +429,8 @@ class SamedayCourier extends CarrierModule
                         'label'   => $this->l('Open package'),
                         'name'    => 'SAMEDAY_OPEN_PACKAGE',
                         'is_bool' => true,
-                        'desc'    => $this->l('Enable this option if you want your client to open the package at delivery'),
+                        'desc'    => $this->l('Enable this option if you want your client to 
+                        open the package at delivery'),
                         'values'  => array(
                             array(
                                 'id'    => 'active_on',
@@ -1423,8 +1422,9 @@ class SamedayCourier extends CarrierModule
                 $optionalServices = unserialize($service['service_optional_taxes']);
 
                 foreach ($optionalServices as $optionalService) {
-
-                    if ($optionalService['code'] === 'OPCG' && $optionalService['type'] === \Sameday\Objects\Types\PackageType::PARCEL) {
+                    if ($optionalService['code'] === 'OPCG'
+                        && $optionalService['type'] === \Sameday\Objects\Types\PackageType::PARCEL
+                    ) {
                         $taxOpenPackage = $optionalService['id'];
                         break;
                     }
@@ -1543,7 +1543,9 @@ class SamedayCourier extends CarrierModule
         if (!empty(Tools::getValue('sameday_open_package'))) {
             $optionalTaxIds = unserialize($service['service_optional_taxes']);
             foreach ($optionalTaxIds as $optionalService) {
-                if ($optionalService['code'] === 'OPCG' && $optionalService['type'] === (int) Tools::getValue('sameday_package_type')) {
+                if ($optionalService['code'] === 'OPCG'
+                    && $optionalService['type'] === (int) Tools::getValue('sameday_package_type')
+                ) {
                     $serviceTaxIds[] = $optionalService['id'];
                     break;
                 }
@@ -1564,7 +1566,7 @@ class SamedayCourier extends CarrierModule
             null,
             $serviceTaxIds,
             null,
-            $order->reference + time(),
+            null,
             Tools::getValue('sameday_observation'),
             '',
             '',

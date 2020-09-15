@@ -9,7 +9,7 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  * @author    PrestaShop SA <contact@prestashop.com>
- * @copyright 2007-2019 PrestaShop SA
+ * @copyright 2007-2020 PrestaShop SA
  * @license   http://addons.prestashop.com/en/content/12-terms-and-conditions-of-use
  * International Registered Trademark & Property of PrestaShop SA
  */
@@ -204,7 +204,8 @@ class SamedayService extends ObjectModel
         $liveMode = Configuration::get('SAMEDAY_LIVE_MODE', 0);
 
         return Db::getInstance()->getRow(
-            "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME . " s WHERE s.live_mode = '{$liveMode}' AND s.id_carrier = " . (int)$id_carrier
+            "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME . " s WHERE s.live_mode = '{$liveMode}' 
+            AND s.id_carrier = " . (int)$id_carrier
         );
     }
 
@@ -213,7 +214,8 @@ class SamedayService extends ObjectModel
         $liveMode = Configuration::get('SAMEDAY_LIVE_MODE', 0);
 
         return Db::getInstance()->getRow(
-            "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME . " s WHERE s.live_mode = '{$liveMode}' AND s.id_service = " . (int)$id_service
+            "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME . " s WHERE s.live_mode = '{$liveMode}' 
+            AND s.id_service = " . (int)$id_service
         );
     }
 }
