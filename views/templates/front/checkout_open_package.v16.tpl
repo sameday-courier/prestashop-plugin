@@ -30,6 +30,8 @@
         <td>
             <div class="checkbox">
                 <label>
+                    <input type="checkbox" id="samedaycourier_open_package" name="samedaycourier_open_package" value="{$carrier_id}">
+                    <span>&nbsp;</span>{$label|escape:'htmlall':'UTF-8'}
                     <span>
                         <input type="checkbox" id="samedaycourier_open_package" name="samedaycourier_open_package" value="{$carrier_id|escape:'htmlall':'UTF-8'}">
                     </span>

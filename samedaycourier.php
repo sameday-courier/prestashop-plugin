@@ -63,7 +63,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.3.0';
+        $this->version = '1.3.1';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1005,7 +1005,9 @@ class SamedayCourier extends CarrierModule
             $locker->lat = $lockerObject->getLat();
             $locker->long = $lockerObject->getLong();
             $locker->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
-            $locker->save();
+            if (!empty($locker->name)) {
+                $locker->save();
+            }
 
             // Save as current lockers.
             $remoteLockers[] = $lockerObject->getId();
@@ -1568,7 +1570,7 @@ class SamedayCourier extends CarrierModule
             Tools::getValue('sameday_observation'),
             '',
             '',
-            $lockerId
+            isset($locker['id_locker']) ? $locker['id_locker'] : null
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
