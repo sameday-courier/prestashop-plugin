@@ -29,7 +29,8 @@
             <tr>
                 <td>{l s='Select locker' mod='samedaycourier'}</td>
                 <td>
-                    <select name="samedaycourier_locker_id">
+                    <select name="samedaycourier_locker_id" id="lockerIdSelector">
+                        <option value=""> {l s='Select locker' mod='samedaycourier'} </option>
                         {foreach from=$lockers item=locker}
                             <option value="{$locker.id|escape:'htmlall':'UTF-8'}" {if $locker.id==$lockerId}selected="selected"{/if}>{$locker.name|escape:'htmlall':'UTF-8'} - {$locker.county|escape:'htmlall':'UTF-8'} - {$locker.city|escape:'htmlall':'UTF-8'} - {$locker.address|escape:'htmlall':'UTF-8'}</option>
                         {/foreach}
@@ -39,3 +40,35 @@
         </tbody>
     </table>
 {/if}
+<script>
+    {literal}
+        document.addEventListener("DOMContentLoaded", function () {
+            let name = 'samedaycourier_locker_id';
+
+            const setCookie = (lockerId) => {
+                document.cookie = name + '=' + lockerId;
+            }
+
+            const getLockerId = () => {
+                let cookies = document.cookie.split(';');
+                let locker_id = '';
+                cookies.forEach(function (value) {
+                    if (value.indexOf('locker_id') > 0) {
+                        locker_id = value.split('=')[1];
+                    }
+                });
+
+                return locker_id;
+            }
+
+            let lockerIdSelector = document.getElementById('lockerIdSelector');
+            lockerIdSelector.value = getLockerId();
+
+            lockerIdSelector.addEventListener('change', function () {
+                if ('' !== lockerIdSelector.value) {
+                    setCookie(lockerIdSelector.value);
+                }
+            }, false);
+        });
+    {/literal}
+</script>

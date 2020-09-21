@@ -63,7 +63,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.3.0';
+        $this->version = '1.4.0';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1006,7 +1006,9 @@ class SamedayCourier extends CarrierModule
             $locker->lat = $lockerObject->getLat();
             $locker->long = $lockerObject->getLong();
             $locker->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
-            $locker->save();
+            if (null !== $locker->name) {
+                $locker->save();
+            }
 
             // Save as current lockers.
             $remoteLockers[] = $lockerObject->getId();
@@ -1449,9 +1451,10 @@ class SamedayCourier extends CarrierModule
      */
     public function hookActionValidateOrder($params)
     {
-        $lockerId = (int) $params['cookie']->samedaycourier_locker_id;
+        $lockerId = (int) $_COOKIE['samedaycourier_locker_id'];
+        $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
 
-        if ($lockerId > 0) {
+        if ($lockerId > 0 && $service['code'] === 'LN') {
             $orderLocker = new SamedayOrderLocker();
 
             $orderLocker->id_order = $params['order']->id;
@@ -1459,21 +1462,16 @@ class SamedayCourier extends CarrierModule
             $orderLocker->save();
         }
 
-        $openPackage = (int) $params['cookie']->samedaycourier_open_package;
+        $openPackage = (int) $_COOKIE['samedaycourier_open_package'];
         if ($openPackage === $params['order']->id_carrier) {
             $SamedayOpenPackage = new SamedayOpenPackage();
 
             $SamedayOpenPackage->id_order = $params['order']->id;
             $SamedayOpenPackage->is_open_package = 1;
             $SamedayOpenPackage->save();
-        }
-    }
 
-    public function hookActionCarrierProcess($params)
-    {
-        if (Tools::isSubmit('delivery_option')) {
-            $params['cookie']->samedaycourier_open_package = Tools::getValue('samedaycourier_open_package');
-            $params['cookie']->samedaycourier_locker_id = Tools::getValue('samedaycourier_locker_id');
+            unset($_COOKIE['samedaycourier_open_package']);
+            setcookie("samedaycourier_open_package", "", time()-3600);
         }
     }
 
