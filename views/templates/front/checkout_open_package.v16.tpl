@@ -38,4 +38,43 @@
     </tr>
     </tbody>
 </table>
+<script>
+    {literal}
+    $(document).ready(function () {
+        let name = 'samedaycourier_open_package';
 
+        const setCookie = (openPackage) => {
+            document.cookie = name + '=' + openPackage;
+        }
+
+        const expireCookie = () => {
+            document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        }
+
+        let openPackageIdSelector = document.getElementById('samedaycourier_open_package');
+
+        const getOpenPackage = () => {
+            let cookies = document.cookie.split(';');
+            let samedaycourier_open_package = '';
+
+            cookies.forEach(function (value) {
+                if (value.indexOf('open_package') > 0) {
+                    samedaycourier_open_package = value.split('=')[1];
+                }
+            });
+
+            return samedaycourier_open_package;
+        }
+
+        openPackageIdSelector.checked = '' !== getOpenPackage();
+
+        openPackageIdSelector.addEventListener('click', function () {
+            if (openPackageIdSelector.checked === true) {
+                setCookie(openPackageIdSelector.value);
+            } else {
+                expireCookie();
+            }
+        }, false);
+    });
+    {/literal}
+</script>

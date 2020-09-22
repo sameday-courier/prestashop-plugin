@@ -58,6 +58,8 @@ class SamedayCourier extends CarrierModule
         ]
     ];
 
+    const OPENPACKAGECODE = 'OPCG';
+
     public function __construct()
     {
         $this->name = 'samedaycourier';
@@ -1415,31 +1417,40 @@ class SamedayCourier extends CarrierModule
             return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options'], null);
         }
 
-        if ((int) Configuration::get('SAMEDAY_OPEN_PACKAGE')) {
-            if ('' !== $service['service_optional_taxes']) {
-                $taxOpenPackage = 0;
+        if (
+            (int) Configuration::get('SAMEDAY_OPEN_PACKAGE')
+            && $this->checkForOpenPackageTax($service['service_optional_taxes'])
+        ) {
+            $this->smarty->assign('carrier_id', $carrierId);
+            $this->smarty->assign('label', Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL'));
 
-                /** @var \Sameday\Objects\Service\OptionalTaxObject[]|false $optionalServices */
-                $optionalServices = unserialize($service['service_optional_taxes']);
+            return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['open_package_option'], null);
+        }
 
-                foreach ($optionalServices as $optionalService) {
+        return '';
+    }
 
-                    if ($optionalService['code'] === 'OPCG' && $optionalService['type'] === \Sameday\Objects\Types\PackageType::PARCEL) {
-                        $taxOpenPackage = $optionalService['id'];
-                        break;
-                    }
-                }
+    /**
+     * @param $serviceOptionalTaxes
+     *
+     * @return bool
+     */
+    private function checkForOpenPackageTax($serviceOptionalTaxes)
+    {
+        $taxOpenPackage = false;
+        $optionalServices = unserialize($serviceOptionalTaxes);
 
-                if ($taxOpenPackage) {
-                    $this->smarty->assign('carrier_id', $carrierId);
-                    $this->smarty->assign('label', Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL'));
+        if (!empty($optionalServices)) {
+            foreach ($optionalServices as $optionalService) {
 
-                    return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['open_package_option'], null);
+                if ($optionalService['code'] === self::OPENPACKAGECODE && $optionalService['type'] === \Sameday\Objects\Types\PackageType::PARCEL) {
+                    $taxOpenPackage = $optionalService['id'];
+                    break;
                 }
             }
         }
 
-        return '';
+        return $taxOpenPackage > 0;
     }
 
     /**
@@ -1463,15 +1474,12 @@ class SamedayCourier extends CarrierModule
         }
 
         $openPackage = (int) $_COOKIE['samedaycourier_open_package'];
-        if ($openPackage === $params['order']->id_carrier) {
+        if ($openPackage > 0  && $this->checkForOpenPackageTax($service['service_optional_taxes'])) {
             $SamedayOpenPackage = new SamedayOpenPackage();
 
             $SamedayOpenPackage->id_order = $params['order']->id;
             $SamedayOpenPackage->is_open_package = 1;
             $SamedayOpenPackage->save();
-
-            unset($_COOKIE['samedaycourier_open_package']);
-            setcookie("samedaycourier_open_package", "", time()-3600);
         }
     }
 
@@ -1539,7 +1547,7 @@ class SamedayCourier extends CarrierModule
         if (!empty(Tools::getValue('sameday_open_package'))) {
             $optionalTaxIds = unserialize($service['service_optional_taxes']);
             foreach ($optionalTaxIds as $optionalService) {
-                if ($optionalService['code'] === 'OPCG' && $optionalService['type'] === (int) Tools::getValue('sameday_package_type')) {
+                if ($optionalService['code'] === self::OPENPACKAGECODE && $optionalService['type'] === (int) Tools::getValue('sameday_package_type')) {
                     $serviceTaxIds[] = $optionalService['id'];
                     break;
                 }
