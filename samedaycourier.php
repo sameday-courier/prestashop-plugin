@@ -9,7 +9,7 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  * @author    PrestaShop SA <contact@prestashop.com>
- * @copyright 2007-2020 PrestaShop SA
+ * @copyright 2007-2019 PrestaShop SA
  * @license   http://addons.prestashop.com/en/content/12-terms-and-conditions-of-use
  * International Registered Trademark & Property of PrestaShop SA
  */
@@ -58,12 +58,14 @@ class SamedayCourier extends CarrierModule
         ]
     ];
 
+    const OPENPACKAGECODE = 'OPCG';
+
     public function __construct()
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.3.1';
+        $this->version = '1.4.0';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -244,6 +246,7 @@ class SamedayCourier extends CarrierModule
                     // Save as current sameday service.
                     $remoteServices[] = $service->getId();
                 }
+
             } catch (\Exception $e) {
                 $this->log($e->getMessage(), SamedayConstants::ERROR);
             }
@@ -257,6 +260,7 @@ class SamedayCourier extends CarrierModule
                     'id_service' => $oldService['id_service']
                 );
             },
+
             SamedayService::getServices()
         );
 
@@ -429,8 +433,7 @@ class SamedayCourier extends CarrierModule
                         'label'   => $this->l('Open package'),
                         'name'    => 'SAMEDAY_OPEN_PACKAGE',
                         'is_bool' => true,
-                        'desc'    => $this->l('Enable this option if you want your client to 
-                        open the package at delivery'),
+                        'desc'    => $this->l('Enable this option if you want your client to open the package at delivery'),
                         'values'  => array(
                             array(
                                 'id'    => 'active_on',
@@ -1005,7 +1008,7 @@ class SamedayCourier extends CarrierModule
             $locker->lat = $lockerObject->getLat();
             $locker->long = $lockerObject->getLong();
             $locker->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
-            if (!empty($locker->name)) {
+            if (null !== $locker->name) {
                 $locker->save();
             }
 
@@ -1414,32 +1417,40 @@ class SamedayCourier extends CarrierModule
             return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options'], null);
         }
 
-        if ((int) Configuration::get('SAMEDAY_OPEN_PACKAGE')) {
-            if ('' !== $service['service_optional_taxes']) {
-                $taxOpenPackage = 0;
+        if (
+            (int) Configuration::get('SAMEDAY_OPEN_PACKAGE')
+            && $this->checkForOpenPackageTax($service['service_optional_taxes'])
+        ) {
+            $this->smarty->assign('carrier_id', $carrierId);
+            $this->smarty->assign('label', Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL'));
 
-                /** @var \Sameday\Objects\Service\OptionalTaxObject[]|false $optionalServices */
-                $optionalServices = unserialize($service['service_optional_taxes']);
+            return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['open_package_option'], null);
+        }
 
-                foreach ($optionalServices as $optionalService) {
-                    if ($optionalService['code'] === 'OPCG'
-                        && $optionalService['type'] === \Sameday\Objects\Types\PackageType::PARCEL
-                    ) {
-                        $taxOpenPackage = $optionalService['id'];
-                        break;
-                    }
-                }
+        return '';
+    }
 
-                if ($taxOpenPackage) {
-                    $this->smarty->assign('carrier_id', $carrierId);
-                    $this->smarty->assign('label', Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL'));
+    /**
+     * @param $serviceOptionalTaxes
+     *
+     * @return bool
+     */
+    private function checkForOpenPackageTax($serviceOptionalTaxes)
+    {
+        $taxOpenPackage = 0;
+        $optionalServices = unserialize($serviceOptionalTaxes);
 
-                    return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['open_package_option'], null);
+        if (!empty($optionalServices)) {
+            foreach ($optionalServices as $optionalService) {
+
+                if ($optionalService['code'] === self::OPENPACKAGECODE && $optionalService['type'] === \Sameday\Objects\Types\PackageType::PARCEL) {
+                    $taxOpenPackage = $optionalService['id'];
+                    break;
                 }
             }
         }
 
-        return '';
+        return $taxOpenPackage > 0;
     }
 
     /**
@@ -1451,9 +1462,10 @@ class SamedayCourier extends CarrierModule
      */
     public function hookActionValidateOrder($params)
     {
-        $lockerId = (int) $params['cookie']->samedaycourier_locker_id;
+        $lockerId = (int) $_COOKIE['samedaycourier_locker_id'];
+        $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
 
-        if ($lockerId > 0) {
+        if ($lockerId > 0 && $service['code'] === 'LN') {
             $orderLocker = new SamedayOrderLocker();
 
             $orderLocker->id_order = $params['order']->id;
@@ -1461,21 +1473,13 @@ class SamedayCourier extends CarrierModule
             $orderLocker->save();
         }
 
-        $openPackage = (int) $params['cookie']->samedaycourier_open_package;
-        if ($openPackage === $params['order']->id_carrier) {
+        $openPackage = (int) $_COOKIE['samedaycourier_open_package'];
+        if ($openPackage > 0  && $this->checkForOpenPackageTax($service['service_optional_taxes'])) {
             $SamedayOpenPackage = new SamedayOpenPackage();
 
             $SamedayOpenPackage->id_order = $params['order']->id;
             $SamedayOpenPackage->is_open_package = 1;
             $SamedayOpenPackage->save();
-        }
-    }
-
-    public function hookActionCarrierProcess($params)
-    {
-        if (Tools::isSubmit('delivery_option')) {
-            $params['cookie']->samedaycourier_open_package = Tools::getValue('samedaycourier_open_package');
-            $params['cookie']->samedaycourier_locker_id = Tools::getValue('samedaycourier_locker_id');
         }
     }
 
@@ -1543,9 +1547,7 @@ class SamedayCourier extends CarrierModule
         if (!empty(Tools::getValue('sameday_open_package'))) {
             $optionalTaxIds = unserialize($service['service_optional_taxes']);
             foreach ($optionalTaxIds as $optionalService) {
-                if ($optionalService['code'] === 'OPCG'
-                    && $optionalService['type'] === (int) Tools::getValue('sameday_package_type')
-                ) {
+                if ($optionalService['code'] === self::OPENPACKAGECODE && $optionalService['type'] === (int) Tools::getValue('sameday_package_type')) {
                     $serviceTaxIds[] = $optionalService['id'];
                     break;
                 }
@@ -1566,11 +1568,11 @@ class SamedayCourier extends CarrierModule
             null,
             $serviceTaxIds,
             null,
-            null,
+            $order->reference + time(),
             Tools::getValue('sameday_observation'),
             '',
             '',
-            isset($locker['id_locker']) ? $locker['id_locker'] : null
+            $lockerId
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {

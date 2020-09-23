@@ -204,8 +204,7 @@ class SamedayService extends ObjectModel
         $liveMode = Configuration::get('SAMEDAY_LIVE_MODE', 0);
 
         return Db::getInstance()->getRow(
-            "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME . " s WHERE s.live_mode = '{$liveMode}' 
-            AND s.id_carrier = " . (int)$id_carrier
+            "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME . " s WHERE s.live_mode = '{$liveMode}' AND s.id_carrier = " . (int)$id_carrier
         );
     }
 
@@ -214,8 +213,7 @@ class SamedayService extends ObjectModel
         $liveMode = Configuration::get('SAMEDAY_LIVE_MODE', 0);
 
         return Db::getInstance()->getRow(
-            "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME . " s WHERE s.live_mode = '{$liveMode}' 
-            AND s.id_service = " . (int)$id_service
+            "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME . " s WHERE s.live_mode = '{$liveMode}' AND s.id_service = " . (int)$id_service
         );
     }
 }

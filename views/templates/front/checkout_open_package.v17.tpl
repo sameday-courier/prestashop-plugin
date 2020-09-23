@@ -1,5 +1,5 @@
 {**
- * 2007-2020 PrestaShop
+ * 2007-2019 PrestaShop
  *
  * NOTICE OF LICENSE
  *
@@ -18,14 +18,54 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  * @author    PrestaShop SA <contact@prestashop.com>
- * @copyright 2007-2020 PrestaShop SA
+ * @copyright 2007-2019 PrestaShop SA
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  * International Registered Trademark & Property of PrestaShop SA
  *}
 
 <div class="col-sm-12">
     <div class="form-control">
-        <input name="samedaycourier_open_package" type="checkbox" value="{$carrier_id|escape:'htmlall':'UTF-8'}" /> {$label|escape:'htmlall':'UTF-8'}
+        <input name="samedaycourier_open_package" id="samedaycourier_open_package" type="checkbox" value="{$carrier_id}" /> {$label|escape:'htmlall':'UTF-8'}
     </div>
 </div>
+<script>
+    {literal}
+        document.addEventListener("DOMContentLoaded", function () {
+            let name = 'samedaycourier_open_package';
+
+            const setCookie = (openPackage) => {
+                document.cookie = name + '=' + openPackage;
+            }
+
+            const expireCookie = () => {
+                document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            }
+
+            let openPackageIdSelector = document.getElementById('samedaycourier_open_package');
+
+            const getOpenPackage = () => {
+                let cookies = document.cookie.split(';');
+                let samedaycourier_open_package = '';
+
+                cookies.forEach(function (value) {
+                    if (value.indexOf('open_package') > 0) {
+                        samedaycourier_open_package = value.split('=')[1];
+                    }
+                });
+
+                return samedaycourier_open_package;
+            }
+
+            openPackageIdSelector.checked = '' !== getOpenPackage();
+
+            openPackageIdSelector.addEventListener('click', function () {
+                if (openPackageIdSelector.checked === true) {
+                    setCookie(openPackageIdSelector.value);
+                } else {
+                    expireCookie();
+                }
+            }, false);
+        });
+    {/literal}
+</script>
 

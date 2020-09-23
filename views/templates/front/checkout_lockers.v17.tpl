@@ -1,5 +1,5 @@
 {**
- * 2007-2020 PrestaShop
+ * 2007-2019 PrestaShop
  *
  * NOTICE OF LICENSE
  *
@@ -18,7 +18,7 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  * @author    PrestaShop SA <contact@prestashop.com>
- * @copyright 2007-2020 PrestaShop SA
+ * @copyright 2007-2019 PrestaShop SA
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  * International Registered Trademark & Property of PrestaShop SA
  *}
@@ -28,10 +28,43 @@
         {l s='Select locker' mod='samedaycourier'}
     </div>
     <div class="col-sm-10">
-        <select name="samedaycourier_locker_id" class="form-control">
+        <select name="samedaycourier_locker_id" class="form-control" id="lockerIdSelector">
+            <option value=""> {l s='Select locker' mod='samedaycourier'} </option>
             {foreach from=$lockers item=locker}
                 <option value="{$locker.id|escape:'htmlall':'UTF-8'}" {if $locker.id==$lockerId}selected="selected"{/if}>{$locker.name|escape:'htmlall':'UTF-8'} - {$locker.county|escape:'htmlall':'UTF-8'} - {$locker.city|escape:'htmlall':'UTF-8'} - {$locker.address|escape:'htmlall':'UTF-8'}</option>
             {/foreach}
         </select>
     </div>
 {/if}
+<script>
+    {literal}
+        document.addEventListener("DOMContentLoaded", function () {
+            let name = 'samedaycourier_locker_id';
+
+            const setCookie = (lockerId) => {
+                document.cookie = name + '=' + lockerId;
+            }
+
+            const getLockerId = () => {
+                let cookies = document.cookie.split(';');
+                let locker_id = '';
+                cookies.forEach(function (value) {
+                   if (value.indexOf('locker_id') > 0) {
+                       locker_id = value.split('=')[1];
+                   }
+                });
+
+                return locker_id;
+            }
+
+            let lockerIdSelector = document.getElementById('lockerIdSelector');
+            lockerIdSelector.value = getLockerId();
+
+            lockerIdSelector.addEventListener('change', function () {
+                if ('' !== lockerIdSelector.value) {
+                    setCookie(lockerIdSelector.value);
+                }
+            }, false);
+        });
+    {/literal}
+</script>
