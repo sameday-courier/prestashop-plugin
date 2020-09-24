@@ -716,11 +716,11 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @return void
+     * @throws PrestaShopDatabaseException
      */
     private function renderLockersList()
     {
-        $lockers = SamedayLocker::getLockers(true);
+        $lockers = SamedayLocker::getLockers(false);
         $fields = array(
             'id_locker' => array(
                 'title' => $this->l('Sameday Id'),
@@ -1514,7 +1514,13 @@ class SamedayCourier extends CarrierModule
     private function displayCarrierExtraContent($samedaycourier_locker_id, $service, $carrierId, $fileVersion)
     {
         if ($service['code'] === self::LOCKER_NEXT_DAY) {
-            $this->smarty->assign('lockers', SamedayLocker::getLockers());
+            $cities = SamedayLocker::getCities();
+            $lockers = array();
+            foreach ($cities as $city) {
+                $lockers[$city['city'] . ' (' . $city['county'] . ')'] = SamedayLocker::getLockersByCity($city['city']);
+            }
+
+            $this->smarty->assign('lockers', $lockers);
             $this->smarty->assign('lockerId', $samedaycourier_locker_id);
 
             return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options'], null);
