@@ -1,6 +1,6 @@
 <?php
 /**
- * 2007-2019 PrestaShop
+ * 2007-2020 PrestaShop
  *
  * DISCLAIMER
  *
@@ -9,11 +9,14 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  * @author    PrestaShop SA <contact@prestashop.com>
- * @copyright 2007-2019 PrestaShop SA
+ * @copyright 2007-2020 PrestaShop SA
  * @license   http://addons.prestashop.com/en/content/12-terms-and-conditions-of-use
  * International Registered Trademark & Property of PrestaShop SA
  */
 
+/**
+ * Class SamedayLocker
+ */
 class SamedayLocker extends ObjectModel
 {
     const TABLE_NAME = 'sameday_lockers';
@@ -45,8 +48,6 @@ class SamedayLocker extends ObjectModel
     /** @var string */
     public $long;
 
-    public $live_mode = 0;
-
     /** @var array */
     public static $definition = array(
         'table' => self::TABLE_NAME,
@@ -66,9 +67,22 @@ class SamedayLocker extends ObjectModel
         ),
     );
 
+    /**
+     * @return int
+     */
+    private static function checkMode()
+    {
+        return (int) Configuration::get('SAMEDAY_LIVE_MODE', 0);
+    }
+
+    /**
+     * @param false $skipImport
+     * @return array|bool|mysqli_result|PDOStatement|resource|null
+     * @throws PrestaShopDatabaseException
+     */
     public static function getLockers($skipImport = false)
     {
-        $liveMode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
+        $liveMode = self::checkMode();
 
         if (!$skipImport && time() > ((int) Configuration::get('SAMEDAY_LAST_LOCKERS')) + 86400) {
             $module = Module::getInstanceByName('samedaycourier');
@@ -81,9 +95,41 @@ class SamedayLocker extends ObjectModel
         );
     }
 
+    /**
+     * @return array|bool|mysqli_result|PDOStatement|resource|null
+     * @throws PrestaShopDatabaseException
+     */
+    public static function getCities()
+    {
+        $liveMode = self::checkMode();
+
+        return Db::getInstance()->executeS(
+            "SELECT city, county FROM " . _DB_PREFIX_ . self::TABLE_NAME . " WHERE live_mode = '{$liveMode}' GROUP BY city"
+        );
+    }
+
+    /**
+     * @param $city
+     * @return array|bool|mysqli_result|PDOStatement|resource|null
+     * @throws PrestaShopDatabaseException
+     */
+    public static function getLockersByCity($city)
+    {
+        $liveMode = self::checkMode();
+
+        return Db::getInstance()->executeS(
+            "SELECT * FROM " . _DB_PREFIX_ . self::TABLE_NAME . " WHERE live_mode = '{$liveMode}' AND city = '{$city}'"
+        );
+    }
+
+    /**
+     * @param $id
+     * @return array|bool|object|null
+     */
     public static function findBySamedayId($id)
     {
-        $liveMode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
+        $liveMode = self::checkMode();
+
         return Db::getInstance()->getRow(
             "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME .
             " s WHERE s.live_mode = '{$liveMode}' AND s.id_locker = " . (int)$id
