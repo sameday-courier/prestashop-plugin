@@ -22,7 +22,7 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  * International Registered Trademark & Property of PrestaShop SA
  *}
-
+{include file='./_partials/checkout_open_package.tpl'}
 <table class="resume table table-bordered">
     <tbody>
     <tr>
@@ -30,14 +30,11 @@
         <td>
             <div class="checkbox">
                 <label>
-                    <span>
-                        <input type="checkbox" id="samedaycourier_open_package" name="samedaycourier_open_package" value="{$carrier_id|escape:'htmlall':'UTF-8'}">
-                    </span>
-                    {$label|escape:'htmlall':'UTF-8'}
+                    <input type="checkbox" id="samedaycourier_open_package" name="samedaycourier_open_package" value="{$carrier_id}">
+                    <span>&nbsp;</span>{$label|escape:'htmlall':'UTF-8'}
                 </label>
             </div>
         </td>
     </tr>
     </tbody>
 </table>
-
