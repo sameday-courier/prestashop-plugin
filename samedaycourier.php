@@ -98,7 +98,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.0';
+        $this->version = '1.4.1';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1684,7 +1684,7 @@ class SamedayCourier extends CarrierModule
             Tools::getValue('sameday_observation'),
             '',
             '',
-            $lockerId
+            null !== $locker ? $locker['id_locker'] : null
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
