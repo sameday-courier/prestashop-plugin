@@ -36,11 +36,15 @@ class SamedayOrderLocker extends ObjectModel
         ),
     );
 
+    /**
+     * @param $orderId
+     * @return int
+     */
     public static function getLockerForOrder($orderId)
     {
-        return Db::getInstance()->getValue(
-            'SELECT id_locker FROM ' . _DB_PREFIX_ . self::TABLE_NAME . ' WHERE id_order=' . (int) $orderId,
-            false
-        );
+        $tableName = _DB_PREFIX_ . self::TABLE_NAME;
+        $sql = "SELECT id_locker FROM {$tableName} WHERE id_order = {$orderId}";
+
+        return Db::getInstance()->getValue($sql);
     }
 }

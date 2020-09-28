@@ -1635,6 +1635,8 @@ class SamedayCourier extends CarrierModule
             $company
         );
 
+        $orderId = $order->id;
+
         $lockerId = (int) SamedayOrderLocker::getLockerForOrder($order->id);
         $locker = null;
         if ($lockerId > 0) {
@@ -1684,7 +1686,7 @@ class SamedayCourier extends CarrierModule
             Tools::getValue('sameday_observation'),
             '',
             '',
-            $lockerId
+            null !== $locker ? $locker['id_locker'] : null
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
