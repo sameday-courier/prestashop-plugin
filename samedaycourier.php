@@ -98,7 +98,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.1';
+        $this->version = '1.4.2';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -134,13 +134,18 @@ class SamedayCourier extends CarrierModule
 
         include(dirname(__FILE__) . '/sql/install.php');
 
+        $hookDisplayAdminOrder = 'displayAdminOrderContentShip';
+        if (AppKernel::MINOR_VERSION > 6) {
+            $hookDisplayAdminOrder = 'displayAdminOrderTabContent';
+        }
+
         return parent::install() &&
             $this->registerHook('actionCarrierUpdate') &&
             (version_compare(_PS_VERSION_, '1.7.0.0') < 0
                 ? $this->registerHook('extraCarrier')
                 : $this->registerHook('displayCarrierExtraContent')) &&
             $this->registerHook('displayAdminAfterHeader') &&
-            $this->registerHook('displayAdminOrderContentShip') &&
+            $this->registerHook($hookDisplayAdminOrder) &&
             $this->registerHook('actionValidateOrder') &&
             $this->registerHook('actionCarrierProcess');
     }
@@ -1386,13 +1391,21 @@ class SamedayCourier extends CarrierModule
     /**
      * @param $params
      * @return false|string
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
+     * @throws SamedaySDKException
+     * @throws \Sameday\Exceptions\SamedayAuthenticationException
+     * @throws \Sameday\Exceptions\SamedayAuthorizationException
+     * @throws \Sameday\Exceptions\SamedayBadRequestException
+     * @throws \Sameday\Exceptions\SamedayNotFoundException
+     * @throws \Sameday\Exceptions\SamedayServerException
      */
-    public function hookDisplayAdminOrderContentShip($params)
+    private function displayAdminOrderContent($params)
     {
         $order = $params['order'];
 
         if (Tools::isSubmit('addAwb')) {
-                $this->addAwb($order);
+            $this->addAwb($order);
         }
 
         if (Tools::isSubmit('addParcel')) {
@@ -1443,6 +1456,32 @@ class SamedayCourier extends CarrierModule
         );
 
         return $this->display(__FILE__, 'displayAdminOrder.tpl');
+    }
+
+    /**
+     * @param $params
+     * @return false|string
+     */
+    public function hookDisplayAdminOrderContentShip($params)
+    {
+        try {
+            return $this->displayAdminOrderContent($params);
+        } catch (Exception $exception) {
+            return $exception;
+        }
+    }
+
+    /**
+     * @param $params
+     * @return Exception|false|string
+     */
+    public function hookDisplayAdminOrderTabContent($params)
+    {
+        try {
+            return $this->displayAdminOrderContent($params);
+        } catch (Exception $exception) {
+            return $exception;
+        }
     }
 
     /**
