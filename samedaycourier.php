@@ -136,7 +136,7 @@ class SamedayCourier extends CarrierModule
 
         $hookDisplayAdminOrder = 'displayAdminOrderContentShip';
         if (AppKernel::MINOR_VERSION > 6) {
-            $hookDisplayAdminOrder = 'displayAdminOrderTabContent';
+            $hookDisplayAdminOrder = 'displayAdminOrderSide';
         }
 
         return parent::install() &&
@@ -1475,8 +1475,10 @@ class SamedayCourier extends CarrierModule
      * @param $params
      * @return Exception|false|string
      */
-    public function hookDisplayAdminOrderTabContent($params)
+    public function hookDisplayAdminOrderSide($params)
     {
+        $params['order'] = new Order((int) $params['id_order']);
+
         try {
             return $this->displayAdminOrderContent($params);
         } catch (Exception $exception) {
