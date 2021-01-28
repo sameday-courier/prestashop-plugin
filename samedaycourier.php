@@ -1721,7 +1721,7 @@ class SamedayCourier extends CarrierModule
             null,
             $serviceTaxIds,
             null,
-            $order->reference + time(),
+            ((int) $order->reference) + time(),
             Tools::getValue('sameday_observation'),
             '',
             '',
