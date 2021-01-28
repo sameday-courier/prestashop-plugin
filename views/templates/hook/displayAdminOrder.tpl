@@ -201,7 +201,6 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">×</button>
-                    <h4 class="modal-title">{l s='Add AWB' mod='samedaycourier'}</h4>
                 </div>
                 <form action="" method="post" id="form-shipping" class="form-horizontal">
                     <div class="modal-body">
@@ -212,19 +211,21 @@
                                     <input type="text" name="sameday_package_number" class="form-control input-number"
                                            id="sameday_package_qty" value="1" readonly="">
                                     <span class="input-group-btn">
-                                  <button type="button" class="btn btn-info btn-number" data-type="plus"
-                                          data-field="sameday_package_qty" id="plus-btn">
-                                      <span class="icon-plus"></span>
-                                  </button>
-                                </span>
+                                          <button type="button" class="btn btn-info btn-number" data-type="plus"
+                                                  data-field="sameday_package_qty" id="plus-btn">
+                                              <span> + </span>
+                                          </button>
+                                    </span>
                                 </div>
                             </div>
                             <label class="col-sm-3 control-label"
                                    for="input-key">{l s='Calculated weight' mod='samedaycourier'}</span></label>
                             <div class="col-sm-2">
                                 <div class="input-group">
-                                    <input type="number" value="0" readonly="readonly" id="calculated-weight"
-                                           class="form-control input-number">
+                                    <label for="calculated-weight">
+                                        <input type="number" value="0" readonly="readonly" id="calculated-weight"
+                                               class="form-control input-number">
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -237,30 +238,46 @@
                                 <div class="col-sm-8" style="padding-bottom: 5px;">
                                     <div class="row">
                                         <div class="col-sm-3">
-                                            <input type="number" name="sameday_package_weight[]" value="" min="1"
-                                                   placeholder="Weight" id="input-weight"
-                                                   class="form-control input-number weight" step="0.1" required>
+                                            <input type="number" name="sameday_package_weight[]"
+                                                   value=""
+                                                   min="1"
+                                                   placeholder="Weight"
+                                                   id="input-weight"
+                                                   class="form-control input-number weight"
+                                                   step="any"
+                                                   required
+                                            >
                                         </div>
                                         <div class="col-sm-3">
-                                            <input type="number" name="sameday_package_width[]" value="" min="0"
-                                                   placeholder="Width" id="input-width"
+                                            <input type="number" name="sameday_package_width[]"
+                                                   value=""
+                                                   min="0"
+                                                   placeholder="Width"
+                                                   id="input-width"
                                                    class="form-control input-number">
                                         </div>
                                         <div class="col-sm-3">
-                                            <input type="number" name="sameday_package_length[]" value="" min="0"
-                                                   placeholder="Length" id="input-length"
+                                            <input type="number" name="sameday_package_length[]"
+                                                   value=""
+                                                   min="0"
+                                                   placeholder="Length"
+                                                   id="input-length"
                                                    class="form-control input-number">
                                         </div>
                                         <div class="col-sm-3">
-                                            <input type="number" name="sameday_package_height[]" value="" min="0"
-                                                   placeholder="Height" id="input-height"
+                                            <input type="number" name="sameday_package_height[]"
+                                                   value=""
+                                                   min="0"
+                                                   placeholder="Height"
+                                                   id="input-height"
                                                    class="form-control input-number">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-sm-1">
-                                        <span id="removePackageDimensionField"><i class="icon-remove pull-left"
-                                                                                  style="vertical-align: bottom; cursor: pointer; padding-top: 9px;"></i></span>
+                                    <span id="removePackageDimensionField">
+                                        <i class="btn btn-danger pull-left" style="vertical-align: bottom; cursor: pointer; padding-top: 9px;"> X </i>
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -269,7 +286,7 @@
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
                                    for="input-key">{l s='Insured value' mod='samedaycourier'}</label>
-                            <div class="col-sm-4">
+                            <div class="col-sm-9">
                                 <input type="number" name="sameday_insured_value" value="0" min="0"
                                        class="form-control">
                             </div>
@@ -281,6 +298,18 @@
                                    for="input-key">{l s='Observation' mod='samedaycourier'}</label>
                             <div class="col-sm-9">
                                 <input type="text" name="sameday_observation" class="form-control">
+                            </div>
+                        </div>
+
+                        <!-- Client Reference //-->
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label"
+                                   for="input-key-clientReference">
+                                {l s='Client Reference' mod='samedaycourier'}
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" name="sameday_client_reference" value="{$orderId|escape:'html':'UTF-8'}" class="form-control" id="input-key-clientReference">
+                                <span> {l s='Default value for this field is Order ID' mod='samedaycourier'} </span>
                             </div>
                         </div>
 
@@ -427,7 +456,7 @@
 
             success: function(response){
                 data = JSON.parse(response);
-                if (data.summary != undefined) {
+                if (data.summary !== undefined) {
                     var summaryHtml = '';
                     $.each(data.summary, function(awb, summary){
                         summaryHtml += '<tr><td>' + awb + '</td><td>' + summary.weight + '</td><td>' + summary.delivered + '</td>' +
@@ -437,7 +466,7 @@
                     $('#awb-summary').html(summaryHtml);
                 }
 
-                if (data.histories != undefined) {
+                if (data.histories !== undefined) {
                     var historiesHtml = '';
                     $.each(data.histories, function(awb, histories){
                         $.each(histories, function(i, history){

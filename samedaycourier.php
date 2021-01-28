@@ -76,7 +76,7 @@ class SamedayCourier extends CarrierModule
      */
     protected $servicePriceCache = array();
 
-    const TEMPLATE_VERSION = [
+    public const TEMPLATE_VERSION = [
         '1.6' => [
             'locker_options' => 'checkout_lockers.v16.tpl',
             'open_package_option' => 'checkout_open_package.v16.tpl'
@@ -87,9 +87,9 @@ class SamedayCourier extends CarrierModule
         ]
     ];
 
-    const OPENPACKAGECODE = 'OPCG';
+    public const OPENPACKAGECODE = 'OPCG';
 
-    const LOCKER_NEXT_DAY = 'LN';
+    public const LOCKER_NEXT_DAY = 'LN';
 
     /**
      * SamedayCourier constructor.
@@ -1442,6 +1442,7 @@ class SamedayCourier extends CarrierModule
 
         $this->smarty->assign(
             array(
+                'orderId'       => $order->id,
                 'pickup_points' => $pickupPoints,
                 'services'      => $services,
                 'current_service' => $service,
@@ -1721,7 +1722,7 @@ class SamedayCourier extends CarrierModule
             null,
             $serviceTaxIds,
             null,
-            ((int) $order->reference) + time(),
+            Tools::getValue('sameday_client_reference'),
             Tools::getValue('sameday_observation'),
             '',
             '',
