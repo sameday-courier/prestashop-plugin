@@ -98,7 +98,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.3';
+        $this->version = '1.4.4';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -166,6 +166,7 @@ class SamedayCourier extends CarrierModule
         Configuration::deleteByName('SAMEDAY_ESTIMATED_COST');
         Configuration::deleteByName('SAMEDAY_OPEN_PACKAGE');
         Configuration::deleteByName('SAMEDAY_OPEN_PACKAGE_LABEL');
+        Configuration::deleteByName('SAMEDAY_LOCKER_MAX_ITEMS');
         Configuration::deleteByName('SAMEDAY_AWB_PDF_FORMAT');
         Configuration::deleteByName('SAMEDAY_LAST_SYNC');
         Configuration::deleteByName('SAMEDAY_STATUS_MODE');
@@ -506,6 +507,13 @@ class SamedayCourier extends CarrierModule
                         'label'  => $this->l('Open package label'),
                     ),
                     array(
+                        'col'    => 2,
+                        'type'   => 'text',
+                        'name'   => 'SAMEDAY_LOCKER_MAX_ITEMS',
+                        'desc'   => $this->l('Set the maximum amount of items to fit in locker'),
+                        'label'  => $this->l('Locker max. items'),
+                    ),
+                    array(
                         'type'    => 'switch',
                         'label'   => $this->l('Debug'),
                         'name'    => 'SAMEDAY_DEBUG_MODE',
@@ -574,6 +582,10 @@ class SamedayCourier extends CarrierModule
             'SAMEDAY_OPEN_PACKAGE_LABEL' => Tools::getValue(
                 'SAMEDAY_OPEN_PACKAGE_LABEL',
                 Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL', null)
+            ),
+            'SAMEDAY_LOCKER_MAX_ITEMS' => Tools::getValue(
+                'SAMEDAY_LOCKER_MAX_ITEMS',
+                Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS', null)
             ),
             'SAMEDAY_DEBUG_MODE'       => Tools::getValue(
                 'SAMEDAY_DEBUG_MODE',
@@ -1128,7 +1140,7 @@ class SamedayCourier extends CarrierModule
             return false;
         }
 
-        if ($service['code'] === self::LOCKER_NEXT_DAY && $params->nbProducts() > 1) {
+        if ($service['code'] === self::LOCKER_NEXT_DAY && $params->nbProducts() > Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS')) {
             // Allow only one product in locker.
             return false;
         }
@@ -1610,7 +1622,7 @@ class SamedayCourier extends CarrierModule
      */
     public function hookActionValidateOrder($params)
     {
-        $lockerId = (int) $_COOKIE['samedaycourier_locker_id'];
+        $lockerId = (int) isset($_COOKIE['samedaycourier_locker_id']) ? $_COOKIE['samedaycourier_locker_id'] : 0;
         $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
 
         if ($lockerId > 0 && $service['code'] === self::LOCKER_NEXT_DAY) {
@@ -1621,7 +1633,7 @@ class SamedayCourier extends CarrierModule
             $orderLocker->save();
         }
 
-        $openPackage = (int) $_COOKIE['samedaycourier_open_package'];
+        $openPackage = (int) isset($_COOKIE['samedaycourier_open_package']) ? $_COOKIE['samedaycourier_open_package'] : 0;
         if ($openPackage > 0  && $this->checkForOpenPackageTax($service['service_optional_taxes'])) {
             $SamedayOpenPackage = new SamedayOpenPackage();
 
