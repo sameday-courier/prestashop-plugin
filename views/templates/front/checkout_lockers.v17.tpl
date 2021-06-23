@@ -28,7 +28,7 @@
         {l s='Select locker' mod='samedaycourier'}
     </div>
     <div class="col-sm-10">
-        <select name="samedaycourier_locker_id" class="form-control" id="lockerIdSelector">
+        <select name="samedaycourier_locker_id" class="form-control" id="lockerIdSelector" required="required">
             <option value=""> {l s='Select locker' mod='samedaycourier'} </option>
             {foreach from=$lockers key=city item = cityLockers}
                 <optgroup label="{$city|escape:'htmlall':'UTF-8'}">
