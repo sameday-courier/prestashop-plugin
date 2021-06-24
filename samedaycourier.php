@@ -92,13 +92,18 @@ class SamedayCourier extends CarrierModule
     public const LOCKER_NEXT_DAY = 'LN';
 
     /**
+     * Cash on delivery
+     */
+    public const COD = 'Cash on delivery';
+
+    /**
      * SamedayCourier constructor.
      */
     public function __construct()
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.5';
+        $this->version = '1.4.6';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1452,6 +1457,12 @@ class SamedayCourier extends CarrierModule
             $service = $service['id_service'];
         }
 
+        $repayment = (float) 0;
+        if ($this->checkForCashPayment($order->payment)) {
+            $repayment = number_format($order->total_paid, 2);
+        }
+
+
         $this->smarty->assign(
             array(
                 'orderId'       => $order->id,
@@ -1459,7 +1470,7 @@ class SamedayCourier extends CarrierModule
                 'services'      => $services,
                 'current_service' => $service,
                 'package_types' => $packageTypes,
-                'ramburs'       => number_format($order->total_paid, 2),
+                'repayment'     => $repayment,
                 'awb'           => $awb,
                 'allowParcel'   => $allowParcel,
                 'allowLocker'   => ((int) SamedayOrderLocker::getLockerForOrder($order->id)) > 0,
@@ -1469,6 +1480,16 @@ class SamedayCourier extends CarrierModule
         );
 
         return $this->display(__FILE__, 'displayAdminOrder.tpl');
+    }
+
+    /**
+     * @param string $paymentType
+     *
+     * @return bool
+     */
+    private function checkForCashPayment(string $paymentType): bool
+    {
+        return strpos($paymentType, self::COD) !== false;
     }
 
     /**
@@ -1729,7 +1750,7 @@ class SamedayCourier extends CarrierModule
             new \Sameday\Objects\Types\AwbPaymentType(Tools::getValue('sameday_awb_payment')),
             $recipient,
             $insuredValue,
-            Tools::getValue('sameday_ramburs'),
+            Tools::getValue('sameday_repayment'),
             new \Sameday\Objects\Types\CodCollectorType(\Sameday\Objects\Types\CodCollectorType::CLIENT),
             null,
             $serviceTaxIds,

@@ -313,12 +313,12 @@
                             </div>
                         </div>
 
-                        <!-- Ramburs //-->
+                        <!-- Repayment //-->
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Ramburs' mod='samedaycourier'}</label>
+                                   for="input-key">{l s='Repayment' mod='samedaycourier'}</label>
                             <div class="col-sm-9">
-                                <input type="text" name="sameday_ramburs" value="{$ramburs|escape:'html':'UTF-8'}" class="form-control">
+                                <input type="text" name="sameday_repayment" value="{$repayment|escape:'html':'UTF-8'}" class="form-control">
                             </div>
                         </div>
 
