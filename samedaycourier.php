@@ -94,7 +94,7 @@ class SamedayCourier extends CarrierModule
     /**
      * Cash on delivery
      */
-    public const COD = 'Cash on delivery';
+    public const COD = ['Cod', 'Ramburs'];
 
     /**
      * SamedayCourier constructor.
@@ -103,7 +103,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.7';
+        $this->version = '1.4.8';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1489,7 +1489,13 @@ class SamedayCourier extends CarrierModule
      */
     private function checkForCashPayment(string $paymentType): bool
     {
-        return strpos($paymentType, self::COD) !== false;
+        foreach (self::COD as $value) {
+            if (stripos($paymentType, $value)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
