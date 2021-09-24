@@ -103,7 +103,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.8';
+        $this->version = '1.4.9';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -244,7 +244,7 @@ class SamedayCourier extends CarrierModule
     /**
      * @throws SamedaySDKException
      */
-    private function importServices()
+    private function importServices(): void
     {
         $client = $this->getSamedayClient();
 
@@ -300,13 +300,16 @@ class SamedayCourier extends CarrierModule
                 }
 
             } catch (\Exception $e) {
+                $this->addMessage('danger', $e->getMessage());
                 $this->log($e->getMessage(), SamedayConstants::ERROR);
+
+                return;
             }
         } while ($page <= $response->getPages());
 
         // Build array of local services.
         $localServices = array_map(
-            function ($oldService) {
+            static function ($oldService) {
                 return array(
                     'id' => $oldService['id'],
                     'id_service' => $oldService['id_service']
@@ -322,6 +325,8 @@ class SamedayCourier extends CarrierModule
                 SamedayService::deleteService($localService['id']);
             }
         }
+
+        $this->addMessage('success', $this->l('The services were successfully imported'));
     }
 
     /**
@@ -970,7 +975,6 @@ class SamedayCourier extends CarrierModule
 
         if (Tools::isSubmit('import_services')) {
             $this->importServices();
-            Tools::redirectAdmin($this->currentIndex . '&token=' . Tools::getAdminTokenLite('AdminModules'));
         }
 
         if (Tools::isSubmit('save_sameday_service')) {
@@ -1475,7 +1479,8 @@ class SamedayCourier extends CarrierModule
                 'allowParcel'   => $allowParcel,
                 'allowLocker'   => ((int) SamedayOrderLocker::getLockerForOrder($order->id)) > 0,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
-                'ajaxRoute'     => $this->ajaxRoute
+                'ajaxRoute'     => $this->ajaxRoute,
+                'messages' => $this->messages,
             )
         );
 
@@ -1732,8 +1737,6 @@ class SamedayCourier extends CarrierModule
                 $customer->email,
                 $company
             );
-        } else {
-            $lockerId = null;
         }
 
         $serviceTaxIds = array();
@@ -1796,6 +1799,7 @@ class SamedayCourier extends CarrierModule
             $orderCarrier->update();
 
             $order->id_carrier = $service['id_carrier'];
+            $order->shipping_number = $samedayAwb->awb_number;
             $order->update();
 
             $this->addMessage('success', $this->l('AWB was generated.'));
@@ -1803,13 +1807,14 @@ class SamedayCourier extends CarrierModule
             return $samedayAwb;
         } catch (\Sameday\Exceptions\SamedayBadRequestException $e) {
             $this->log($e->getErrors(), SamedayConstants::ERROR);
-            $this->addMessage('danger', $this->l('Error while generating AWB.'));
+            $errors = [$this->l('Error while generating AWB.')];
             foreach ($e->getErrors() as $error) {
-                $this->addMessage('danger', implode(', ', $error['key']) . ' - ' . implode(', ', $error['errors']));
+                $errors[] = implode(', ', $error['key']) . '- ' . implode(', ', $error['errors']);
             }
+            $this->addMessage('danger', $errors);
         } catch (\Exception $e) {
             $this->log($e->getMessage() . $e->getTraceAsString(), SamedayConstants::ERROR);
-            $this->addMessage('danger', $this->l('An error has occured.'));
+            $this->addMessage('danger', $this->l($e->getMessage()));
         }
 
         return null;

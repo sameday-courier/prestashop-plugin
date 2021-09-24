@@ -23,6 +23,20 @@
  * International Registered Trademark & Property of PrestaShop SA
  *}
 
+{if $messages|count}
+    {foreach from=$messages item=message}
+        <div class="alert alert-{$message.type|escape:'html':'UTF-8'}">
+            <ul>
+                {if $message.content|count > 0}
+                    {foreach from=$message.content item=error}
+                        <li style="font-weight: bold; font-size: 12px; color: #643036">{$error|escape:'html':'UTF-8'}</li>
+                    {/foreach}
+                {/if}
+            </ul>
+        </div>
+    {/foreach}
+{/if}
+
 <div class="well">
     <div class="row">
         {if $awb}
