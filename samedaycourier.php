@@ -103,7 +103,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.10';
+        $this->version = '1.4.11';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1926,7 +1926,10 @@ class SamedayCourier extends CarrierModule
             $this->log($request, SamedayConstants::DEBUG);
         }
         $pdf = $sameday->getAwbPdf($request);
-
+        while(ob_get_level()>1) {
+            //   if(ob_get_level()&& ob_get_length()>0){
+            ob_end_clean();
+        }
         header('Content-Description: File Transfer');
         header('Content-Type: application/octet-stream');
         header('Content-Disposition: attachment; filename=' . $awb['awb_number'] . '.pdf');
