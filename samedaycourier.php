@@ -1927,7 +1927,6 @@ class SamedayCourier extends CarrierModule
         }
         $pdf = $sameday->getAwbPdf($request);
         while(ob_get_level()>1) {
-            //   if(ob_get_level()&& ob_get_length()>0){
             ob_end_clean();
         }
         header('Content-Description: File Transfer');
