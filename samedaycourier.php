@@ -140,7 +140,7 @@ class SamedayCourier extends CarrierModule
         include(dirname(__FILE__) . '/sql/install.php');
 
         $hookDisplayAdminOrder = 'displayAdminOrderContentShip';
-        if (AppKernel::MINOR_VERSION > 6) {
+        if (class_exists(AppKernel::class) && AppKernel::MINOR_VERSION > 6) {
             $hookDisplayAdminOrder = 'displayAdminOrderSide';
         }
 
