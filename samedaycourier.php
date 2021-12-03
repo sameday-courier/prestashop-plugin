@@ -14,8 +14,6 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
-use Sameday\Exceptions\SamedaySDKException;
-
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -103,7 +101,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.11';
+        $this->version = '1.4.12';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -120,6 +118,14 @@ class SamedayCourier extends CarrierModule
         $this->logger->setFilename(dirname(__FILE__) . '/log/' . date('Ymd') . '_sameday.log');
         $this->messages = array();
         $this->ajaxRoute = _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/ajax.php?token=' . Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10);
+    }
+
+    /**
+     * @return int
+     */
+    private function getMinorVersion()
+    {
+        return (int) explode('.', _PS_VERSION_, 3)[1];
     }
 
     /**
@@ -140,7 +146,7 @@ class SamedayCourier extends CarrierModule
         include(dirname(__FILE__) . '/sql/install.php');
 
         $hookDisplayAdminOrder = 'displayAdminOrderContentShip';
-        if (AppKernel::MINOR_VERSION > 6) {
+        if ($this->getMinorVersion() > 6) {
             $hookDisplayAdminOrder = 'displayAdminOrderSide';
         }
 
@@ -226,7 +232,7 @@ class SamedayCourier extends CarrierModule
     /**
      * @param null $persistentHandler
      * @return \Sameday\SamedayClient
-     * @throws SamedaySDKException
+     * @throws Sameday\Exceptions\SamedaySDKException
      */
     private function getSamedayClient($persistentHandler = null)
     {
@@ -242,7 +248,7 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @throws SamedaySDKException
+     * @throws Sameday\Exceptions\SamedaySDKException
      */
     private function importServices(): void
     {
@@ -288,7 +294,7 @@ class SamedayCourier extends CarrierModule
                         $samedayService->code = $service->getCode();
                         $samedayService->delivery_type = $service->getDeliveryType()->getId();
                         $samedayService->delivery_type_name = $service->getDeliveryType()->getName();
-                        $samedayService->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
+                        $samedayService->live_mode = (int) Configuration::get('SAMEDAY_LIVE_MODE', 0);
                         $samedayService->service_optional_taxes = $optionalTaxes;
                         $samedayService->save();
                     } else {
@@ -991,7 +997,7 @@ class SamedayCourier extends CarrierModule
     /**
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
-     * @throws SamedaySDKException
+     * @throws Sameday\Exceptions\SamedaySDKException
      */
     private function importPickupPoints()
     {
@@ -1014,6 +1020,7 @@ class SamedayCourier extends CarrierModule
             } catch (\Exception $e) {
                 $this->addMessage('danger', $e->getMessage());
                 $this->log($e->getMessage(), SamedayConstants::ERROR);
+
                 return;
             }
 
@@ -1063,7 +1070,7 @@ class SamedayCourier extends CarrierModule
     /**
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
-     * @throws SamedaySDKException
+     * @throws Sameday\Exceptions\SamedaySDKException
      */
     public function importLockers()
     {
@@ -1414,7 +1421,7 @@ class SamedayCourier extends CarrierModule
      * @return false|string
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
-     * @throws SamedaySDKException
+     * @throws Sameday\Exceptions\SamedaySDKException
      * @throws \Sameday\Exceptions\SamedayAuthenticationException
      * @throws \Sameday\Exceptions\SamedayAuthorizationException
      * @throws \Sameday\Exceptions\SamedayBadRequestException
@@ -1823,7 +1830,7 @@ class SamedayCourier extends CarrierModule
     /**
      * @param $order
      * @throws PrestaShopException
-     * @throws SamedaySDKException
+     * @throws Sameday\Exceptions\SamedaySDKException
      * @throws \Sameday\Exceptions\SamedayAuthenticationException
      * @throws \Sameday\Exceptions\SamedayAuthorizationException
      * @throws \Sameday\Exceptions\SamedayBadRequestException
@@ -1906,7 +1913,7 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $order
-     * @throws SamedaySDKException
+     * @throws Sameday\Exceptions\SamedaySDKException
      * @throws \Sameday\Exceptions\SamedayAuthenticationException
      * @throws \Sameday\Exceptions\SamedayAuthorizationException
      * @throws \Sameday\Exceptions\SamedayBadRequestException
@@ -1956,7 +1963,7 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @throws SamedaySDKException
+     * @throws Sameday\Exceptions\SamedaySDKException
      */
     private function testConnection()
     {
@@ -1968,7 +1975,7 @@ class SamedayCourier extends CarrierModule
             } else {
                 $this->addMessage('danger', $this->l('Connection could not be established.'));
             }
-        } catch (SamedaySDKException $e) {
+        } catch (Sameday\Exceptions\SamedaySDKException $e) {
             return;
         }
     }
