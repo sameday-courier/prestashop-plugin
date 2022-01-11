@@ -28,6 +28,7 @@ include(dirname(__FILE__). '/classes/SamedayAwb.php');
 include(dirname(__FILE__). '/classes/SamedayAwbParcel.php');
 include(dirname(__FILE__). '/classes/SamedayAwbParcelHistory.php');
 include(dirname(__FILE__). '/classes/SamedayConstants.php');
+include(dirname(__FILE__). '/classes/SamedayPersistenceDataHandler.php');
 
 /**
  * Class SamedayCourier
@@ -101,7 +102,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.12';
+        $this->version = '1.4.13';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -234,7 +235,7 @@ class SamedayCourier extends CarrierModule
      * @return \Sameday\SamedayClient
      * @throws Sameday\Exceptions\SamedaySDKException
      */
-    private function getSamedayClient($persistentHandler = null)
+    private function getSamedayClient()
     {
         return new \Sameday\SamedayClient(
             Configuration::get('SAMEDAY_ACCOUNT_USER'),
@@ -243,7 +244,7 @@ class SamedayCourier extends CarrierModule
             'Prestashop',
             _PS_VERSION_,
             'curl',
-            $persistentHandler
+            new SamedayPersistenceDataHandler()
         );
     }
 
@@ -965,8 +966,15 @@ class SamedayCourier extends CarrierModule
         if (((bool)Tools::isSubmit('submit_sameday')) == true) {
             $form_values = $this->getConfigFormValues();
 
-            foreach (array_keys($form_values) as $key) {
-                Configuration::updateValue($key, Tools::getValue($key));
+            try {
+                $client = $this->getSamedayClient();
+                if ($client->login()) {
+                    foreach (array_keys($form_values) as $key) {
+                        Configuration::updateValue($key, Tools::getValue($key));
+                    }
+                }
+            } catch (Exception $exception) {
+                $this->addMessage('danger', $this->l($exception->getMessage()));
             }
 
             if ((bool)Tools::isSubmit('test_connection') == true) {
