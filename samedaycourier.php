@@ -235,12 +235,20 @@ class SamedayCourier extends CarrierModule
      * @return \Sameday\SamedayClient
      * @throws Sameday\Exceptions\SamedaySDKException
      */
-    private function getSamedayClient()
+    private function getSamedayClient($user = null, $password = null, $testingMode = null)
     {
+        if ($user === null) {
+            $user = Configuration::get('SAMEDAY_ACCOUNT_USER');
+        }
+
+        if ($password === null) {
+            $password = Configuration::get('SAMEDAY_ACCOUNT_PASSWORD');
+        }
+
         return new \Sameday\SamedayClient(
-            Configuration::get('SAMEDAY_ACCOUNT_USER'),
-            Configuration::get('SAMEDAY_ACCOUNT_PASSWORD'),
-            $this->getApiUrl(),
+            $user,
+            $password,
+            $this->getApiUrl($testingMode),
             'Prestashop',
             _PS_VERSION_,
             'curl',
@@ -967,11 +975,13 @@ class SamedayCourier extends CarrierModule
             $form_values = $this->getConfigFormValues();
 
             try {
-                $client = $this->getSamedayClient();
+                $client = $this->getSamedayClient($form_values['SAMEDAY_ACCOUNT_USER'], $form_values['SAMEDAY_ACCOUNT_PASSWORD'], $form_values['SAMEDAY_LIVE_MODE']);
                 if ($client->login()) {
                     foreach (array_keys($form_values) as $key) {
                         Configuration::updateValue($key, Tools::getValue($key));
                     }
+                } else {
+                    $this->addMessage('danger', $this->l('Bad credential!'));
                 }
             } catch (Exception $exception) {
                 $this->addMessage('danger', $this->l($exception->getMessage()));
@@ -1999,11 +2009,17 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
+     * @param null $testingMode
+     *
      * @return string
      */
-    private function getApiUrl()
+    private function getApiUrl($testingMode = null)
     {
-        if (Configuration::get('SAMEDAY_LIVE_MODE')) {
+        if (null !== $testingMode) {
+            $testingMode = Configuration::get('SAMEDAY_LIVE_MODE');
+        }
+
+        if ($testingMode === '1') {
             return SamedayConstants::API_URL_PROD;
         }
 
