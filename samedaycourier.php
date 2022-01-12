@@ -982,7 +982,12 @@ class SamedayCourier extends CarrierModule
             $form_values = $this->getConfigFormValues();
 
             try {
-                $client = $this->getSamedayClient($form_values['SAMEDAY_ACCOUNT_USER'], $form_values['SAMEDAY_ACCOUNT_PASSWORD'], $form_values['SAMEDAY_LIVE_MODE']);
+                $client = $this->getSamedayClient(
+                    $form_values['SAMEDAY_ACCOUNT_USER'],
+                    $form_values['SAMEDAY_ACCOUNT_PASSWORD'],
+                    $form_values['SAMEDAY_LIVE_MODE']
+                );
+
                 if ($client->login()) {
                     foreach (array_keys($form_values) as $key) {
                         Configuration::updateValue($key, Tools::getValue($key));
@@ -996,12 +1001,10 @@ class SamedayCourier extends CarrierModule
 
             if ((bool)Tools::isSubmit('test_connection') == true) {
                 $this->testConnection();
-            } else {
-                $this->html .= $this->displayConfirmation($this->l('Settings updated'));
             }
 
-//            $this->importPickupPoints();
-//            $this->importLockers();
+            $this->importPickupPoints();
+            $this->importLockers();
         }
 
         if (Tools::isSubmit('import_services')) {
