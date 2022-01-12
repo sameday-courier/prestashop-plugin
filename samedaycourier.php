@@ -14,6 +14,9 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
+use Sameday\Exceptions\SamedaySDKException;
+use Sameday\SamedayClient;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -28,6 +31,7 @@ include(dirname(__FILE__). '/classes/SamedayAwb.php');
 include(dirname(__FILE__). '/classes/SamedayAwbParcel.php');
 include(dirname(__FILE__). '/classes/SamedayAwbParcelHistory.php');
 include(dirname(__FILE__). '/classes/SamedayConstants.php');
+include(dirname(__FILE__). '/classes/SamedayPersistenceDataHandler.php');
 
 /**
  * Class SamedayCourier
@@ -101,7 +105,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.12';
+        $this->version = '1.4.13';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -230,20 +234,32 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @param null $persistentHandler
-     * @return \Sameday\SamedayClient
-     * @throws Sameday\Exceptions\SamedaySDKException
+     * @param null $user
+     * @param null $password
+     * @param null $testingMode
+     *
+     * @return SamedayClient
+     *
+     * @throws SamedaySDKException
      */
-    private function getSamedayClient($persistentHandler = null)
+    private function getSamedayClient($user = null, $password = null, $testingMode = null): SamedayClient
     {
-        return new \Sameday\SamedayClient(
-            Configuration::get('SAMEDAY_ACCOUNT_USER'),
-            Configuration::get('SAMEDAY_ACCOUNT_PASSWORD'),
-            $this->getApiUrl(),
+        if ($user === null) {
+            $user = Configuration::get('SAMEDAY_ACCOUNT_USER');
+        }
+
+        if ($password === null) {
+            $password = Configuration::get('SAMEDAY_ACCOUNT_PASSWORD');
+        }
+
+        return new SamedayClient(
+            $user,
+            $password,
+            $this->getApiUrl($testingMode),
             'Prestashop',
             _PS_VERSION_,
             'curl',
-            $persistentHandler
+            new SamedayPersistenceDataHandler()
         );
     }
 
@@ -965,14 +981,26 @@ class SamedayCourier extends CarrierModule
         if (((bool)Tools::isSubmit('submit_sameday')) == true) {
             $form_values = $this->getConfigFormValues();
 
-            foreach (array_keys($form_values) as $key) {
-                Configuration::updateValue($key, Tools::getValue($key));
+            try {
+                $client = $this->getSamedayClient(
+                    $form_values['SAMEDAY_ACCOUNT_USER'],
+                    $form_values['SAMEDAY_ACCOUNT_PASSWORD'],
+                    $form_values['SAMEDAY_LIVE_MODE']
+                );
+
+                if ($client->login()) {
+                    foreach (array_keys($form_values) as $key) {
+                        Configuration::updateValue($key, Tools::getValue($key));
+                    }
+                } else {
+                    $this->addMessage('danger', $this->l('Bad credential!'));
+                }
+            } catch (Exception $exception) {
+                $this->addMessage('danger', $this->l($exception->getMessage()));
             }
 
             if ((bool)Tools::isSubmit('test_connection') == true) {
                 $this->testConnection();
-            } else {
-                $this->html .= $this->displayConfirmation($this->l('Settings updated'));
             }
 
             $this->importPickupPoints();
@@ -1991,11 +2019,17 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
+     * @param null $testingMode
+     *
      * @return string
      */
-    private function getApiUrl()
+    private function getApiUrl($testingMode = null)
     {
-        if (Configuration::get('SAMEDAY_LIVE_MODE')) {
+        if (null !== $testingMode) {
+            $testingMode = Configuration::get('SAMEDAY_LIVE_MODE');
+        }
+
+        if ($testingMode === '1') {
             return SamedayConstants::API_URL_PROD;
         }
 
