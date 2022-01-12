@@ -14,6 +14,9 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
+use Sameday\Exceptions\SamedaySDKException;
+use Sameday\SamedayClient;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -231,11 +234,15 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @param null $persistentHandler
-     * @return \Sameday\SamedayClient
-     * @throws Sameday\Exceptions\SamedaySDKException
+     * @param null $user
+     * @param null $password
+     * @param null $testingMode
+     *
+     * @return SamedayClient
+     *
+     * @throws SamedaySDKException
      */
-    private function getSamedayClient($user = null, $password = null, $testingMode = null)
+    private function getSamedayClient($user = null, $password = null, $testingMode = null): SamedayClient
     {
         if ($user === null) {
             $user = Configuration::get('SAMEDAY_ACCOUNT_USER');
@@ -245,7 +252,7 @@ class SamedayCourier extends CarrierModule
             $password = Configuration::get('SAMEDAY_ACCOUNT_PASSWORD');
         }
 
-        return new \Sameday\SamedayClient(
+        return new SamedayClient(
             $user,
             $password,
             $this->getApiUrl($testingMode),
@@ -993,8 +1000,8 @@ class SamedayCourier extends CarrierModule
                 $this->html .= $this->displayConfirmation($this->l('Settings updated'));
             }
 
-            $this->importPickupPoints();
-            $this->importLockers();
+//            $this->importPickupPoints();
+//            $this->importLockers();
         }
 
         if (Tools::isSubmit('import_services')) {
