@@ -1985,7 +1985,7 @@ class SamedayCourier extends CarrierModule
     /**
      * @param $form_values
      * @param $prodMode
-     * @return int
+     * @return bool
      */
     private function loginClient($form_values, $prodMode)
     {
@@ -1998,12 +1998,12 @@ class SamedayCourier extends CarrierModule
         try{
             if($client->login()){
                 Configuration::updateValue('SAMEDAY_LIVE_MODE', $prodMode);
-                return 1;
+                return true;
             }
         } catch (Exception $exception) {
             $this->addMessage('danger', $this->l($exception->getMessage()));
         }
-        return 0;
+        return false;
     }
 
     /**
@@ -2013,8 +2013,8 @@ class SamedayCourier extends CarrierModule
     private function connectionLogin($form_values = null)
     {
         if(null === $form_values) $form_values = $this->getConfigFormValues();
-        ($this->loginClient($form_values, '1') === 1) ? $connectedProd = true : $connectedProd = false;
-        ($this->loginClient($form_values, '0') === 1) ? $connectedDemo = true : $connectedDemo = false;
+        ($this->loginClient($form_values, '1') === true) ? $connectedProd = true : $connectedProd = false;
+        ($this->loginClient($form_values, '0') === true) ? $connectedDemo = true : $connectedDemo = false;
         if($connectedDemo || $connectedProd) return 1;
         return 0;
     }
