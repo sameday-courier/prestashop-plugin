@@ -1982,6 +1982,11 @@ class SamedayCourier extends CarrierModule
         );
     }
 
+    /**
+     * @param $form_values
+     * @param $prodMode
+     * @return int
+     */
     private function loginClient($form_values, $prodMode)
     {
         $client = $this->getSamedayClient(
@@ -2053,7 +2058,6 @@ class SamedayCourier extends CarrierModule
 
         return SamedayConstants::API_URL_DEMO;
     }
-
 
     /**
      * @param $message
