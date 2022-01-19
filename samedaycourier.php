@@ -2008,15 +2008,15 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param null $form_values
-     * @return int
+     * @return bool
      */
     private function connectionLogin($form_values = null)
     {
         if(null === $form_values) $form_values = $this->getConfigFormValues();
         ($this->loginClient($form_values, '1') === true) ? $connectedProd = true : $connectedProd = false;
         ($this->loginClient($form_values, '0') === true) ? $connectedDemo = true : $connectedDemo = false;
-        if($connectedDemo || $connectedProd) return 1;
-        return 0;
+        if($connectedDemo || $connectedProd) return true;
+        return false;
     }
 
     /**
