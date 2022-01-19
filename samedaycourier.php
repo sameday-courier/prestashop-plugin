@@ -2011,8 +2011,6 @@ class SamedayCourier extends CarrierModule
         ($this->loginClient($form_values, '1') === 1) ? $connectedProd = true : $connectedProd = false;
         ($this->loginClient($form_values, '0') === 1) ? $connectedDemo = true : $connectedDemo = false;
         if($connectedDemo || $connectedProd) return 1;
-
-        $this->addMessage('danger', $this->l('Bad credential!'));
         return 0;
     }
 
@@ -2043,17 +2041,19 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @param null $prodMode
-     * @return mixed
+     * @param null $testingMode
+     *
+     * @return string
      */
-    private function getApiUrl($prodMode = null)
+    private function getApiUrl($testingMode = null)
     {
-        if ($prodMode === '1') {
+        if ($testingMode === '1') {
             return SamedayConstants::API_URL_PROD;
         }
 
         return SamedayConstants::API_URL_DEMO;
     }
+
 
     /**
      * @param $message
