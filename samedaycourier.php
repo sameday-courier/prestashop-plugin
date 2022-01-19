@@ -238,13 +238,13 @@ class SamedayCourier extends CarrierModule
     /**
      * @param null $user
      * @param null $password
-     * @param null $testingMode
+     * @param null $envMode
      *
      * @return SamedayClient
      *
      * @throws SamedaySDKException
      */
-    private function getSamedayClient($user = null, $password = null, $testingMode = null): SamedayClient
+    private function getSamedayClient($user = null, $password = null, $envMode = null): SamedayClient
     {
         if ($user === null) {
             $user = Configuration::get('SAMEDAY_ACCOUNT_USER');
@@ -257,7 +257,7 @@ class SamedayCourier extends CarrierModule
         return new SamedayClient(
             $user,
             $password,
-            $this->getApiUrl($testingMode),
+            $envMode,
             'Prestashop',
             _PS_VERSION_,
             'curl',
@@ -1984,20 +1984,20 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $form_values
-     * @param $prodMode
+     * @param $env_mode
      * @return bool
      */
-    private function loginClient($form_values, $prodMode)
+    private function loginClient($form_values, $env_mode)
     {
         $client = $this->getSamedayClient(
             $form_values['SAMEDAY_ACCOUNT_USER'],
             $form_values['SAMEDAY_ACCOUNT_PASSWORD'],
-            $prodMode
+            $env_mode
         );
 
         try{
             if($client->login()){
-                Configuration::updateValue('SAMEDAY_LIVE_MODE', $prodMode);
+                Configuration::updateValue('SAMEDAY_LIVE_MODE', $env_mode);
                 return true;
             }
         } catch (Exception $exception) {
@@ -2012,10 +2012,14 @@ class SamedayCourier extends CarrierModule
      */
     private function connectionLogin($form_values = null)
     {
+        $connected = false;
         if(null === $form_values) $form_values = $this->getConfigFormValues();
-        ($this->loginClient($form_values, '1') === true) ? $connectedProd = true : $connectedProd = false;
-        ($this->loginClient($form_values, '0') === true) ? $connectedDemo = true : $connectedDemo = false;
-        if($connectedDemo || $connectedProd) return true;
+        $arr_envs = SamedayConstants::SAMEDAY_ENVS;
+        foreach($arr_envs as $arr_env){
+            ($this->loginClient($form_values, $arr_env['API_URL_PROD']) === true) ? $connected = true : $connected = false;
+            ($this->loginClient($form_values, $arr_env['API_URL_DEMO']) === true) ? $connected = true : $connected = false;
+        }
+        if($connected) return true;
         return false;
     }
 
