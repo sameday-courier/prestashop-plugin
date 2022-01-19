@@ -144,7 +144,7 @@ class SamedayCourier extends CarrierModule
             return false;
         }
 
-        Configuration::updateValue('SAMEDAY_LIVE_MODE', 0);
+//        Configuration::updateValue('SAMEDAY_LIVE_MODE', 0);
         Configuration::updateValue('SAMEDAY_CRON_TOKEN', uniqid('', ''));
 
         include(dirname(__FILE__) . '/sql/install.php');
@@ -186,6 +186,8 @@ class SamedayCourier extends CarrierModule
         Configuration::deleteByName('SAMEDAY_LAST_SYNC');
         Configuration::deleteByName('SAMEDAY_STATUS_MODE');
         Configuration::deleteByName('SAMEDAY_LAST_LOCKERS');
+        Configuration::deleteByName('SAMEDAY_TOKEN');
+        Configuration::deleteByName('SAMEDAY_TOKEN_EXPIRES_AT');
 
         $services = SamedayService::getAllServices();
         foreach ($services as $service) {
@@ -226,7 +228,7 @@ class SamedayCourier extends CarrierModule
             _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/sync.php?token='
             .Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10));
 
-        if (Configuration::get('SAMEDAY_LIVE_MODE', 0) == 0) {
+        if (Configuration::get('SAMEDAY_LIVE_MODE', 0) === 0) {
             $this->addMessage('warning', $this->l('Module Sameday Courier is working in testing mode'));
         }
 
@@ -419,25 +421,25 @@ class SamedayCourier extends CarrierModule
                     'icon'  => 'icon-cogs',
                 ),
                 'input'   => array(
-                    array(
-                        'type'    => 'switch',
-                        'label'   => $this->l('Production mode'),
-                        'name'    => 'SAMEDAY_LIVE_MODE',
-                        'is_bool' => true,
-                        'desc'    => $this->l('Use this module in production mode'),
-                        'values'  => array(
-                            array(
-                                'id'    => 'active_on',
-                                'value' => 1,
-                                'label' => $this->l('Enabled'),
-                            ),
-                            array(
-                                'id'    => 'active_off',
-                                'value' => 0,
-                                'label' => $this->l('Disabled'),
-                            ),
-                        ),
-                    ),
+//                    array(
+//                        'type'    => 'switch',
+//                        'label'   => $this->l('Production mode'),
+//                        'name'    => 'SAMEDAY_LIVE_MODE',
+//                        'is_bool' => true,
+//                        'desc'    => $this->l('Use this module in production mode'),
+//                        'values'  => array(
+//                            array(
+//                                'id'    => 'active_on',
+//                                'value' => 1,
+//                                'label' => $this->l('Enabled'),
+//                            ),
+//                            array(
+//                                'id'    => 'active_off',
+//                                'value' => 0,
+//                                'label' => $this->l('Disabled'),
+//                            ),
+//                        ),
+//                    ),
                     array(
                         'col'    => 2,
                         'type'   => 'text',
@@ -587,10 +589,10 @@ class SamedayCourier extends CarrierModule
     protected function getConfigFormValues()
     {
         return array(
-            'SAMEDAY_LIVE_MODE'        => Tools::getValue(
-                'SAMEDAY_LIVE_MODE',
-                Configuration::get('SAMEDAY_LIVE_MODE', false)
-            ),
+//            'SAMEDAY_LIVE_MODE'        => Tools::getValue(
+//                'SAMEDAY_LIVE_MODE',
+//                Configuration::get('SAMEDAY_LIVE_MODE', false)
+//            ),
             'SAMEDAY_STATUS_MODE'      => Tools::getValue(
                 'SAMEDAY_STATUS_MODE',
                 Configuration::get('SAMEDAY_STATUS_MODE', false)
@@ -981,22 +983,12 @@ class SamedayCourier extends CarrierModule
         if (((bool)Tools::isSubmit('submit_sameday')) == true) {
             $form_values = $this->getConfigFormValues();
 
-            try {
-                $client = $this->getSamedayClient(
-                    $form_values['SAMEDAY_ACCOUNT_USER'],
-                    $form_values['SAMEDAY_ACCOUNT_PASSWORD'],
-                    $form_values['SAMEDAY_LIVE_MODE']
-                );
-
-                if ($client->login()) {
-                    foreach (array_keys($form_values) as $key) {
-                        Configuration::updateValue($key, Tools::getValue($key));
-                    }
-                } else {
-                    $this->addMessage('danger', $this->l('Bad credential!'));
+            if ($this->connectionLogin($form_values)) {
+                foreach (array_keys($form_values) as $key) {
+                    Configuration::updateValue($key, Tools::getValue($key));
                 }
-            } catch (Exception $exception) {
-                $this->addMessage('danger', $this->l($exception->getMessage()));
+            } else {
+                $this->addMessage('danger', $this->l('Bad credential!'));
             }
 
             if ((bool)Tools::isSubmit('test_connection') == true) {
@@ -1990,15 +1982,47 @@ class SamedayCourier extends CarrierModule
         );
     }
 
+    private function loginClient($form_values, $prodMode)
+    {
+        $client = $this->getSamedayClient(
+            $form_values['SAMEDAY_ACCOUNT_USER'],
+            $form_values['SAMEDAY_ACCOUNT_PASSWORD'],
+            $prodMode
+        );
+
+        try{
+            if($client->login()){
+                Configuration::updateValue('SAMEDAY_LIVE_MODE', $prodMode);
+                return 1;
+            }
+        } catch (Exception $exception) {
+            $this->addMessage('danger', $this->l($exception->getMessage()));
+        }
+        return 0;
+    }
+
+    /**
+     * @param null $form_values
+     * @return int
+     */
+    private function connectionLogin($form_values = null)
+    {
+        if(null === $form_values) $form_values = $this->getConfigFormValues();
+        ($this->loginClient($form_values, '1') === 1) ? $connectedProd = true : $connectedProd = false;
+        ($this->loginClient($form_values, '0') === 1) ? $connectedDemo = true : $connectedDemo = false;
+        if($connectedDemo || $connectedProd) return 1;
+
+        $this->addMessage('danger', $this->l('Bad credential!'));
+        return 0;
+    }
+
     /**
      * @throws Sameday\Exceptions\SamedaySDKException
      */
     private function testConnection()
     {
-        $client = $this->getSamedayClient();
-
         try {
-            if ($client->login()) {
+            if ($this->connectionLogin()) {
                 $this->addMessage('success', $this->l('Connection successfully established'));
             } else {
                 $this->addMessage('danger', $this->l('Connection could not be established.'));
@@ -2019,17 +2043,12 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @param null $testingMode
-     *
-     * @return string
+     * @param null $prodMode
+     * @return mixed
      */
-    private function getApiUrl($testingMode = null)
+    private function getApiUrl($prodMode = null)
     {
-        if (null !== $testingMode) {
-            $testingMode = Configuration::get('SAMEDAY_LIVE_MODE');
-        }
-
-        if ($testingMode === '1') {
+        if ($prodMode === '1') {
             return SamedayConstants::API_URL_PROD;
         }
 
