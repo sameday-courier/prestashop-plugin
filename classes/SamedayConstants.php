@@ -16,6 +16,13 @@
 
 final class SamedayConstants
 {
+    const SAMEDAY_ENVS = [
+        'ro' => [
+            'API_URL_PROD' => 'https://api.sameday.ro',
+            'API_URL_DEMO' => 'https://sameday-api.demo.zitec.com',
+        ],
+    ];
+
     const API_URL_PROD = 'https://api.sameday.ro';
     const API_URL_DEMO = 'https://sameday-api.demo.zitec.com';
     const DEBUG = 0;
