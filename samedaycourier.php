@@ -244,7 +244,7 @@ class SamedayCourier extends CarrierModule
      *
      * @throws SamedaySDKException
      */
-    private function getSamedayClient($user = null, $password = null, $envMode = null): SamedayClient
+    private function getSamedayClient($user = null, $password = null, $url_env = null, $testing_mode = null): SamedayClient
     {
         if ($user === null) {
             $user = Configuration::get('SAMEDAY_ACCOUNT_USER');
@@ -254,10 +254,21 @@ class SamedayCourier extends CarrierModule
             $password = Configuration::get('SAMEDAY_ACCOUNT_PASSWORD');
         }
 
+        if(null == $url_env) {
+            $country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ? Configuration::get('SAMEDAY_HOST_COUNTRY') : 'ro';
+            if(null == $testing_mode) $testing_mode = (Configuration::get('SAMEDAY_LIVE_MODE')) ? Configuration::get('SAMEDAY_LIVE_MODE') : '0';
+
+            if ($testing_mode == '1') {
+                $url_env = SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_PROD'];
+            } else {
+                $url_env = SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_DEMO'];
+            }
+        }
+
         return new SamedayClient(
             $user,
             $password,
-            $envMode,
+            $url_env,
             'Prestashop',
             _PS_VERSION_,
             'curl',
@@ -1987,17 +1998,24 @@ class SamedayCourier extends CarrierModule
      * @param $env_mode
      * @return bool
      */
-    private function loginClient($form_values, $env_mode)
+    private function loginClient($form_values, $testing_mode, $country)
     {
+        if($testing_mode == '1'){
+            $url = SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_PROD'];
+        }else{
+            $url = SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_DEMO'];
+        }
         $client = $this->getSamedayClient(
             $form_values['SAMEDAY_ACCOUNT_USER'],
             $form_values['SAMEDAY_ACCOUNT_PASSWORD'],
-            $env_mode
+            $url,
+            $testing_mode
         );
 
         try{
             if($client->login()){
-                Configuration::updateValue('SAMEDAY_LIVE_MODE', $env_mode);
+                Configuration::updateValue('SAMEDAY_LIVE_MODE', $testing_mode);
+                Configuration::updateValue('SAMEDAY_HOST_COUNTRY', $country);
                 return true;
             }
         } catch (Exception $exception) {
@@ -2015,12 +2033,11 @@ class SamedayCourier extends CarrierModule
         $connected = false;
         if(null === $form_values) $form_values = $this->getConfigFormValues();
         $arr_envs = SamedayConstants::SAMEDAY_ENVS;
-        foreach($arr_envs as $arr_env){
-            ($this->loginClient($form_values, $arr_env['API_URL_PROD']) === true) ? $connected = true : $connected = false;
-            ($this->loginClient($form_values, $arr_env['API_URL_DEMO']) === true) ? $connected = true : $connected = false;
+        foreach($arr_envs as $index => $arr_env){
+            if($this->loginClient($form_values, '1', $index) === true) $connected = true;
+            if($this->loginClient($form_values, '0', $index) === true) $connected = true;
         }
-        if($connected) return true;
-        return false;
+        return $connected;
     }
 
     /**
@@ -2047,20 +2064,6 @@ class SamedayCourier extends CarrierModule
     {
         $mode = Configuration::get('SAMEDAY_LIVE_MODE', 0) ? 'PROD_' : 'TEST_';
         return "SAMEDAY_CARRIER_" . $mode . trim($code);
-    }
-
-    /**
-     * @param null $testingMode
-     *
-     * @return string
-     */
-    private function getApiUrl($testingMode = null)
-    {
-        if ($testingMode === '1') {
-            return SamedayConstants::API_URL_PROD;
-        }
-
-        return SamedayConstants::API_URL_DEMO;
     }
 
     /**
