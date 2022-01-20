@@ -98,6 +98,11 @@ class SamedayCourier extends CarrierModule
      */
     public const COD = ['Cod', 'Ramburs'];
 
+    public const PRODUCTION_CODE = "1";
+    public const DEMO_CODE = "0";
+    public const ROMANIA_CODE = "ro";
+    public const HUNGARY_CODE = "hu";
+
     /**
      * SamedayCourier constructor.
      */
@@ -238,10 +243,9 @@ class SamedayCourier extends CarrierModule
     /**
      * @param null $user
      * @param null $password
-     * @param null $envMode
-     *
+     * @param null $url_env
+     * @param null $testing_mode
      * @return SamedayClient
-     *
      * @throws SamedaySDKException
      */
     private function getSamedayClient($user = null, $password = null, $url_env = null, $testing_mode = null): SamedayClient
@@ -254,15 +258,19 @@ class SamedayCourier extends CarrierModule
             $password = Configuration::get('SAMEDAY_ACCOUNT_PASSWORD');
         }
 
-        if(null == $url_env) {
-            $country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ? Configuration::get('SAMEDAY_HOST_COUNTRY') : 'ro';
-            if(null == $testing_mode) $testing_mode = (Configuration::get('SAMEDAY_LIVE_MODE')) ? Configuration::get('SAMEDAY_LIVE_MODE') : '0';
+        if($testing_mode === null){
+            $testing_mode = (Configuration::get('SAMEDAY_LIVE_MODE')) ? Configuration::get('SAMEDAY_LIVE_MODE') : self::DEMO_CODE;
+        }
 
-            if ($testing_mode == '1') {
-                $url_env = SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_PROD'];
-            } else {
-                $url_env = SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_DEMO'];
-            }
+        if ($testing_mode == self::PRODUCTION_CODE) {
+            $url_env_param = 'API_URL_PROD';
+        } else {
+            $url_env_param = 'API_URL_DEMO';
+        }
+
+        if($url_env === null) {
+            $country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ? Configuration::get('SAMEDAY_HOST_COUNTRY') : self::ROMANIA_CODE;
+            $url_env = SamedayConstants::SAMEDAY_ENVS[$country][$url_env_param];
         }
 
         return new SamedayClient(
@@ -1995,16 +2003,23 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $form_values
-     * @param $env_mode
+     * @param $testing_mode
+     * @param $country
      * @return bool
+     * @throws SamedaySDKException
      */
     private function loginClient($form_values, $testing_mode, $country)
     {
-        if($testing_mode == '1'){
-            $url = SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_PROD'];
+        if(!in_array($testing_mode, [self::DEMO_CODE, self::PRODUCTION_CODE])) return false;
+        if(!is_array($form_values)) return false;
+        if(!in_array($country, [self::ROMANIA_CODE, self::HUNGARY_CODE])) return false;
+
+        if($testing_mode === self::PRODUCTION_CODE){
+            $url = (!empty(SamedayConstants::SAMEDAY_ENVS)) ? SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_PROD'] : null;
         }else{
-            $url = SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_DEMO'];
+            $url =  (!empty(SamedayConstants::SAMEDAY_ENVS)) ? SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_DEMO'] : null;
         }
+
         $client = $this->getSamedayClient(
             $form_values['SAMEDAY_ACCOUNT_USER'],
             $form_values['SAMEDAY_ACCOUNT_PASSWORD'],
@@ -2027,15 +2042,16 @@ class SamedayCourier extends CarrierModule
     /**
      * @param null $form_values
      * @return bool
+     * @throws SamedaySDKException
      */
     private function connectionLogin($form_values = null)
     {
-        $connected = false;
         if(null === $form_values) $form_values = $this->getConfigFormValues();
-        $arr_envs = SamedayConstants::SAMEDAY_ENVS;
+        $connected = false;
+        $arr_envs = (!empty(SamedayConstants::SAMEDAY_ENVS)) ? SamedayConstants::SAMEDAY_ENVS : null;
         foreach($arr_envs as $index => $arr_env){
-            if($this->loginClient($form_values, '1', $index) === true) $connected = true;
-            if($this->loginClient($form_values, '0', $index) === true) $connected = true;
+            if($this->loginClient($form_values, self::PRODUCTION_CODE, $index) === true) $connected = true;
+            if($this->loginClient($form_values, self::DEMO_CODE, $index) === true) $connected = true;
         }
         return $connected;
     }
