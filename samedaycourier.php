@@ -99,7 +99,9 @@ class SamedayCourier extends CarrierModule
     public const COD = ['Cod', 'Ramburs'];
 
     public const PRODUCTION_CODE = "1";
+    public const PRODUCTION_URL_PARAM = "API_URL_PROD";
     public const DEMO_CODE = "0";
+    public const DEMO_URL_PARAM = "API_URL_DEMO";
     public const ROMANIA_CODE = "ro";
     public const HUNGARY_CODE = "hu";
 
@@ -263,9 +265,9 @@ class SamedayCourier extends CarrierModule
         }
 
         if ($testing_mode == self::PRODUCTION_CODE) {
-            $url_env_param = 'API_URL_PROD';
+            $url_env_param = self::PRODUCTION_URL_PARAM;
         } else {
-            $url_env_param = 'API_URL_DEMO';
+            $url_env_param = self::DEMO_URL_PARAM;
         }
 
         if($url_env === null) {
@@ -2015,9 +2017,9 @@ class SamedayCourier extends CarrierModule
         if(!in_array($country, [self::ROMANIA_CODE, self::HUNGARY_CODE])) return false;
 
         if($testing_mode === self::PRODUCTION_CODE){
-            $url = (!empty(SamedayConstants::SAMEDAY_ENVS)) ? SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_PROD'] : null;
+            $url = (!empty(SamedayConstants::SAMEDAY_ENVS)) ? SamedayConstants::SAMEDAY_ENVS[$country][self::PRODUCTION_URL_PARAM] : null;
         }else{
-            $url =  (!empty(SamedayConstants::SAMEDAY_ENVS)) ? SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_DEMO'] : null;
+            $url =  (!empty(SamedayConstants::SAMEDAY_ENVS)) ? SamedayConstants::SAMEDAY_ENVS[$country][self::DEMO_URL_PARAM] : null;
         }
 
         $client = $this->getSamedayClient(
