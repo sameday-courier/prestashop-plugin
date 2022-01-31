@@ -51,9 +51,6 @@ class SamedayService extends ObjectModel
     /** @var string */
     public $delivery_type_name;
 
-    /** @var string */
-    public $working_days;
-
     /** @var int */
     public $id_carrier;
 
@@ -99,9 +96,6 @@ class SamedayService extends ObjectModel
             ),
             'delivery_type_name'      => array(
                 'type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'
-            ),
-            'working_days'            => array(
-                'type' => self::TYPE_STRING, 'required' => false, 'validate' => 'isCleanHtml'
             ),
             'id_carrier'              => array(
                 'type' => self::TYPE_INT, 'required' => false, 'validate' => 'isUnsignedInt'
