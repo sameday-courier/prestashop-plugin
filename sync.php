@@ -34,7 +34,9 @@ if (!$lastSync) {
 
 $endTimestamp = $lastSync + 7200;
 
-$api = Configuration::get('SAMEDAY_LIVE_MODE') ? SamedayConstants::API_URL_PROD : SamedayConstants::API_URL_DEMO;
+$country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ? Configuration::get('SAMEDAY_HOST_COUNTRY') : 'ro';
+$testingMode = (Configuration::get('SAMEDAY_LIVE_MODE')) ? Configuration::get('SAMEDAY_LIVE_MODE') : '0';
+$api = $testingMode ? SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_PROD'] : SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_DEMO'];
 
 $logger = new FileLogger(0);
 $logger->setFilename(dirname(__FILE__) . '/log/' . date('Ymd') . '_sameday_sync.log');

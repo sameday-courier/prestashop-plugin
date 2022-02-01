@@ -29,7 +29,9 @@ if (Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 1
 
 if (Tools::getValue('awb_id')) {
     $awbId = (int)Tools::getValue('awb_id');
-    $api = Configuration::get('SAMEDAY_LIVE_MODE') ? SamedayConstants::API_URL_PROD : SamedayConstants::API_URL_DEMO;
+    $country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ? Configuration::get('SAMEDAY_HOST_COUNTRY') : 'ro';
+    $testingMode = (Configuration::get('SAMEDAY_LIVE_MODE')) ? Configuration::get('SAMEDAY_LIVE_MODE') : '0';
+    $api = $testingMode ? SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_PROD'] : SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_DEMO'];
 
     $sameday = new \Sameday\Sameday(
         new \Sameday\SamedayClient(
