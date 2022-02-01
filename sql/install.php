@@ -26,7 +26,6 @@ $sql[] = "CREATE TABLE `". _DB_PREFIX_ . SamedayService::TABLE_NAME ."` (
           `price` decimal(10,2) NOT NULL DEFAULT '0.00',
           `free_delivery` tinyint(1) NOT NULL DEFAULT '0',
           `free_shipping_threshold` decimal(10,2) NULL DEFAULT '0.00',
-          `working_days` text,
           `id_carrier` int(11) DEFAULT NULL,
           `status` tinyint(1) NOT NULL DEFAULT '0',
           `disabled` tinyint(1) NOT NULL DEFAULT '0',

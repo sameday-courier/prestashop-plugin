@@ -387,7 +387,6 @@ class SamedayCourier extends CarrierModule
         $service->price = Tools::getValue('price');
         $service->free_delivery = Tools::getValue('free_delivery');
         $service->free_shipping_threshold = Tools::getValue('free_shipping_threshold');
-        $service->working_days = serialize(Tools::getValue('working_days'));
         $service->status = Tools::getValue('status');
         if ($service->validateFields()) {
             $service->save();
@@ -921,7 +920,6 @@ class SamedayCourier extends CarrierModule
                         'name'    => 'status',
                         'label'   => $this->l('Status'),
                         'id'      => 'service_status',
-                        'desc'    => $this->l('For interval insert below working days with start and end hours'),
                         'options' => array(
                             'query' => array(
                                 array(
@@ -931,22 +929,11 @@ class SamedayCourier extends CarrierModule
                                 array(
                                     'id_option' => 1,
                                     'name'      => $this->l('Always'),
-                                ),
-                                array(
-                                    'id_option' => 2,
-                                    'name'      => $this->l('Interval'),
-                                ),
+                                )
                             ),
                             'id'    => 'id_option',
                             'name'  => 'name',
                         ),
-                    ),
-                    array(
-                        'type'     => 'calendar',
-                        'name'     => 'working_days',
-                        'label'    => $this->l('Working days'),
-                        'class'    => 'interval',
-                        'required' => false,
                     ),
                 ),
                 'submit'  => array(
@@ -979,7 +966,6 @@ class SamedayCourier extends CarrierModule
             'price'                   => $service->price,
             'free_delivery'           => $service->free_delivery,
             'free_shipping_threshold' => $service->free_shipping_threshold,
-            'working_days'            => unserialize($service->working_days),
             'status'                  => $service->status,
         );
 
@@ -1256,23 +1242,10 @@ class SamedayCourier extends CarrierModule
     private function carrierDeliveryAvailable($service)
     {
         if ($service &&
-            $service['status'] != SamedayService::STATUS_INTERVAL_ACTIVE &&
             $service['live_mode'] == Configuration::get('SAMEDAY_LIVE_MODE', 0)
         ) {
             return true;
         }
-
-        $workingTime = unserialize($service['working_days']);
-        $now = new \DateTime();
-        $weekDay = $now->format("w");
-        if (!empty($workingTime['days'][$weekDay]) &&
-            !empty($workingTime['hours'][$weekDay]['from']) &&
-            !empty($workingTime['hours'][$weekDay]['from'])) {
-            return time() >= strtotime($workingTime['hours'][$weekDay]['from']) &&
-                time() <= (strtotime($workingTime['hours'][$weekDay]['to']) + 59);
-        }
-
-        return false;
     }
 
     /**
