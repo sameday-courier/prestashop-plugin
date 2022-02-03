@@ -35,32 +35,25 @@
         }
 
         docReady(function () {
+            window.LockerPlugin.init();
+            lockerPLugin = window.LockerPlugin.getInstance();
+
             let name = 'samedaycourier_locker_id';
+            let showLockerMap = document.getElementById('showLockerMap');
 
             const setCookie = (lockerId) => {
                 document.cookie = name + '=' + lockerId;
             }
 
-            const getLockerId = () => {
-                let cookies = document.cookie.split(';');
-                let locker_id = '';
-                cookies.forEach(function (value) {
-                    if (value.indexOf('locker_id') > 0) {
-                        locker_id = value.split('=')[1];
-                    }
-                });
-
-                return locker_id;
-            }
-
-            let lockerIdSelector = document.getElementById('lockerIdSelector');
-            lockerIdSelector.value = getLockerId();
-
-            lockerIdSelector.addEventListener('change', function () {
-                if ('' !== lockerIdSelector.value) {
-                    setCookie(lockerIdSelector.value);
-                }
+            showLockerMap.addEventListener('click', function () {
+                lockerPLugin.open();
             }, false);
+
+            lockerPLugin.subscribe((locker) => {
+                setCookie(locker.lockerId);
+
+                lockerPLugin.close();
+            });
         });
     {/literal}
 </script>

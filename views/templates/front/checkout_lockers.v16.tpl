@@ -22,6 +22,7 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  * International Registered Trademark & Property of PrestaShop SA
  *}
+<script src="https://cdnsameday.azureedge.net/preprod-locker-plugin/lockerpluginsdk.js"></script>
 {include file='./_partials/checkout_lockers.tpl'}
 {if $lockers|count}
     <table class="resume table table-bordered">
@@ -29,15 +30,9 @@
             <tr>
                 <td>{l s='Select locker' mod='samedaycourier'}</td>
                 <td>
-                    <select name="samedaycourier_locker_id" id="lockerIdSelector">
-                        <option value=""> {l s='Select locker' mod='samedaycourier'} </option>
-                        {foreach from=$lockers key=city item = cityLockers}
-                            <optgroup label="{$city|escape:'htmlall':'UTF-8'}">
-                            {foreach from=$cityLockers item=locker}
-                                <option value="{$locker.id|escape:'htmlall':'UTF-8'}" {if $locker.id==$lockerId}selected="selected"{/if}>{$locker.name|escape:'htmlall':'UTF-8'} - {$locker.address|escape:'htmlall':'UTF-8'} </option>
-                            {/foreach}
-                        {/foreach}
-                    </select>
+                    <button type="button" name="samedaycourier_locker_id" id="showLockerMap" class="button-exclusive btn btn-default">
+                        {l s='Show locker map' mod='samedaycourier'}
+                    </button>
                 </td>
             </tr>
         </tbody>
