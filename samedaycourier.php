@@ -14,9 +14,6 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
-use Sameday\Exceptions\SamedaySDKException;
-use Sameday\SamedayClient;
-
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -78,7 +75,7 @@ class SamedayCourier extends CarrierModule
      */
     protected $servicePriceCache = array();
 
-    public const TEMPLATE_VERSION = [
+    const TEMPLATE_VERSION = [
         '1.6' => [
             'locker_options' => 'checkout_lockers.v16.tpl',
             'open_package_option' => 'checkout_open_package.v16.tpl'
@@ -89,21 +86,21 @@ class SamedayCourier extends CarrierModule
         ]
     ];
 
-    public const OPENPACKAGECODE = 'OPCG';
+    const OPENPACKAGECODE = 'OPCG';
 
-    public const LOCKER_NEXT_DAY = 'LN';
+    const LOCKER_NEXT_DAY = 'LN';
 
     /**
      * Cash on delivery
      */
-    public const COD = ['Cod', 'Ramburs'];
+    const COD = ['Cod', 'Ramburs'];
 
-    public const PRODUCTION_CODE = "1";
-    public const PRODUCTION_URL_PARAM = "API_URL_PROD";
-    public const DEMO_CODE = "0";
-    public const DEMO_URL_PARAM = "API_URL_DEMO";
-    public const ROMANIA_CODE = "ro";
-    public const HUNGARY_CODE = "hu";
+    const PRODUCTION_CODE = "1";
+    const PRODUCTION_URL_PARAM = "API_URL_PROD";
+    const DEMO_CODE = "0";
+    const DEMO_URL_PARAM = "API_URL_DEMO";
+    const ROMANIA_CODE = "ro";
+    const HUNGARY_CODE = "hu";
 
     /**
      * SamedayCourier constructor.
@@ -247,10 +244,10 @@ class SamedayCourier extends CarrierModule
      * @param null $password
      * @param null $url_env
      * @param null $testing_mode
-     * @return SamedayClient
-     * @throws SamedaySDKException
+     * @return Sameday\SamedayClient
+     * @throws Sameday\Exceptions\SamedaySDKException
      */
-    private function getSamedayClient($user = null, $password = null, $url_env = null, $testing_mode = null): SamedayClient
+    private function getSamedayClient($user = null, $password = null, $url_env = null, $testing_mode = null)
     {
         if ($user === null) {
             $user = Configuration::get('SAMEDAY_ACCOUNT_USER');
@@ -275,7 +272,7 @@ class SamedayCourier extends CarrierModule
             $url_env = SamedayConstants::SAMEDAY_ENVS[$country][$url_env_param];
         }
 
-        return new SamedayClient(
+        return new Sameday\SamedayClient(
             $user,
             $password,
             $url_env,
@@ -289,7 +286,7 @@ class SamedayCourier extends CarrierModule
     /**
      * @throws Sameday\Exceptions\SamedaySDKException
      */
-    private function importServices(): void
+    private function importServices()
     {
         $client = $this->getSamedayClient();
 
@@ -1435,7 +1432,7 @@ class SamedayCourier extends CarrierModule
      * @return false|string
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
-     * @throws Sameday\Exceptions\SamedaySDKException
+     * @throws \Sameday\Exceptions\SamedaySDKException
      * @throws \Sameday\Exceptions\SamedayAuthenticationException
      * @throws \Sameday\Exceptions\SamedayAuthorizationException
      * @throws \Sameday\Exceptions\SamedayBadRequestException
@@ -2031,9 +2028,6 @@ class SamedayCourier extends CarrierModule
         return $connected;
     }
 
-    /**
-     * @throws Sameday\Exceptions\SamedaySDKException
-     */
     private function testConnection()
     {
         try {

@@ -19,7 +19,7 @@ use Sameday\PersistentData\SamedayPersistentDataInterface;
 
 class SamedayPersistenceDataHandler implements SamedayPersistentDataInterface
 {
-    protected const KEYS = [
+    const KEYS = [
         SamedayClient::KEY_TOKEN => 'SAMEDAY_TOKEN',
         SamedayClient::KEY_TOKEN_EXPIRES => 'SAMEDAY_TOKEN_EXPIRES_AT'
     ];
@@ -29,7 +29,7 @@ class SamedayPersistenceDataHandler implements SamedayPersistentDataInterface
      *
      * @return string
      */
-    public function get($key): string
+    public function get($key)
     {
         return Configuration::get(self::KEYS[$key]);
     }
@@ -39,7 +39,7 @@ class SamedayPersistenceDataHandler implements SamedayPersistentDataInterface
      *
      * @param mixed $value
      */
-    public function set($key, $value): void
+    public function set($key, $value)
     {
         Configuration::updateValue(self::KEYS[$key], $value);
     }
