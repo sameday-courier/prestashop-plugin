@@ -1510,7 +1510,7 @@ class SamedayCourier extends CarrierModule
      *
      * @return bool
      */
-    private function checkForCashPayment(string $paymentType): bool
+    private function checkForCashPayment(string $paymentType)
     {
         foreach (self::COD as $value) {
             if (stripos($paymentType, $value) !== false) {
