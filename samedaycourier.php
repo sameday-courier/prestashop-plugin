@@ -109,7 +109,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.13';
+        $this->version = '1.4.14';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
