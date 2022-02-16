@@ -46,6 +46,7 @@ class SamedayOrderLocker extends ObjectModel
         if (!empty($lockerId)){
             return $lockerId;
         }
-        
+
+        return null;
     }
 }

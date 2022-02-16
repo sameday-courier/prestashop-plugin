@@ -1770,7 +1770,7 @@ class SamedayCourier extends CarrierModule
             Tools::getValue('sameday_observation'),
             '',
             '',
-            null !== $lockerId
+            $lockerId
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
