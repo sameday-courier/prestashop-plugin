@@ -109,7 +109,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.14';
+        $this->version = '1.4.15';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1495,7 +1495,7 @@ class SamedayCourier extends CarrierModule
                 'repayment'     => $repayment,
                 'awb'           => $awb,
                 'allowParcel'   => $allowParcel,
-                'allowLocker'   => ((int) SamedayOrderLocker::getLockerForOrder($order->id)) > 0,
+                'allowLocker'   => ((int) SamedayOrderLocker::getLockerIdForOrder($order->id)) > 0,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
                 'ajaxRoute'     => $this->ajaxRoute,
                 'messages' => $this->messages,
@@ -1739,7 +1739,7 @@ class SamedayCourier extends CarrierModule
             $company
         ); 
 
-        $locker = SamedayOrderLocker::getLockerForOrder($order->id);
+        $lockerId = SamedayOrderLocker::getLockerIdForOrder($order->id);
 
         $serviceTaxIds = array();
         if (!empty(Tools::getValue('sameday_open_package'))) {
@@ -1770,7 +1770,7 @@ class SamedayCourier extends CarrierModule
             Tools::getValue('sameday_observation'),
             '',
             '',
-            null !== $locker ? $locker['id_locker'] : null
+            null !== $lockerId ? $lockerId['id_locker'] : null
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
