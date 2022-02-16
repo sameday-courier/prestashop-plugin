@@ -1738,19 +1738,16 @@ class SamedayCourier extends CarrierModule
             $customer->email,
             $company
         );
-
+        
         $lockerId = (int) SamedayOrderLocker::getLockerForOrder($order->id);
-        $locker = null;
-        if ($lockerId > 0) {
-            $locker = SamedayLocker::findBySamedayId($lockerId);
-        }
-
+        $locker = SamedayOrderLocker::getLockerForOrder($order->id);
+        
         if ($locker) {
             $recipient = new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
-                $locker['city'],
-                $locker['county'],
+                $address->city,
+                $state->name,
+                trim($address->address1 . ' ' . $address->address2),
                 $locker['address'],
-                $address->firstname . ' ' . $address->lastname,
                 !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone,
                 $customer->email,
                 $company
