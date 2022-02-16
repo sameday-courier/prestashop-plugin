@@ -1737,22 +1737,9 @@ class SamedayCourier extends CarrierModule
             !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone,
             $customer->email,
             $company
-        );
-        
-        $lockerId = (int) SamedayOrderLocker::getLockerForOrder($order->id);
+        ); 
+
         $locker = SamedayOrderLocker::getLockerForOrder($order->id);
-        
-        if ($locker) {
-            $recipient = new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
-                $address->city,
-                $state->name,
-                trim($address->address1 . ' ' . $address->address2),
-                $locker['address'],
-                !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone,
-                $customer->email,
-                $company
-            );
-        }
 
         $serviceTaxIds = array();
         if (!empty(Tools::getValue('sameday_open_package'))) {
