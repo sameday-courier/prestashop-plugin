@@ -1739,7 +1739,7 @@ class SamedayCourier extends CarrierModule
             $company
         ); 
 
-        $lockerId = SamedayOrderLocker::getLockerIdForOrder($order->id);
+        $lockerId = (int) SamedayOrderLocker::getLockerIdForOrder($order->id);
 
         $serviceTaxIds = array();
         if (!empty(Tools::getValue('sameday_open_package'))) {
