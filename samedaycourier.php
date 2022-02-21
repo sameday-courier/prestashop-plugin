@@ -1213,6 +1213,7 @@ class SamedayCourier extends CarrierModule
                 null,
                 null,
                 null,
+                (!empty($address->postcode)) ? $address->postcode : null,
                 null
             ),
             0,
@@ -1736,6 +1737,7 @@ class SamedayCourier extends CarrierModule
             $address->firstname . ' ' . $address->lastname,
             !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone,
             $customer->email,
+            (!empty($address->postcode)) ? $address->postcode : null,
             $company
         ); 
 

@@ -42,6 +42,11 @@ class EntityObject
     protected $company;
 
     /**
+     * @var null|string
+     */
+    protected $postalCode;
+
+    /**
      * EntityObject constructor.
      *
      * @param string $city
@@ -49,6 +54,7 @@ class EntityObject
      * @param string $address
      * @param string $name
      * @param string $phone
+     * @param string|null $postalCode
      * @param CompanyEntityObject|null $company
      */
     public function __construct(
@@ -57,6 +63,7 @@ class EntityObject
         $address,
         $name,
         $phone,
+        $postalCode = null,
         CompanyEntityObject $company = null
     ) {
         $this->city = $city;
@@ -64,6 +71,7 @@ class EntityObject
         $this->address = $address;
         $this->name = $name;
         $this->phone = $phone;
+        $this->postalCode = $postalCode;
         $this->company = $company;
     }
 
@@ -103,6 +111,8 @@ class EntityObject
                 'companyBank' => $this->company->getBank(),
             ]);
         }
+
+        $fields['postalCode'] = $this->postalCode;
 
         return $fields;
     }
@@ -223,6 +233,26 @@ class EntityObject
     public function setCompany($company)
     {
         $this->company = $company;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getPostalCode()
+    {
+        return $this->postalCode;
+    }
+
+    /**
+     * @param $postalCode
+     *
+     * @return $this
+     */
+    public function setPostalCode($postalCode)
+    {
+        $this->postalCode = $postalCode;
 
         return $this;
     }

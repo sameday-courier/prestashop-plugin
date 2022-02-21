@@ -21,6 +21,10 @@ final class SamedayConstants
             'API_URL_PROD' => 'https://api.sameday.ro',
             'API_URL_DEMO' => 'https://sameday-api.demo.zitec.com',
         ],
+        'hu' => [
+            'API_URL_PROD' => 'https://api.sameday.hu',
+            'API_URL_DEMO' => 'https://sameday-api-hu.demo.zitec.com',
+        ],
     ];
 
     const DEBUG = 0;
