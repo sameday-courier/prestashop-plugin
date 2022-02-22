@@ -1213,8 +1213,8 @@ class SamedayCourier extends CarrierModule
                 null,
                 null,
                 null,
-                (!empty($address->postcode)) ? $address->postcode : null,
-                null
+                null,
+                (!empty($address->postcode)) ? $address->postcode : null
             ),
             0,
             $params->getOrderTotal(true, 4),
@@ -1737,8 +1737,8 @@ class SamedayCourier extends CarrierModule
             $address->firstname . ' ' . $address->lastname,
             !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone,
             $customer->email,
-            (!empty($address->postcode)) ? $address->postcode : null,
-            $company
+            $company,
+            (!empty($address->postcode)) ? $address->postcode : null
         ); 
 
         $lockerId = (int) SamedayOrderLocker::getLockerIdForOrder($order->id);
