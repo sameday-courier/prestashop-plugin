@@ -40,18 +40,25 @@
 
             let name = 'samedaycourier_locker_id';
             let showLockerMap = document.getElementById('showLockerMap');
+            let showLockerSelector = document.getElementById('lockerIdSelector');
 
             const setCookie = (lockerId) => {
                 document.cookie = name + '=' + lockerId;
             }
 
-            showLockerMap.addEventListener('click', function () {
-                lockerPLugin.open();
-            }, false);
+            if (typeof(showLockerMap) != 'undefined' && showLockerMap != null){
+                showLockerMap.addEventListener('click', function () {
+                    lockerPLugin.open();
+                }, false);
+            }else{
+                showLockerSelector.onchange = (event) => {
+                    let lockerId = event.target.value;
+                    setCookie(lockerId);
+                }
+            }
 
             lockerPLugin.subscribe((locker) => {
                 setCookie(locker.lockerId);
-
                 lockerPLugin.close();
             });
         });
