@@ -77,11 +77,13 @@ class SamedayCourier extends CarrierModule
 
     const TEMPLATE_VERSION = [
         '1.6' => [
-            'locker_options' => 'checkout_lockers.v16.tpl',
+            'locker_options_map' => 'checkout_lockers.v16.tpl',
+            'locker_options_selector' => 'checkout_lockers_selector.v16.tpl',
             'open_package_option' => 'checkout_open_package.v16.tpl'
         ],
         '1.7' => [
-            'locker_options' => 'checkout_lockers.v17.tpl',
+            'locker_options_map' => 'checkout_lockers.v17.tpl',
+            'locker_options_selector' => 'checkout_lockers_selector.v17.tpl',
             'open_package_option' => 'checkout_open_package.v17.tpl'
         ]
     ];
@@ -109,7 +111,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.16';
+        $this->version = '1.4.17';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -184,6 +186,7 @@ class SamedayCourier extends CarrierModule
         Configuration::deleteByName('SAMEDAY_DEBUG_MODE');
         Configuration::deleteByName('SAMEDAY_ESTIMATED_COST');
         Configuration::deleteByName('SAMEDAY_OPEN_PACKAGE');
+        Configuration::deleteByName('SAMEDAY_LOCKERS_MAP');
         Configuration::deleteByName('SAMEDAY_OPEN_PACKAGE_LABEL');
         Configuration::deleteByName('SAMEDAY_LOCKER_MAX_ITEMS');
         Configuration::deleteByName('SAMEDAY_AWB_PDF_FORMAT');
@@ -551,6 +554,25 @@ class SamedayCourier extends CarrierModule
                         ),
                     ),
                     array(
+                        'type'    => 'switch',
+                        'label'   => $this->l('Use locker map'),
+                        'name'    => 'SAMEDAY_LOCKERS_MAP',
+                        'is_bool' => true,
+                        'desc'    => $this->l('For this moment, lockers map is available only for Romania and is not responsive.'),
+                        'values'  => array(
+                            array(
+                                'id'    => 'active_on',
+                                'value' => true,
+                                'label' => $this->l('Enabled'),
+                            ),
+                            array(
+                                'id'    => 'active_off',
+                                'value' => false,
+                                'label' => $this->l('Disabled'),
+                            ),
+                        ),
+                    ),
+                    array(
                         'col'    => 2,
                         'type'   => 'text',
                         'name'   => 'SAMEDAY_OPEN_PACKAGE_LABEL',
@@ -629,6 +651,10 @@ class SamedayCourier extends CarrierModule
             'SAMEDAY_OPEN_PACKAGE' => Tools::getValue(
                 'SAMEDAY_OPEN_PACKAGE',
                 Configuration::get('SAMEDAY_OPEN_PACKAGE', null)
+            ),
+            'SAMEDAY_LOCKERS_MAP' => Tools::getValue(
+                'SAMEDAY_LOCKERS_MAP',
+                Configuration::get('SAMEDAY_LOCKERS_MAP', null)
             ),
             'SAMEDAY_OPEN_PACKAGE_LABEL' => Tools::getValue(
                 'SAMEDAY_OPEN_PACKAGE_LABEL',
@@ -1627,8 +1653,12 @@ class SamedayCourier extends CarrierModule
 
             $this->smarty->assign('lockers', $lockers);
             $this->smarty->assign('lockerId', $samedaycourier_locker_id);
-
-            return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options'], null);
+            if(Configuration::get('SAMEDAY_LOCKERS_MAP')){
+                return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_map'], null);
+            }else{
+                return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_selector'], null);
+            }
+           
         }
 
         if (

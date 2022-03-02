@@ -29,10 +29,16 @@
         <tbody>
             <tr>
                 <td>{l s='Select locker' mod='samedaycourier'}</td>
-                <td> 
-                    <button type="button" name="samedaycourier_locker_id" id="showLockerMap" class="button-exclusive btn btn-default">
-                        {l s='Show locker map' mod='samedaycourier'}
-                    </button>
+                <td>
+                    <select name="samedaycourier_locker_id" id="lockerIdSelector">
+                        <option value=""> {l s='Select locker' mod='samedaycourier'} </option>
+                        {foreach from=$lockers key=city item = cityLockers}
+                            <optgroup label="{$city|escape:'htmlall':'UTF-8'}">
+                            {foreach from=$cityLockers item=locker}
+                                <option value="{$locker.id|escape:'htmlall':'UTF-8'}" {if $locker.id==$lockerId}selected="selected"{/if}>{$locker.name|escape:'htmlall':'UTF-8'} - {$locker.address|escape:'htmlall':'UTF-8'} </option>
+                            {/foreach}
+                        {/foreach}
+                    </select>
                 </td>
             </tr>
         </tbody>
