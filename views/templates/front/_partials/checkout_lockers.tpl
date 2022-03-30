@@ -37,8 +37,8 @@
         docReady(function () {
             
             const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have an unique clientId
-            const countryCode= document.getElementById('showLockerMap').getAttribute('data-country') //country for which the plugin is used
-            const langCode= document.getElementById('showLockerMap').getAttribute('data-country').toLowerCase();  //language of the plugin
+            const countryCode= document.getElementById('showLockerMap').getAttribute('data-country').toUpperCase(); //country for which the plugin is used
+            const langCode= document.getElementById('showLockerMap').getAttribute('data-country')  //language of the plugin
             window.LockerPlugin.init({ clientId: clientId, countryCode: countryCode, langCode: langCode });
             
             lockerPLugin = window.LockerPlugin.getInstance();
