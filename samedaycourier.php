@@ -77,12 +77,14 @@ class SamedayCourier extends CarrierModule
 
     const TEMPLATE_VERSION = [
         '1.6' => [
-            'locker_options_map' => 'checkout_lockers.v16.tpl',
+            'locker_options_map_ro' => 'checkout_lockers.v16.tpl',
+            'locker_options_map_hu' => 'checkout_lockers_hu.v16.tpl',
             'locker_options_selector' => 'checkout_lockers_selector.v16.tpl',
             'open_package_option' => 'checkout_open_package.v16.tpl'
         ],
         '1.7' => [
-            'locker_options_map' => 'checkout_lockers.v17.tpl',
+            'locker_options_map_ro' => 'checkout_lockers.v17.tpl',
+            'locker_options_map_hu' => 'checkout_lockers_hu.v17.tpl',
             'locker_options_selector' => 'checkout_lockers_selector.v17.tpl',
             'open_package_option' => 'checkout_open_package.v17.tpl'
         ]
@@ -111,7 +113,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.17';
+        $this->version = '1.4.18';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1654,7 +1656,7 @@ class SamedayCourier extends CarrierModule
             $this->smarty->assign('lockers', $lockers);
             $this->smarty->assign('lockerId', $samedaycourier_locker_id);
             if(Configuration::get('SAMEDAY_LOCKERS_MAP')){
-                return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_map'], null);
+                return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_map_'.Configuration::get('SAMEDAY_HOST_COUNTRY').''], null);
             }else{
                 return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_selector'], null);
             }

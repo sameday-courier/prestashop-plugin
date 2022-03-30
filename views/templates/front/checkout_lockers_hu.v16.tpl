@@ -25,12 +25,16 @@
 <script src="https://cdnsameday.azureedge.net/preprod-locker-plugin/lockerpluginsdk.js"></script>
 {include file='./_partials/checkout_lockers.tpl'}
 {if $lockers|count}
-    <div class="col-sm-2">
-        {l s='Select locker' mod='samedaycourier'}
-    </div>
-    <div class="col-sm-10">
-        <button type="button" name="samedaycourier_locker_id" id="showLockerMap" data-country='RO' class="button-exclusive btn btn-default">
-            {l s='Show locker map' mod='samedaycourier'}
-        </button>
-    </div>
+    <table class="resume table table-bordered">
+        <tbody>
+            <tr>
+                <td>{l s='Select locker' mod='samedaycourier'}</td>
+                <td> 
+                    <button type="button" name="samedaycourier_locker_id" id="showLockerMap" data-country='HU' class="button-exclusive btn btn-default">
+                        {l s='Show locker map' mod='samedaycourier'}
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 {/if}
