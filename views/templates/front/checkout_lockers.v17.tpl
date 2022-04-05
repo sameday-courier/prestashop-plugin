@@ -22,14 +22,14 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  * International Registered Trademark & Property of PrestaShop SA
  *}
-<script src="https://cdnsameday.azureedge.net/preprod-locker-plugin/lockerpluginsdk.js"></script>
+<script src="https://cdn.sameday.ro/locker-plugin/lockerpluginsdk.js"></script>
 {include file='./_partials/checkout_lockers.tpl'}
 {if $lockers|count}
     <div class="col-sm-2">
         {l s='Select locker' mod='samedaycourier'}
     </div>
-    <div class="col-sm-10"> 
-        <button type="button" name="samedaycourier_locker_id" id="showLockerMap" class="button-exclusive btn btn-default">
+    <div class="col-sm-10">
+        <button type="button" name="samedaycourier_locker_id" id="showLockerMap" data-country='{$hostCountry}' class="button-exclusive btn btn-default">
             {l s='Show locker map' mod='samedaycourier'}
         </button>
     </div>
