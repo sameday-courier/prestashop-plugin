@@ -47,15 +47,14 @@
                 if(getCookie("samedaycourier_locker_name").length > 1){
                     let lockerNamedcookie = getCookie("samedaycourier_locker_name");
                     let lockerAddresscookie = getCookie("samedaycourier_locker_address");
-                    document.getElementById("locker_name").style.display = "block";
-                    document.getElementById("locker_address").style.display = "block";
                     document.getElementById("locker_name").value = lockerNamedcookie;
                     document.getElementById("locker_address").value = lockerAddresscookie;
+
+                    document.getElementById("showLockerDetails").style.display = "block";
                     document.getElementById("showLockerDetails").innerHTML = lockerNamedcookie + '<br/>' + lockerAddresscookie;
 
                 }else{
-                    document.getElementById("locker_name").style.display = "none";
-                    document.getElementById("locker_address").style.display = "none";
+                    document.getElementById("showLockerDetails").style.display = "none";
                 }
             }
             const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have an unique clientId
@@ -88,9 +87,9 @@
                 setCookie("samedaycourier_locker_name", lockerNamed, 30);
                 document.getElementById("locker_address").value = lockerAddress;
                 setCookie("samedaycourier_locker_address", lockerAddress, 30);
-                document.getElementById("locker_name").style.display = "block";
-                document.getElementById("locker_address").style.display = "block";
-                 document.getElementById("showLockerDetails").innerHTML = lockerNamed + '<br/>' + lockerAddress;
+
+                document.getElementById("showLockerDetails").style.display = "block";
+                document.getElementById("showLockerDetails").innerHTML = lockerNamed + '<br/>' + lockerAddress;
                 lockerPLugin.close();
             });
         });
