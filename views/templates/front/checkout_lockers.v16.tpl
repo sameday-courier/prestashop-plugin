@@ -34,6 +34,9 @@
                         {l s='Show locker map' mod='samedaycourier'}
                     </button>
                 </td>
+                <td>
+                    <span style="padding-bottom: 10px;font-size: 13px; font-weight: bold; line-height: 22px;width:100%;display:block" id="showLockerDetails"></span>
+                </td>
             </tr>
         </tbody>
     </table>

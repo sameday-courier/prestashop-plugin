@@ -28,9 +28,14 @@
     <div class="col-sm-2">
         {l s='Select locker' mod='samedaycourier'}
     </div>
-    <div class="col-sm-10">
+    <div class="col-sm-4">
         <button type="button" name="samedaycourier_locker_id" id="showLockerMap" data-country='{$hostCountry}' class="button-exclusive btn btn-default">
             {l s='Show locker map' mod='samedaycourier'}
-        </button>
+        </button>     
+    </div>
+    <div class="col-sm-6">
+        <input type="hidden" id="locker_name" name="locker_name" value="">
+        <input type="hidden" id="locker_address" name="locker_address" value=""> 
+        <span style="padding-bottom: 10px;font-size: 13px; font-weight: bold; line-height: 22px;width:100%;display:block" id="showLockerDetails"></span>
     </div>
 {/if}
