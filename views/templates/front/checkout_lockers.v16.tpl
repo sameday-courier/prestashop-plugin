@@ -35,6 +35,8 @@
                     </button>
                 </td>
                 <td>
+                    <input type="hidden" id="locker_name" name="locker_name" value="">
+                    <input type="hidden" id="locker_address" name="locker_address" value="">
                     <span style="padding-bottom: 10px;font-size: 13px; font-weight: bold; line-height: 22px;width:100%;display:block" id="showLockerDetails"></span>
                 </td>
             </tr>

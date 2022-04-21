@@ -1647,7 +1647,7 @@ class SamedayCourier extends CarrierModule
         if ($service['code'] === self::LOCKER_NEXT_DAY) {
             $cities = SamedayLocker::getCities();
             $lockers = array();
-            $hostCountry = Configuration::get('SAMEDAY_HOST_COUNTRY');
+            $hostCountry = Configuration::get('SAMEDAY_HOST_COUNTRY') ?? 'ro'; // Default will always be 'ro'
             foreach ($cities as $city) {
                 $lockers[$city['city'] . ' (' . $city['county'] . ')'] = SamedayLocker::getLockersByCity($city['city']);
             }
