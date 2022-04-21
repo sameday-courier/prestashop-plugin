@@ -57,13 +57,15 @@
                     document.getElementById("showLockerDetails").style.display = "none";
                 }
             }
-            const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have an unique clientId
-            const countryCode= document.getElementById('showLockerMap').getAttribute('data-country').toUpperCase(); //country for which the plugin is used
-            const langCode= document.getElementById('showLockerMap').getAttribute('data-country')  //language of the plugin
-            window.LockerPlugin.init({ clientId: clientId, countryCode: countryCode, langCode: langCode });
-            
-            lockerPLugin = window.LockerPlugin.getInstance();
 
+            if (isset( () => document.getElementById("showLockerMap"))) {
+                const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have an unique clientId
+                const countryCode= document.getElementById('showLockerMap').getAttribute('data-country').toUpperCase(); //country for which the plugin is used
+                const langCode= document.getElementById('showLockerMap').getAttribute('data-country')  //language of the plugin
+                window.LockerPlugin.init({ clientId: clientId, countryCode: countryCode, langCode: langCode });
+                
+                lockerPLugin = window.LockerPlugin.getInstance();
+            }
             let name = 'samedaycourier_locker_id';
             let showLockerMap = document.getElementById('showLockerMap');
             let showLockerSelector = document.getElementById('lockerIdSelector');
@@ -75,23 +77,26 @@
             }else{
                 showLockerSelector.onchange = (event) => {
                     let lockerId = event.target.value;
-                    setCookie("samedaycourier_locker_id", locker.lockerId, 30);
+                     alert(lockerId);
+                    setCookie("samedaycourier_locker_id", lockerId, 30);
                 }
             }
 
-            lockerPLugin.subscribe((locker) => {
-                let lockerNamed = locker.name;
-                let lockerAddress = locker.address;
-                setCookie("samedaycourier_locker_id", locker.lockerId, 30);
-                document.getElementById("locker_name").value = lockerNamed;
-                setCookie("samedaycourier_locker_name", lockerNamed, 30);
-                document.getElementById("locker_address").value = lockerAddress;
-                setCookie("samedaycourier_locker_address", lockerAddress, 30);
+            if (isset( () => document.getElementById("showLockerMap"))) {
+                lockerPLugin.subscribe((locker) => {
+                    let lockerNamed = locker.name;
+                    let lockerAddress = locker.address;
+                    setCookie("samedaycourier_locker_id", locker.lockerId, 30);
+                    document.getElementById("locker_name").value = lockerNamed;
+                    setCookie("samedaycourier_locker_name", lockerNamed, 30);
+                    document.getElementById("locker_address").value = lockerAddress;
+                    setCookie("samedaycourier_locker_address", lockerAddress, 30);
 
-                document.getElementById("showLockerDetails").style.display = "block";
-                document.getElementById("showLockerDetails").innerHTML = lockerNamed + '<br/>' + lockerAddress;
-                lockerPLugin.close();
-            });
+                    document.getElementById("showLockerDetails").style.display = "block";
+                    document.getElementById("showLockerDetails").innerHTML = lockerNamed + '<br/>' + lockerAddress;
+                    lockerPLugin.close();
+                });
+            }
         });
 
         const setCookie = (key, value, days) => {

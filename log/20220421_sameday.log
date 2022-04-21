@@ -1,0 +1,176 @@
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:49:50: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:49:50: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 1
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:49:50: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:49:50: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 2
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:49:54: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:49:54: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 3
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:49:55: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:49:55: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 4
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:49:55: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:49:55: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 5
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:49:56: Import lockers
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:49:56: Sameday\Requests\SamedayGetLockersRequest Object
+(
+    [lockerIds:protected] => Array
+        (
+        )
+
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:50:31: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:50:31: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 1
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:50:32: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:50:32: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 2
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:50:32: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:50:32: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 3
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:50:33: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:50:33: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 4
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:50:33: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:50:33: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 5
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:50:33: Import lockers
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:50:33: Sameday\Requests\SamedayGetLockersRequest Object
+(
+    [lockerIds:protected] => Array
+        (
+        )
+
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:51:47: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:51:47: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 1
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:51:47: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:51:47: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 2
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:51:48: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:51:48: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 3
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:51:48: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:51:48: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 4
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:51:49: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:51:49: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 5
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:51:49: Import lockers
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:51:49: Sameday\Requests\SamedayGetLockersRequest Object
+(
+    [lockerIds:protected] => Array
+        (
+        )
+
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:57:23: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:57:23: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 1
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:57:24: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:57:24: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 2
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:57:25: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:57:25: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 3
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:57:25: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:57:25: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 4
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:57:25: Import pickup points
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:57:25: Sameday\Requests\SamedayGetPickupPointsRequest Object
+(
+    [page:protected] => 5
+    [countPerPage:protected] => 50
+)
+
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:57:26: Import lockers
+*DEBUG* 	v1.7.8.2	2022/04/21 - 07:57:26: Sameday\Requests\SamedayGetLockersRequest Object
+(
+    [lockerIds:protected] => Array
+        (
+        )
+
+)
+
