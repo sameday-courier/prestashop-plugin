@@ -77,7 +77,6 @@
             }else{
                 showLockerSelector.onchange = (event) => {
                     let lockerId = event.target.value;
-                     alert(lockerId);
                     setCookie("samedaycourier_locker_id", lockerId, 30);
                 }
             }
