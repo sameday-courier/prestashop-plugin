@@ -70,14 +70,14 @@
             let showLockerMap = document.getElementById('showLockerMap');
             let showLockerSelector = document.getElementById('lockerIdSelector');
            
-            if (typeof(showLockerMap) != 'undefined' && showLockerMap != null){
-                showLockerMap.addEventListener('click', function () {
+            if (isset( () => showLockerMap)) {
+                showLockerMap.addEventListener('click', () => {
                     lockerPLugin.open();
                 }, false);
-            }else{
+            } else {
                 showLockerSelector.onchange = (event) => {
                     let lockerId = event.target.value;
-                    setCookie("samedaycourier_locker_id", lockerId, 30);
+                    setCookie(name, lockerId, 30);
                 }
             }
 
