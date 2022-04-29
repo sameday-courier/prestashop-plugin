@@ -111,7 +111,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.19';
+        $this->version = '1.4.20';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -168,7 +168,9 @@ class SamedayCourier extends CarrierModule
             $this->registerHook('displayAdminAfterHeader') &&
             $this->registerHook($hookDisplayAdminOrder) &&
             $this->registerHook('actionValidateOrder') &&
-            $this->registerHook('actionCarrierProcess');
+            $this->registerHook('actionCarrierProcess') &&
+            $this->registerHook('actionValidateStepComplete')
+        ;
     }
 
     /**
@@ -1723,6 +1725,20 @@ class SamedayCourier extends CarrierModule
             $SamedayOpenPackage->id_order = $params['order']->id;
             $SamedayOpenPackage->is_open_package = 1;
             $SamedayOpenPackage->save();
+        }
+    }
+
+    /**
+     * @param $params
+     */
+    public function hookActionValidateStepComplete($params)
+    {
+        $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
+        $lockerId = $_COOKIE['samedaycourier_locker_id'] ?? null;
+
+        if (($service['code'] === self::LOCKER_NEXT_DAY) && null === $lockerId) {
+            $this->context->controller->errors[] = $this->l('Please select your easyBox from lockers map');
+            $params['completed']  = false;
         }
     }
 

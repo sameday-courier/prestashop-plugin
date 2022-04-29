@@ -83,16 +83,20 @@
 
             if (isset( () => document.getElementById("showLockerMap"))) {
                 lockerPLugin.subscribe((locker) => {
-                    let lockerNamed = locker.name;
+                    let lockerName = locker.name;
                     let lockerAddress = locker.address;
+
                     setCookie("samedaycourier_locker_id", locker.lockerId, 30);
-                    document.getElementById("locker_name").value = lockerNamed;
-                    setCookie("samedaycourier_locker_name", lockerNamed, 30);
+
+                    document.getElementById("locker_name").value = lockerName;
+                    setCookie("samedaycourier_locker_name", lockerName, 30);
+
                     document.getElementById("locker_address").value = lockerAddress;
                     setCookie("samedaycourier_locker_address", lockerAddress, 30);
 
                     document.getElementById("showLockerDetails").style.display = "block";
-                    document.getElementById("showLockerDetails").innerHTML = lockerNamed + '<br/>' + lockerAddress;
+                    document.getElementById("showLockerDetails").innerHTML = lockerName + '<br/>' + lockerAddress;
+
                     lockerPLugin.close();
                 });
             }
