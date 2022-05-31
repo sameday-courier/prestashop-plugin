@@ -111,7 +111,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.20';
+        $this->version = '1.4.21';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1709,6 +1709,10 @@ class SamedayCourier extends CarrierModule
     {
         $lockerId = (int) isset($_COOKIE['samedaycourier_locker_id']) ? $_COOKIE['samedaycourier_locker_id'] : 0;
         $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
+
+        if ($service['code'] === self::LOCKER_NEXT_DAY && $lockerId === 0 && null !== Tools::getValue('samedaycourier_locker_id')) {
+            $lockerId = Tools::getValue('samedaycourier_locker_id');
+        }
 
         if ($lockerId > 0 && $service['code'] === self::LOCKER_NEXT_DAY) {
             $orderLocker = new SamedayOrderLocker();
