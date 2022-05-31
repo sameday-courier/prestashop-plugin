@@ -19,6 +19,7 @@ include(dirname(__FILE__).'/../../config/config.inc.php');
 include(dirname(__FILE__).'/../../init.php');
 include(dirname(__FILE__) . '/classes/SamedayAwbParcel.php');
 include(dirname(__FILE__) . '/classes/SamedayConstants.php');
+include(dirname(__FILE__) . '/classes/SamedayPersistenceDataHandler.php');
 
 if (Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10) != Tools::getValue('token') ||
     !Module::isInstalled('samedaycourier')
@@ -50,7 +51,8 @@ try {
             $api,
             'Prestashop',
             _PS_VERSION_,
-            'curl'
+            'curl',
+            new SamedayPersistenceDataHandler()
         )
     );
 } catch (Exception $exception) {

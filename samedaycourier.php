@@ -111,7 +111,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.21';
+        $this->version = '1.4.22';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -233,9 +233,9 @@ class SamedayCourier extends CarrierModule
         $this->renderPickupPointsList();
         $this->renderLockersList();
 
-        $this->addMessage('info', $this->l('Use this url for cron status sync ') .' ' .
-            _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/sync.php?token='
-            .Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10));
+//        $this->addMessage('info', $this->l('Use this url for cron status sync ') .' ' .
+//            _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/sync.php?token='
+//            .Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10));
 
         if (Configuration::get('SAMEDAY_LIVE_MODE', 0) === 0) {
             $this->addMessage('warning', $this->l('Module Sameday Courier is working in testing mode'));
@@ -471,7 +471,7 @@ class SamedayCourier extends CarrierModule
                     ),
                     array(
                         'col'    => 2,
-                        'type'   => 'text',
+                        'type'   => 'password',
                         'prefix' => '<i class="icon icon-lock"></i>',
                         'name'   => 'SAMEDAY_ACCOUNT_PASSWORD',
                         'label'  => $this->l('Password'),
@@ -560,7 +560,7 @@ class SamedayCourier extends CarrierModule
                         'label'   => $this->l('Use locker map'),
                         'name'    => 'SAMEDAY_LOCKERS_MAP',
                         'is_bool' => true,
-                        'desc'    => $this->l('For this moment, lockers map is available only for Romania and is not responsive.'),
+                        'desc'    => $this->l('Enable this for easyBox interactive map!'),
                         'values'  => array(
                             array(
                                 'id'    => 'active_on',
@@ -585,7 +585,7 @@ class SamedayCourier extends CarrierModule
                         'col'    => 2,
                         'type'   => 'text',
                         'name'   => 'SAMEDAY_LOCKER_MAX_ITEMS',
-                        'desc'   => $this->l('Set the maximum amount of items to fit in locker'),
+                        'desc'   => $this->l('Set the maximum amount of items to fit in locker! In order to work Locker NextDay service do not leave this field blank !!'),
                         'label'  => $this->l('Locker max. items'),
                     ),
                     array(
