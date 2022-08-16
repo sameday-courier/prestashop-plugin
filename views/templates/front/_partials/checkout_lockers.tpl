@@ -34,7 +34,7 @@
             }
         }
 
-        const isset = (accessor) => {
+        const is_set = (accessor) => {
             try {
                 return accessor() !== undefined && accessor() !== null
             } catch (e) {
@@ -43,56 +43,56 @@
         }
 
         docReady(function () {
-            if (isset( () => document.getElementById("locker_name"))) {
-                if(getCookie("samedaycourier_locker_name").length > 1){
-                    let lockerNamedcookie = getCookie("samedaycourier_locker_name");
-                    let lockerAddresscookie = getCookie("samedaycourier_locker_address");
-                    document.getElementById("locker_name").value = lockerNamedcookie;
-                    document.getElementById("locker_address").value = lockerAddresscookie;
+            if (is_set( () => document.getElementById("locker_name"))) {
+                if(get_cookie("samedaycourier_locker_name").length > 1){
+                    let lockerNamesCookie = get_cookie("samedaycourier_locker_name");
+                    let lockerAddressCookie = get_cookie("samedaycourier_locker_address");
+                    document.getElementById("locker_name").value = lockerNamesCookie;
+                    document.getElementById("locker_address").value = lockerAddressCookie;
 
                     document.getElementById("showLockerDetails").style.display = "block";
-                    document.getElementById("showLockerDetails").innerHTML = lockerNamedcookie + '<br/>' + lockerAddresscookie;
+                    document.getElementById("showLockerDetails").innerHTML = lockerNamesCookie + '<br/>' + lockerAddressCookie;
 
                 }else{
                     document.getElementById("showLockerDetails").style.display = "none";
                 }
             }
 
-            if (isset( () => document.getElementById("showLockerMap"))) {
+            if (is_set( () => document.getElementById("showLockerMap"))) {
                 const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have an unique clientId
                 const countryCode= document.getElementById('showLockerMap').getAttribute('data-country').toUpperCase(); //country for which the plugin is used
                 const langCode= document.getElementById('showLockerMap').getAttribute('data-country')  //language of the plugin
                 window.LockerPlugin.init({ clientId: clientId, countryCode: countryCode, langCode: langCode });
-                
+
                 lockerPLugin = window.LockerPlugin.getInstance();
             }
             let name = 'samedaycourier_locker_id';
             let showLockerMap = document.getElementById('showLockerMap');
             let showLockerSelector = document.getElementById('lockerIdSelector');
-           
-            if (isset( () => showLockerMap)) {
+
+            if (is_set( () => showLockerMap)) {
                 showLockerMap.addEventListener('click', () => {
                     lockerPLugin.open();
                 }, false);
             } else {
                 showLockerSelector.onchange = (event) => {
                     let lockerId = event.target.value;
-                    setCookie(name, lockerId, 30);
+                    set_cookie(name, lockerId, 30);
                 }
             }
 
-            if (isset( () => document.getElementById("showLockerMap"))) {
+            if (is_set( () => document.getElementById("showLockerMap"))) {
                 lockerPLugin.subscribe((locker) => {
                     let lockerName = locker.name;
                     let lockerAddress = locker.address;
 
-                    setCookie("samedaycourier_locker_id", locker.lockerId, 30);
+                    set_cookie("samedaycourier_locker_id", locker.lockerId, 30);
 
                     document.getElementById("locker_name").value = lockerName;
-                    setCookie("samedaycourier_locker_name", lockerName, 30);
+                    set_cookie("samedaycourier_locker_name", lockerName, 30);
 
                     document.getElementById("locker_address").value = lockerAddress;
-                    setCookie("samedaycourier_locker_address", lockerAddress, 30);
+                    set_cookie("samedaycourier_locker_address", lockerAddress, 30);
 
                     document.getElementById("showLockerDetails").style.display = "block";
                     document.getElementById("showLockerDetails").innerHTML = lockerName + '<br/>' + lockerAddress;
@@ -102,7 +102,7 @@
             }
         });
 
-        const setCookie = (key, value, days) => {
+        const set_cookie = (key, value, days) => {
             let d = new Date();
             d.setTime(d.getTime() + (days*24*60*60*1000));
             let expires = "expires=" + d.toUTCString();
@@ -110,7 +110,7 @@
             document.cookie = key + "=" + value + ";" + expires + ";path=/";
         }
 
-        const getCookie = (key) => {
+        const get_cookie = (key) => {
             let cookie = '';
             document.cookie.split(';').forEach(function (value) {
                 if (value.split('=')[0].trim() === key) {
