@@ -111,7 +111,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.23';
+        $this->version = '1.4.24';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1649,6 +1649,7 @@ class SamedayCourier extends CarrierModule
         if ($service['code'] === self::LOCKER_NEXT_DAY) {
             $cities = SamedayLocker::getCities();
             $lockers = array();
+            $sameday_user = Configuration::get('SAMEDAY_ACCOUNT_USER');
             $hostCountry = Configuration::get('SAMEDAY_HOST_COUNTRY') ?? 'ro'; // Default will always be 'ro'
             foreach ($cities as $city) {
                 $lockers[$city['city'] . ' (' . $city['county'] . ')'] = SamedayLocker::getLockersByCity($city['city']);
@@ -1657,6 +1658,7 @@ class SamedayCourier extends CarrierModule
             $this->smarty->assign('lockers', $lockers);
             $this->smarty->assign('lockerId', $samedaycourier_locker_id);
             $this->smarty->assign('hostCountry', $hostCountry);
+            $this->smarty->assign('samedayUser', $sameday_user);
             if(Configuration::get('SAMEDAY_LOCKERS_MAP')){
                 return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_map'], null);
             }else{

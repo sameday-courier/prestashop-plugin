@@ -30,7 +30,7 @@
             <tr>
                 <td>{l s='Select locker' mod='samedaycourier'}</td>
                 <td> 
-                    <button type="button" name="samedaycourier_locker_id" id="showLockerMap" data-country='{$hostCountry}' class="button-exclusive btn btn-default">
+                    <button type="button" name="samedaycourier_locker_id" id="showLockerMap" data-username='{$samedayUser}' data-country='{$hostCountry}' class="button-exclusive btn btn-default">
                         {l s='Show locker map' mod='samedaycourier'}
                     </button>
                 </td>
