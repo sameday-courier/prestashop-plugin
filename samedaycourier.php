@@ -111,7 +111,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.24';
+        $this->version = '1.4.25';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1872,7 +1872,7 @@ class SamedayCourier extends CarrierModule
             $this->addMessage('danger', $errors);
         } catch (\Exception $e) {
             $this->log($e->getMessage() . $e->getTraceAsString(), SamedayConstants::ERROR);
-            $this->addMessage('danger', $this->l($e->getMessage()));
+            $this->addMessage('danger', [sprintf('Error Nr. %s: %s', $e->getCode(), $this->l($e->getMessage()))]);
         }
 
         return null;
