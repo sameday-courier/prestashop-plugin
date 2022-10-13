@@ -43,6 +43,7 @@ function upgrade_module_1_1_0($object)
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
           `id_order` int(11) unsigned NOT NULL,
           `id_locker` int(11) unsigned NOT NULL,
+          `name_locker` varchar(255) NOT NULL,
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB;'
     );

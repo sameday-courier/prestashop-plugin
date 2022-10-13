@@ -111,7 +111,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.25';
+        $this->version = '1.4.26';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1524,6 +1524,9 @@ class SamedayCourier extends CarrierModule
                 'repayment'     => $repayment,
                 'awb'           => $awb,
                 'allowParcel'   => $allowParcel,
+                'lockerId'      => ((int) SamedayOrderLocker::getLockerIdForOrder($order->id)) > 0,
+                'lockerName'   => SamedayOrderLocker::getLockerNameForOrder($order->id),
+                'lockerAddress'   => SamedayOrderLocker::getLockerAddressForOrder($order->id),
                 'allowLocker'   => ((int) SamedayOrderLocker::getLockerIdForOrder($order->id)) > 0,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
                 'ajaxRoute'     => $this->ajaxRoute,
@@ -1610,6 +1613,7 @@ class SamedayCourier extends CarrierModule
 
         return $this->displayCarrierExtraContent(
             $params['cookie']->samedaycourier_locker_id,
+            $params['cookie']->samedaycourier_locker_name,
             $service,
             $params['cart']->id_carrier,
             '1.6'
@@ -1630,6 +1634,8 @@ class SamedayCourier extends CarrierModule
 
         return $this->displayCarrierExtraContent(
             $params['cookie']->samedaycourier_locker_id,
+            $params['cookie']->samedaycourier_locker_name,
+            $params['cookie']->samedaycourier_locker_address,
             $service,
             $params['carrier']['id'],
             '1.7'
@@ -1638,13 +1644,15 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $samedaycourier_locker_id
+     * @param $samedaycourier_locker_name
+     * @param $samedaycourier_locker_address
      * @param $service
      * @param $carrierId
      * @param $fileVersion
      *
      * @return false|string
      */
-    private function displayCarrierExtraContent($samedaycourier_locker_id, $service, $carrierId, $fileVersion)
+    private function displayCarrierExtraContent($samedaycourier_locker_id, $samedaycourier_locker_name, $samedaycourier_locker_address, $service, $carrierId, $fileVersion)
     {
         if ($service['code'] === self::LOCKER_NEXT_DAY) {
             $cities = SamedayLocker::getCities();
@@ -1657,6 +1665,8 @@ class SamedayCourier extends CarrierModule
 
             $this->smarty->assign('lockers', $lockers);
             $this->smarty->assign('lockerId', $samedaycourier_locker_id);
+            $this->smarty->assign('lockerName', $samedaycourier_locker_name);
+            $this->smarty->assign('lockerAddress', $samedaycourier_locker_address);
             $this->smarty->assign('hostCountry', $hostCountry);
             $this->smarty->assign('samedayUser', $sameday_user);
             if(Configuration::get('SAMEDAY_LOCKERS_MAP')){
@@ -1710,10 +1720,14 @@ class SamedayCourier extends CarrierModule
     public function hookActionValidateOrder($params)
     {
         $lockerId = (int) isset($_COOKIE['samedaycourier_locker_id']) ? $_COOKIE['samedaycourier_locker_id'] : 0;
+        $lockerName = (int) isset($_COOKIE['samedaycourier_locker_name']) ? $_COOKIE['samedaycourier_locker_name'] : 0;
+        $lockerAddress = (int) isset($_COOKIE['samedaycourier_locker_address']) ? $_COOKIE['samedaycourier_locker_address'] : 0;
         $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
 
         if ($service['code'] === self::LOCKER_NEXT_DAY && $lockerId === 0 && null !== Tools::getValue('samedaycourier_locker_id')) {
             $lockerId = Tools::getValue('samedaycourier_locker_id');
+            $lockerName = Tools::getValue('samedaycourier_locker_name');
+            $lockerAddress = Tools::getValue('samedaycourier_locker_address');
         }
 
         if ($lockerId > 0 && $service['code'] === self::LOCKER_NEXT_DAY) {
@@ -1721,6 +1735,9 @@ class SamedayCourier extends CarrierModule
 
             $orderLocker->id_order = $params['order']->id;
             $orderLocker->id_locker = $lockerId;
+            $orderLocker->name_locker = $lockerName;
+            $orderLocker->address_locker = $lockerAddress;
+
             $orderLocker->save();
         }
 
@@ -1741,6 +1758,8 @@ class SamedayCourier extends CarrierModule
     {
         $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
         $lockerId = $_COOKIE['samedaycourier_locker_id'] ?? null;
+        $lockerName = $_COOKIE['samedaycourier_locker_name'] ?? null;
+        $lockerAddress = $_COOKIE['samedaycourier_locker_address'] ?? null;
 
         if (($service['code'] === self::LOCKER_NEXT_DAY) && null === $lockerId) {
             $this->context->controller->errors[] = $this->l('Please select your easyBox from lockers map');
@@ -1796,6 +1815,7 @@ class SamedayCourier extends CarrierModule
         ); 
 
         $lockerId = (int) SamedayOrderLocker::getLockerIdForOrder($order->id);
+       
 
         $serviceTaxIds = array();
         if (!empty(Tools::getValue('sameday_open_package'))) {

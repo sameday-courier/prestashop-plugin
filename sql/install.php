@@ -90,6 +90,8 @@ $sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
           `id_order` int(11) unsigned NOT NULL,
           `id_locker` int(11) unsigned NOT NULL,
+          `name_locker` varchar() unsigned NOT NULL,
+          `address_locker` varchar() unsigned NOT NULL,
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB;';
 
