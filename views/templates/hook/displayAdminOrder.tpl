@@ -395,9 +395,9 @@
                         <!-- Locker Details //-->
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
-                                   for="input-status-sameday-locker-detail">{l s='Locker Details' mod='samedaycourier'}</label>
+                                   for="input-status-sameday-locker-details">{l s='Locker Details' mod='samedaycourier'}</label>
                             <div class="col-sm-9">
-                                <input type="text" name="locker-detail" value="{$lockerName|escape:'html':'UTF-8'}, {$lockerAddress|escape:'html':'UTF-8'}" class="form-control" readonly>
+                                <input type="text" name="locker-details" value="{$lockerDetails|escape:'html':'UTF-8'}" class="form-control" readonly>
                             </div>
                         </div>
 

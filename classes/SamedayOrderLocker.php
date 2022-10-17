@@ -44,46 +44,19 @@ class SamedayOrderLocker extends ObjectModel
         ),
     );
 
-    public static function getLockerIdForOrder($orderId)
+    public static function getLockerForOrder($orderId)
     {
         $sql = new DbQuery();
         $sql->from(self::TABLE_NAME);
-        $sql->select('id_locker');
-        $sql->where('id_order = '.$orderId.'');
-        $lockerId = Db::getInstance()->getValue($sql);
-        if (!empty($lockerId)){
-            return $lockerId;
+        $sql->select('*');
+        $sql->where('id_order=' . $orderId);
+
+        $locker = Db::getInstance()->getRow($sql);
+
+        if (!empty($locker)){
+            return $locker;
         }
 
         return null;
     }
-
-    public static function getLockerNameForOrder($orderId)
-    {
-        $sql = new DbQuery();
-        $sql->from(self::TABLE_NAME);
-        $sql->select('name_locker');
-        $sql->where('id_order = '.$orderId.'');
-        $lockerName = Db::getInstance()->getValue($sql);
-        if (!empty($lockerName)){
-            return $lockerName;
-        }
-
-        return null;
-    }
-
-    public static function getLockerAddressForOrder($orderId)
-    {
-        $sql = new DbQuery();
-        $sql->from(self::TABLE_NAME);
-        $sql->select('address_locker');
-        $sql->where('id_order = '.$orderId.'');
-        $lockerAddress = Db::getInstance()->getValue($sql);
-        if (!empty($lockerAddress)){
-            return $lockerAddress;
-        }
-
-        return null;
-    }
-    
 }

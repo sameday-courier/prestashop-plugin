@@ -58,48 +58,55 @@
                 }
             }
 
-            if (is_set( () => document.getElementById("showLockerMap"))) {
-                const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have an unique clientId
-                const countryCode= document.getElementById('showLockerMap').getAttribute('data-country').toUpperCase(); //country for which the plugin is used
-                const langCode= document.getElementById('showLockerMap').getAttribute('data-country')  //language of the plugin
-                const samedayUser= document.getElementById('showLockerMap').getAttribute('data-username')  ////sameday username
-                window.LockerPlugin.init({ clientId: clientId, countryCode: countryCode, langCode: langCode, apiUsername: samedayUser });
+            const cookie_locker_id = 'samedaycourier_locker_id';
+            const cookie_locker_name = 'samedaycourier_locker_name';
+            const cookie_locker_address = 'samedaycourier_locker_address';
 
-                lockerPLugin = window.LockerPlugin.getInstance();
-            }
-            let name = 'samedaycourier_locker_id';
             let showLockerMap = document.getElementById('showLockerMap');
             let showLockerSelector = document.getElementById('lockerIdSelector');
 
-            if (is_set( () => showLockerMap)) {
-                showLockerMap.addEventListener('click', () => {
-                    lockerPLugin.open();
-                }, false);
-            } else {
-                showLockerSelector.onchange = (event) => {
-                    let lockerId = event.target.value;
-                    set_cookie(name, lockerId, 30);
-                }
-            }
+            if (is_set(() => document.getElementById("showLockerMap"))) {
+                const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have a unique clientId
+                const countryCode= document.getElementById('showLockerMap').getAttribute('data-country').toUpperCase(); //country for which the plugin is used
+                const langCode= document.getElementById('showLockerMap').getAttribute('data-country');  //language of the plugin
+                const samedayUser= document.getElementById('showLockerMap').getAttribute('data-username'); //sameday username
 
-            if (is_set( () => document.getElementById("showLockerMap"))) {
-                lockerPLugin.subscribe((locker) => {
+                window['LockerPlugin'].init({ clientId: clientId, countryCode: countryCode, langCode: langCode, apiUsername: samedayUser });
+
+                let lockerPlugin = window['LockerPlugin'].getInstance();
+
+                showLockerMap.addEventListener('click', () => {
+                    lockerPlugin.open();
+                }, false);
+
+                lockerPlugin.subscribe((locker) => {
+                    let lockerId = locker.lockerId;
                     let lockerName = locker.name;
                     let lockerAddress = locker.address;
 
-                    set_cookie("samedaycourier_locker_id", locker.lockerId, 30);
+                    set_cookie(cookie_locker_id, lockerId, 30);
 
                     document.getElementById("locker_name").value = lockerName;
-                    set_cookie("samedaycourier_locker_name", lockerName, 30);
+                    set_cookie(cookie_locker_name, lockerName, 30);
 
                     document.getElementById("locker_address").value = lockerAddress;
-                    set_cookie("samedaycourier_locker_address", lockerAddress, 30);
+                    set_cookie(cookie_locker_address, lockerAddress, 30);
 
                     document.getElementById("showLockerDetails").style.display = "block";
                     document.getElementById("showLockerDetails").innerHTML = lockerName + '<br/>' + lockerAddress;
 
-                    lockerPLugin.close();
+                    lockerPlugin.close();
                 });
+
+            } else {
+                showLockerSelector.onchange = (event) => {
+                    let _target = event.target;
+                    let option = _target.options[_target.selectedIndex];
+
+                    set_cookie(cookie_locker_id, _target.value, 30);
+                    set_cookie(cookie_locker_name, option.getAttribute('data-name'), 30);
+                    set_cookie(cookie_locker_address, option.getAttribute('data-address'), 30);
+                }
             }
         });
 

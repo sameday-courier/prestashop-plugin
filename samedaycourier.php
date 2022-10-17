@@ -346,7 +346,7 @@ class SamedayCourier extends CarrierModule
                     $remoteServices[] = $service->getId();
                 }
 
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->addMessage('danger', $e->getMessage());
                 $this->log($e->getMessage(), SamedayConstants::ERROR);
 
@@ -1069,7 +1069,7 @@ class SamedayCourier extends CarrierModule
 
             try {
                 $pickupPoints = $sameday->getPickupPoints($request);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->addMessage('danger', $e->getMessage());
                 $this->log($e->getMessage(), SamedayConstants::ERROR);
 
@@ -1139,9 +1139,10 @@ class SamedayCourier extends CarrierModule
 
         try {
             $lockers = $sameday->getLockers($request);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->addMessage('danger', $e->getMessage());
             $this->log($e->getMessage(), SamedayConstants::ERROR);
+
             return;
         }
 
@@ -1173,10 +1174,10 @@ class SamedayCourier extends CarrierModule
 
         // Build array of local lockers.
         $localLockers = array_map(
-            function ($locker) {
+            static function ($locker) {
                 return array(
                     'id' => $locker['id'],
-                    'sameday_id' => $locker['id_locker']
+                    'sameday_id' => (int) $locker['id_locker']
                 );
             },
             SamedayLocker::getLockers(true)
@@ -1184,7 +1185,7 @@ class SamedayCourier extends CarrierModule
 
         // Delete local lockers that aren't present in remote lockers anymore.
         foreach ($localLockers as $localLocker) {
-            if (!in_array($localLocker['sameday_id'], $remoteLockers)) {
+            if (!in_array($localLocker['sameday_id'], $remoteLockers, true)) {
                 $toDelete = new SamedayLocker($localLocker['id']);
                 $toDelete->delete();
             }
@@ -1209,7 +1210,7 @@ class SamedayCourier extends CarrierModule
         }
 
         if ($service['code'] === self::LOCKER_NEXT_DAY && $params->nbProducts() > Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS')) {
-            // Allow only one product in locker.
+            // Limit nr. of products to locker delivery
             return false;
         }
 
@@ -1253,7 +1254,7 @@ class SamedayCourier extends CarrierModule
         try {
             $estimation = $sameday->postAwbEstimation($request);
             $this->servicePriceCache[$service['id']] = $estimation->getCost();
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             $this->servicePriceCache[$service['id']] = $shipping_cost;
         }
 
@@ -1374,7 +1375,7 @@ class SamedayCourier extends CarrierModule
                             'price' => $price
                         )
                     );
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     continue;
                 }
             }
@@ -1425,7 +1426,7 @@ class SamedayCourier extends CarrierModule
 
                 return $carrier;
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log($e->getMessage(), SamedayConstants::ERROR);
         }
 
@@ -1501,18 +1502,27 @@ class SamedayCourier extends CarrierModule
         if ($awb) {
             $now = new DateTime();
             $allowParcel =
-                DateTime::createFromFormat('Y-m-d H:i:s', $awb['created'])->format('Ymd') == $now->format('Ymd');
+                DateTime::createFromFormat('Y-m-d H:i:s', $awb['created'])->format('Ymd') === $now->format('Ymd');
         }
+
         $service = SamedayService::findByCarrierId($order->id_carrier);
         if ($service) {
             $service = $service['id_service'];
         }
 
-        $repayment = (float) 0;
+        $repayment = 0.0;
         if ($this->checkForCashPayment($order->payment)) {
             $repayment = number_format($order->total_paid, 2);
         }
 
+        $lockerId = null;
+        $lockerName = null;
+        $lockerAddress = null;
+        if (null !== $locker = SamedayOrderLocker::getLockerForOrder($order->id)) {
+            $lockerId = $locker['id_locker'] ?? null;
+            $lockerName = $locker['name_locker'] ?? null;
+            $lockerAddress = $locker['address_locker'] ?? null;
+        }
 
         $this->smarty->assign(
             array(
@@ -1524,10 +1534,9 @@ class SamedayCourier extends CarrierModule
                 'repayment'     => $repayment,
                 'awb'           => $awb,
                 'allowParcel'   => $allowParcel,
-                'lockerId'      => ((int) SamedayOrderLocker::getLockerIdForOrder($order->id)) > 0,
-                'lockerName'   => SamedayOrderLocker::getLockerNameForOrder($order->id),
-                'lockerAddress'   => SamedayOrderLocker::getLockerAddressForOrder($order->id),
-                'allowLocker'   => ((int) SamedayOrderLocker::getLockerIdForOrder($order->id)) > 0,
+                'lockerId'      => ((int) $lockerId) > 0,
+                'lockerDetails' => sprintf('%s  %s', $lockerName, $lockerAddress),
+                'allowLocker'   => ((int) $lockerId) > 0,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
                 'ajaxRoute'     => $this->ajaxRoute,
                 'messages' => $this->messages,
@@ -1614,6 +1623,7 @@ class SamedayCourier extends CarrierModule
         return $this->displayCarrierExtraContent(
             $params['cookie']->samedaycourier_locker_id,
             $params['cookie']->samedaycourier_locker_name,
+            $params['cookie']->samedaycourier_locker_address,
             $service,
             $params['cart']->id_carrier,
             '1.6'
@@ -1652,29 +1662,54 @@ class SamedayCourier extends CarrierModule
      *
      * @return false|string
      */
-    private function displayCarrierExtraContent($samedaycourier_locker_id, $samedaycourier_locker_name, $samedaycourier_locker_address, $service, $carrierId, $fileVersion)
+    private function displayCarrierExtraContent(
+        $samedaycourier_locker_id,
+        $samedaycourier_locker_name,
+        $samedaycourier_locker_address,
+        $service,
+        $carrierId,
+        $fileVersion
+    )
     {
         if ($service['code'] === self::LOCKER_NEXT_DAY) {
-            $cities = SamedayLocker::getCities();
-            $lockers = array();
             $sameday_user = Configuration::get('SAMEDAY_ACCOUNT_USER');
             $hostCountry = Configuration::get('SAMEDAY_HOST_COUNTRY') ?? 'ro'; // Default will always be 'ro'
-            foreach ($cities as $city) {
-                $lockers[$city['city'] . ' (' . $city['county'] . ')'] = SamedayLocker::getLockersByCity($city['city']);
+            $useLockerMap = (bool) Configuration::get('SAMEDAY_LOCKERS_MAP');
+
+            $lockers = null;
+            if (! $useLockerMap) {
+                // Use locker list from Local Import
+                $lockersList = SamedayLocker::getLockers();
+                if (isset($lockersList) && !empty($lockersList)) {
+                    foreach ($lockersList as $locker) {
+                        $lockers[$locker['city']][] = [
+                            'id' => $locker['id_locker'],
+                            'name' => $locker['name'],
+                            'address' => $locker['address'],
+                            'label' => sprintf('%s - %s', $locker['name'], $locker['address']),
+                        ];
+                    }
+
+                    ksort($lockers);
+                }
             }
 
-            $this->smarty->assign('lockers', $lockers);
+            if (null !== $lockers) {
+                $this->smarty->assign('lockers', $lockers);
+            }
+
             $this->smarty->assign('lockerId', $samedaycourier_locker_id);
             $this->smarty->assign('lockerName', $samedaycourier_locker_name);
             $this->smarty->assign('lockerAddress', $samedaycourier_locker_address);
             $this->smarty->assign('hostCountry', $hostCountry);
             $this->smarty->assign('samedayUser', $sameday_user);
-            if(Configuration::get('SAMEDAY_LOCKERS_MAP')){
-                return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_map'], null);
-            }else{
-                return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_selector'], null);
+
+            if(Configuration::get('SAMEDAY_LOCKERS_MAP')) {
+                return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_map']);
             }
-           
+
+            return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_selector']);
+
         }
 
         if (
@@ -1814,8 +1849,13 @@ class SamedayCourier extends CarrierModule
             (!empty($address->postcode)) ? $address->postcode : null
         ); 
 
-        $lockerId = (int) SamedayOrderLocker::getLockerIdForOrder($order->id);
-       
+        $lockerId = null;
+        if ((null !== $locker = SamedayOrderLocker::getLockerForOrder($order->id))
+            && null !== $locker['name_locker']
+            && null !== $locker['address_locker']
+        ) {
+            $lockerId = (int) $locker['id_locker'];
+        }
 
         $serviceTaxIds = array();
         if (!empty(Tools::getValue('sameday_open_package'))) {
@@ -1890,7 +1930,7 @@ class SamedayCourier extends CarrierModule
                 $errors[] = implode(', ', $error['key']) . '- ' . implode(', ', $error['errors']);
             }
             $this->addMessage('danger', $errors);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log($e->getMessage() . $e->getTraceAsString(), SamedayConstants::ERROR);
             $this->addMessage('danger', [sprintf('Error Nr. %s: %s', $e->getCode(), $this->l($e->getMessage()))]);
         }
@@ -1976,7 +2016,7 @@ class SamedayCourier extends CarrierModule
             $response = json_decode($e->getRawResponse()->getBody());
             $this->addMessage('danger', $response->error->message);
             $this->log($e->getRawResponse()->getBody(), SamedayConstants::ERROR);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log($e->getMessage(), SamedayConstants::ERROR);
             $this->addMessage('danger', $this->l('An error occured while trying to cancel AWB'));
         }

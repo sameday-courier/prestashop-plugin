@@ -28,8 +28,8 @@ function upgrade_module_1_4_26($object)
     $sql = ['ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
            ADD `address_locker` TEXT' ];
 
-    $sql[] = ['ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
-    ADD `name_locker` TEXT' ];
+    $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
+    ADD `name_locker` TEXT';
     
 
     foreach ($sql as $query) {
