@@ -34,7 +34,11 @@
                         {foreach from=$lockers key=city item = cityLockers}
                             <optgroup label="{$city|escape:'htmlall':'UTF-8'}">
                             {foreach from=$cityLockers item=locker}
-                                <option value="{$locker.id|escape:'htmlall':'UTF-8'}" {if $locker.id==$lockerId}selected="selected"{/if}>{$locker.label|escape:'htmlall':'UTF-8'}</option>
+                                <option value="{$locker.id|escape:'htmlall':'UTF-8'}"
+                                        {if $locker.id==$lockerId}selected="selected"{/if}
+                                        data-name="{$locker.name|escape:'htmlall':'UTF-8'}"
+                                        data-address="{$locker.address|escape:'htmlall':'UTF-8'}"
+                                >
                             {/foreach}
                         {/foreach}
                     </select>
