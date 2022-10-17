@@ -39,6 +39,8 @@
                                         data-name="{$locker.name|escape:'htmlall':'UTF-8'}"
                                         data-address="{$locker.address|escape:'htmlall':'UTF-8'}"
                                 >
+                                {$locker.label|escape:'htmlall':'UTF-8'}
+                                </option>
                             {/foreach}
                         {/foreach}
                     </select>
