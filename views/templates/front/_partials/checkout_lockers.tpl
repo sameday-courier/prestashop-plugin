@@ -65,7 +65,9 @@
             let showLockerMap = document.getElementById('showLockerMap');
             let showLockerSelector = document.getElementById('lockerIdSelector');
 
-            if (is_set(() => document.getElementById("showLockerMap"))) {
+            console.log(showLockerMap);
+
+            if (is_set(() => showLockerMap)) {
                 const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have a unique clientId
                 const countryCode= document.getElementById('showLockerMap').getAttribute('data-country').toUpperCase(); //country for which the plugin is used
                 const langCode= document.getElementById('showLockerMap').getAttribute('data-country');  //language of the plugin
