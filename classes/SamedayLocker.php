@@ -82,9 +82,11 @@ class SamedayLocker extends ObjectModel
      */
     public static function getLockers($skipImport = false)
     {
-        $liveMode = self::checkMode();
+      $liveMode = self::checkMode();
 
-        if (!$skipImport && time() > ((int) Configuration::get('SAMEDAY_LAST_LOCKERS')) + 86400) {
+        if ((false === $skipImport)
+            && (time() > ((int) Configuration::get('SAMEDAY_LAST_LOCKERS')) + 86400))
+        {
             $module = Module::getInstanceByName('samedaycourier');
             $module->importLockers();
             Configuration::updateValue('SAMEDAY_LAST_LOCKERS', time());
@@ -92,33 +94,6 @@ class SamedayLocker extends ObjectModel
 
         return Db::getInstance()->executeS(
             "SELECT * FROM " . _DB_PREFIX_ . self::TABLE_NAME . " WHERE live_mode = '{$liveMode}'"
-        );
-    }
-
-    /**
-     * @return array|bool|mysqli_result|PDOStatement|resource|null
-     * @throws PrestaShopDatabaseException
-     */
-    public static function getCities()
-    {
-        $liveMode = self::checkMode();
-
-        return Db::getInstance()->executeS(
-            "SELECT city, county FROM " . _DB_PREFIX_ . self::TABLE_NAME . " WHERE live_mode = '{$liveMode}' GROUP BY city"
-        );
-    }
-
-    /**
-     * @param $city
-     * @return array|bool|mysqli_result|PDOStatement|resource|null
-     * @throws PrestaShopDatabaseException
-     */
-    public static function getLockersByCity($city)
-    {
-        $liveMode = self::checkMode();
-
-        return Db::getInstance()->executeS(
-            "SELECT * FROM " . _DB_PREFIX_ . self::TABLE_NAME . " WHERE live_mode = '{$liveMode}' AND city = '{$city}'"
         );
     }
 

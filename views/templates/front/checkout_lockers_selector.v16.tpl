@@ -22,9 +22,8 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  * International Registered Trademark & Property of PrestaShop SA
  *}
-<script src="https://cdnsameday.azureedge.net/preprod-locker-plugin/lockerpluginsdk.js"></script>
 {include file='./_partials/checkout_lockers.tpl'}
-{if $lockers|count}
+{if isset($lockers)}
     <table class="resume table table-bordered">
         <tbody>
             <tr>
@@ -35,7 +34,13 @@
                         {foreach from=$lockers key=city item = cityLockers}
                             <optgroup label="{$city|escape:'htmlall':'UTF-8'}">
                             {foreach from=$cityLockers item=locker}
-                                <option value="{$locker.id|escape:'htmlall':'UTF-8'}" {if $locker.id==$lockerId}selected="selected"{/if}>{$locker.name|escape:'htmlall':'UTF-8'} - {$locker.address|escape:'htmlall':'UTF-8'} </option>
+                                <option value="{$locker.id|escape:'htmlall':'UTF-8'}"
+                                        {if $locker.id==$lockerId}selected="selected"{/if}
+                                        data-name="{$locker.name|escape:'htmlall':'UTF-8'}"
+                                        data-address="{$locker.address|escape:'htmlall':'UTF-8'}"
+                                >
+                                {$locker.label|escape:'htmlall':'UTF-8'}
+                                </option>
                             {/foreach}
                         {/foreach}
                     </select>

@@ -24,6 +24,12 @@ class SamedayOrderLocker extends ObjectModel
     /** @var integer */
     public $id_locker;
 
+    /** @var string */
+    public $name_locker;
+
+     /** @var string */
+     public $address_locker;
+
     /** @var array */
     public static $definition = array(
         'table' => self::TABLE_NAME,
@@ -33,18 +39,22 @@ class SamedayOrderLocker extends ObjectModel
         'fields' => array(
             'id_order' => array('type' => self::TYPE_INT, 'required' => true, 'validate' => 'isUnsignedInt'),
             'id_locker' => array('type' => self::TYPE_INT, 'required' => true, 'validate' => 'isUnsignedInt'),
+            'name_locker' => array('type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'),
+            'address_locker' => array('type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'),
         ),
     );
 
-    public static function getLockerIdForOrder($orderId)
+    public static function getLockerForOrder($orderId)
     {
         $sql = new DbQuery();
         $sql->from(self::TABLE_NAME);
-        $sql->select('id_locker');
-        $sql->where('id_order = '.$orderId.'');
-        $lockerId = Db::getInstance()->getValue($sql);
-        if (!empty($lockerId)){
-            return $lockerId;
+        $sql->select('*');
+        $sql->where('id_order=' . $orderId);
+
+        $locker = Db::getInstance()->getRow($sql);
+
+        if (!empty($locker)){
+            return $locker;
         }
 
         return null;
