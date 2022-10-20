@@ -25,11 +25,15 @@ if (!defined('_PS_VERSION_')) {
  */
 function upgrade_module_1_4_26($object)
 {
-    $sql = ['ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
-           ADD `address_locker` TEXT' ];
+    $sql[] = sprintf('ALTER TABLE %s ADD `%s` TEXT',
+        _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME,
+        'address_locker'
+    );
 
-    $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
-    ADD `name_locker` TEXT';
+    $sql[] = sprintf('ALTER TABLE %s ADD `%s` TEXT',
+        _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME,
+        'name_locker'
+    );
     
 
     foreach ($sql as $query) {
@@ -39,8 +43,8 @@ function upgrade_module_1_4_26($object)
     }
 
     return (version_compare(_PS_VERSION_, '1.7.0.0') < 0
-        ? $object->registerHook('extraCarrier')
-        : $object->registerHook('displayCarrierExtraContent')) &&
+            ? $object->registerHook('extraCarrier')
+            : $object->registerHook('displayCarrierExtraContent')) &&
         $object->registerHook('actionValidateOrder') &&
         $object->registerHook('actionCarrierProcess');
 }
