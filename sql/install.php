@@ -86,14 +86,18 @@ $sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayLocker::TABLE_NAME . "` (
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
 
-$sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '` (
+$sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . "` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
           `id_order` int(11) unsigned NOT NULL,
           `id_locker` int(11) unsigned NOT NULL,
-          `name_locker` varchar() unsigned NOT NULL,
-          `address_locker` varchar() unsigned NOT NULL,
           PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB;';
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+
+$sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
+            ADD `address_locker` TEXT';
+
+$sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
+            ADD `name_locker` TEXT';
 
 $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayService::TABLE_NAME . '
             ADD `service_optional_taxes` TEXT';
@@ -106,7 +110,7 @@ $sql[] = 'CREATE TABLE `' . _DB_PREFIX_ . SamedayOpenPackage::TABLE_NAME ."` (
         ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
 
 foreach ($sql as $query) {
-    if (Db::getInstance()->execute($query) == false) {
+    if (!Db::getInstance()->execute($query)) {
         return false;
     }
 }
