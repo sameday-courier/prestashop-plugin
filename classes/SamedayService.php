@@ -170,8 +170,6 @@ class SamedayService extends ObjectModel
 
     public static function deactivateAllServices($liveMode = false)
     {
-        $liveMode = (int) Configuration::get('SAMEDAY_LIVE_MODE', 0);
-
         return Db::getInstance()->update(self::TABLE_NAME, array('disabled' => 1), 'live_mode = '. (int) $liveMode);
     }
 

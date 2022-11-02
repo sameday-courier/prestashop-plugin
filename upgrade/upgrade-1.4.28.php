@@ -23,18 +23,17 @@ if (!defined('_PS_VERSION_')) {
  * useful when you modify your database, or register a new hook ...
  * Don't forget to create one file per version.
  */
-function upgrade_module_1_4_26($object)
+function upgrade_module_1_4_28($object)
 {
-    $sql[] = sprintf('ALTER TABLE %s ADD `%s` TEXT',
-        _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME,
-        'address_locker'
-    );
+    $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
+            ADD `address_locker` TEXT';
 
-    $sql[] = sprintf('ALTER TABLE %s ADD `%s` TEXT',
-        _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME,
-        'name_locker'
-    );
-    
+    $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
+            ADD `name_locker` TEXT';
+
+    // Refresh Locker list
+    $sql[] = 'DELETE FROM ' . _DB_PREFIX_ . SamedayLocker::TABLE_NAME;
+    Configuration::updateValue('SAMEDAY_LAST_LOCKERS', 0);
 
     foreach ($sql as $query) {
         if (Db::getInstance()->execute($query) === false) {
