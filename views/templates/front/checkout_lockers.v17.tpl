@@ -23,6 +23,7 @@
  * International Registered Trademark & Property of PrestaShop SA
  *}
 <script src="https://cdn.sameday.ro/locker-plugin/lockerpluginsdk.js"></script>
+
 {include file='./_partials/checkout_lockers.tpl'}
 <div class="col-sm-2">
     {l s='Select locker' mod='samedaycourier'}

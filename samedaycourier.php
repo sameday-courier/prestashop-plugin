@@ -111,7 +111,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.28';
+        $this->version = '1.4.29';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1519,6 +1519,7 @@ class SamedayCourier extends CarrierModule
         $lockerName = null;
         $lockerAddress = null;
         if (null !== $locker = SamedayOrderLocker::getLockerForOrder($order->id)) {
+            $samedayOrderLockerId = isset($locker['id']) ? $locker['id'] : null;
             $lockerId = isset($locker['id_locker']) ? $locker['id_locker'] : null;
             $lockerName = isset($locker['name_locker']) ? $locker['name_locker'] : null;
             $lockerAddress = isset($locker['address_locker']) ? $locker['address_locker'] : null;
@@ -1535,8 +1536,11 @@ class SamedayCourier extends CarrierModule
                 'awb'           => $awb,
                 'allowParcel'   => $allowParcel,
                 'lockerId'      => ((int) $lockerId) > 0,
+                'samedayUser'   => Configuration::get('SAMEDAY_ACCOUNT_USER'),
+                'hostCountry'   => Configuration::get('SAMEDAY_HOST_COUNTRY') ?? 'ro', // Default will always be 'ro'
                 'lockerDetails' => sprintf('%s  %s', $lockerName, $lockerAddress),
                 'allowLocker'   => ((int) $lockerId) > 0,
+                'samedayOrderLockerId'   => $samedayOrderLockerId,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
                 'ajaxRoute'     => $this->ajaxRoute,
                 'messages' => $this->messages,

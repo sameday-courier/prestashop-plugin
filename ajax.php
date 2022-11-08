@@ -22,12 +22,29 @@ include(dirname(__FILE__) . '/classes/SamedayAwbParcelHistory.php');
 include(dirname(__FILE__) . '/classes/SamedayConstants.php');
 include(dirname(__FILE__) . '/classes/SamedayPersistenceDataHandler.php');
 
+
 if (Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10) != Tools::getValue('token') ||
     !Module::isInstalled('samedaycourier')
 ) {
     die('Bad token');
 }
 
+if (Tools::getValue('updateStatus') == 'true') {
+    include(dirname(__FILE__) . '/classes/SamedayOrderLocker.php');
+    $lockerDetails = json_decode(Tools::getValue('lockerDetails'), true);
+    $lockerId = $lockerDetails['id'];
+    $lockerName = $lockerDetails['name'];
+    $lockerAddress = $lockerDetails['address'];
+
+    $orderLocker = new SamedayOrderLocker(Tools::getValue('samedayOrderLockerId'));
+    $orderLocker->id_locker = $lockerId;
+    $orderLocker->name_locker = $lockerName;
+    $orderLocker->address_locker = $lockerAddress;
+
+    $orderLocker->save();
+
+    die($lockerId);
+}
 if (Tools::getValue('awb_id')) {
     $awbId = (int)Tools::getValue('awb_id');
     $country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ? Configuration::get('SAMEDAY_HOST_COUNTRY') : 'ro';
