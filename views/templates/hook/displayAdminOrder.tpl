@@ -22,7 +22,7 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  * International Registered Trademark & Property of PrestaShop SA
  *}
-
+<script src="https://cdn.sameday.ro/locker-plugin/lockerpluginsdk.js"></script>
 {if $messages|count}
     {foreach from=$messages item=message}
         <div class="alert alert-{$message.type|escape:'html':'UTF-8'}">
@@ -397,8 +397,12 @@
                             <label class="col-sm-3 control-label"
                                    for="input-status-sameday-locker-details">{l s='Locker Details' mod='samedaycourier'}</label>
                             <div class="col-sm-9">
-                                <input type="text" name="locker-details" value="{$lockerDetails|escape:'html':'UTF-8'}" class="form-control" readonly>
+                                <input type="text" name="locker-details" id="sameday_locker_name" value="{$lockerDetails|escape:'html':'UTF-8'}" class="form-control" readonly>
                             </div>
+                            <div class="col-sm-12">
+                                <button data-username="{$samedayUser}" data-country="{$hostCountry}" class="btn btn-primary update-status ml-3 sameday_select_locker" type="button" id="select_locker" style="margin-left: 0px !important; margin-top: 10px;">Change locker</button> 
+                            </div>
+
                         </div>
 
 
@@ -515,4 +519,53 @@
             }
         });
     });
+
+    function init(){
+    let selectors = {
+        selectLockerMap: document.querySelector('#select_locker')
+    };
+    
+    selectors.selectLockerMap.addEventListener('click', openLockers);
+}      
+
+function openLockers(){
+
+        /* DOM node selectors. */
+        const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have unique clientId
+        const countryCode= document.querySelector('#select_locker').getAttribute('data-country').toUpperCase(); //country for which the plugin is used
+        const langCode= document.querySelector('#select_locker').getAttribute('data-country').toLowerCase(); //language of the plugin
+        const samedayUser = document.querySelector('#select_locker').getAttribute('data-username').toLowerCase(); //sameday username
+        window['LockerPlugin'].init({ clientId: clientId, countryCode: countryCode, langCode: langCode, apiUsername: samedayUser });
+        let pluginInstance = window['LockerPlugin'].getInstance();
+
+        pluginInstance.open();
+
+        pluginInstance.subscribe((message) => {
+            let lockerDetails = {};
+            lockerDetails.id = message.lockerId;
+            lockerDetails.name  = message.name;
+            lockerDetails.address = message.address;
+
+            let samedayOrderLockerId = '{$samedayOrderLockerId|escape:'html':'UTF-8'}';
+           
+            pluginInstance.close();
+            document.querySelector('#sameday_locker_name').value = message.name + " - " +message.address;
+           console.log(JSON.stringify(lockerDetails));
+           jQuery.ajax({
+                type: "POST",
+                url: '{$ajaxRoute|escape:'html':'UTF-8'}' + '&updateStatus=true',
+                data: "lockerDetails=" + JSON.stringify(lockerDetails) + '&samedayOrderLockerId=' + samedayOrderLockerId,
+                success: function(msg){
+                    console.log(msg);
+                }
+            });
+
+
+            
+        })
+
+}
+
+setTimeout(init, 2000);
+
 </script>
