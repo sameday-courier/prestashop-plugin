@@ -25,8 +25,8 @@ if (!defined('_PS_VERSION_')) {
  */
 function upgrade_module_1_3_0($object)
 {
-    $sql = ['ALTER TABLE ' . _DB_PREFIX_ . SamedayService::TABLE_NAME . '
-            ADD `service_optional_taxes` TEXT'];
+    $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayService::TABLE_NAME . '
+            ADD `service_optional_taxes` TEXT';
     $sql[] = 'CREATE TABLE `' . _DB_PREFIX_ . SamedayOpenPackage::TABLE_NAME ."` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
           `id_order` int(11) unsigned NOT NULL,

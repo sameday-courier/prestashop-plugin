@@ -18,17 +18,17 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-include(dirname(__FILE__). '/libs/sameday-php-sdk/src/Sameday/autoload.php');
-include(dirname(__FILE__). '/classes/SamedayService.php');
-include(dirname(__FILE__). '/classes/SamedayPickupPoint.php');
-include(dirname(__FILE__). '/classes/SamedayLocker.php');
-include(dirname(__FILE__). '/classes/SamedayOrderLocker.php');
-include(dirname(__FILE__). '/classes/SamedayOpenPackage.php');
-include(dirname(__FILE__). '/classes/SamedayAwb.php');
-include(dirname(__FILE__). '/classes/SamedayAwbParcel.php');
-include(dirname(__FILE__). '/classes/SamedayAwbParcelHistory.php');
-include(dirname(__FILE__). '/classes/SamedayConstants.php');
-include(dirname(__FILE__). '/classes/SamedayPersistenceDataHandler.php');
+include(__DIR__ . '/libs/sameday-php-sdk/src/Sameday/autoload.php');
+include(__DIR__ . '/classes/SamedayService.php');
+include(__DIR__ . '/classes/SamedayPickupPoint.php');
+include(__DIR__ . '/classes/SamedayLocker.php');
+include(__DIR__ . '/classes/SamedayOrderLocker.php');
+include(__DIR__ . '/classes/SamedayOpenPackage.php');
+include(__DIR__ . '/classes/SamedayAwb.php');
+include(__DIR__ . '/classes/SamedayAwbParcel.php');
+include(__DIR__ . '/classes/SamedayAwbParcelHistory.php');
+include(__DIR__ . '/classes/SamedayConstants.php');
+include(__DIR__ . '/classes/SamedayPersistenceDataHandler.php');
 
 /**
  * Class SamedayCourier
@@ -111,7 +111,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.27';
+        $this->version = '1.4.28';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -153,7 +153,7 @@ class SamedayCourier extends CarrierModule
 //        Configuration::updateValue('SAMEDAY_LIVE_MODE', 0);
         Configuration::updateValue('SAMEDAY_CRON_TOKEN', uniqid('', ''));
 
-        include(dirname(__FILE__) . '/sql/install.php');
+        include(__DIR__ . '/sql/install.php');
 
         $hookDisplayAdminOrder = 'displayAdminOrderContentShip';
         if ($this->getMinorVersion() > 6) {
@@ -1409,7 +1409,7 @@ class SamedayCourier extends CarrierModule
         $carrier->range_behavior = 0;
         $carrier->external_module_name = $this->name;
 
-        if ((bool)$service['free_delivery'] && $service['free_shipping_threshold'] == 0) {
+        if ($service['free_delivery'] && ((int) $service['free_shipping_threshold']) === 0) {
             $carrier->is_free = true;
         }
 
@@ -1418,8 +1418,8 @@ class SamedayCourier extends CarrierModule
         }
 
         try {
-            if ($carrier->add() == true) {
-                @copy(dirname(__FILE__) . '/views/img/carrier_image.jpg', _PS_SHIP_IMG_DIR_
+            if ($carrier->add() === true) {
+                @copy(__DIR__ . '/views/img/carrier_image.jpg', _PS_SHIP_IMG_DIR_
                     . '/' . (int)$carrier->id . '.jpg');
 
                 Configuration::updateValue($carrier_key, (int)$carrier->id);
@@ -1519,10 +1519,10 @@ class SamedayCourier extends CarrierModule
         $lockerName = null;
         $lockerAddress = null;
         if (null !== $locker = SamedayOrderLocker::getLockerForOrder($order->id)) {
-            $samedayOrderLockerId = $locker['id'] ?? null;
-            $lockerId = $locker['id_locker'] ?? null;
-            $lockerName = $locker['name_locker'] ?? null;
-            $lockerAddress = $locker['address_locker'] ?? null;
+            $samedayOrderLockerId = isset($locker['id']) ? $locker['id'] : null;
+            $lockerId = isset($locker['id_locker']) ? $locker['id_locker'] : null;
+            $lockerName = isset($locker['name_locker']) ? $locker['name_locker'] : null;
+            $lockerAddress = isset($locker['address_locker']) ? $locker['address_locker'] : null;
         }
 
         $this->smarty->assign(
@@ -1555,7 +1555,7 @@ class SamedayCourier extends CarrierModule
      *
      * @return bool
      */
-    private function checkForCashPayment(string $paymentType)
+    private function checkForCashPayment($paymentType)
     {
         foreach (self::COD as $value) {
             if (stripos($paymentType, $value) !== false) {
@@ -1677,7 +1677,7 @@ class SamedayCourier extends CarrierModule
     {
         if ($service['code'] === self::LOCKER_NEXT_DAY) {
             $sameday_user = Configuration::get('SAMEDAY_ACCOUNT_USER');
-            $hostCountry = Configuration::get('SAMEDAY_HOST_COUNTRY') ?? 'ro'; // Default will always be 'ro'
+            $hostCountry = Configuration::get('SAMEDAY_HOST_COUNTRY') !== null ? Configuration::get('SAMEDAY_HOST_COUNTRY') : 'ro'; // Default will always be 'ro'
             $useLockerMap = (bool) Configuration::get('SAMEDAY_LOCKERS_MAP');
 
             $lockers = null;
@@ -1796,9 +1796,9 @@ class SamedayCourier extends CarrierModule
     public function hookActionValidateStepComplete($params)
     {
         $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
-        $lockerId = $_COOKIE['samedaycourier_locker_id'] ?? null;
-        $lockerName = $_COOKIE['samedaycourier_locker_name'] ?? null;
-        $lockerAddress = $_COOKIE['samedaycourier_locker_address'] ?? null;
+        $lockerId = isset($_COOKIE['samedaycourier_locker_id']) ? $_COOKIE['samedaycourier_locker_id'] : null;
+        $lockerName = isset($_COOKIE['samedaycourier_locker_name']) ? $_COOKIE['samedaycourier_locker_name'] : null;
+        $lockerAddress = isset($_COOKIE['samedaycourier_locker_address']) ? $_COOKIE['samedaycourier_locker_address'] : null;
 
         if (($service['code'] === self::LOCKER_NEXT_DAY) && null === $lockerId) {
             $this->context->controller->errors[] = $this->l('Please select your easyBox from lockers map');
@@ -2082,7 +2082,7 @@ class SamedayCourier extends CarrierModule
      * @param $testing_mode
      * @param $country
      * @return bool
-     * @throws SamedaySDKException
+     * @throws \Sameday\Exceptions\SamedaySDKException
      */
     private function loginClient($form_values, $testing_mode, $country)
     {
