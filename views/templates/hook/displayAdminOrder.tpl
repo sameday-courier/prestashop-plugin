@@ -393,18 +393,26 @@
 
 
                         <!-- Locker Details //-->
+                        {if $lockerId}
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
                                    for="input-status-sameday-locker-details">{l s='Locker Details' mod='samedaycourier'}</label>
                             <div class="col-sm-9">
                                 <input type="text" name="locker-details" id="sameday_locker_name" value="{$lockerDetails|escape:'html':'UTF-8'}" class="form-control" readonly>
                             </div>
+
+                            <input type="hidden" id="locker_id" name="locker_id" value="{$idLocker|escape:'html':'UTF-8'}">
+                            <input type="hidden" id="locker_name" name="locker_name" value="{$lockerName|escape:'html':'UTF-8'}">
+                            <input type="hidden" id="locker_address" name="locker_address" value="{$lockerAddress|escape:'html':'UTF-8'}">
+                            <input type="hidden" id="samedayOrderLockerId" name="samedayOrderLockerId" value="{$samedayOrderLockerId|escape:'html':'UTF-8'}">
+
+                            
                             <div class="col-sm-12">
                                 <button data-username="{$samedayUser}" data-country="{$hostCountry}" class="btn btn-primary update-status ml-3 sameday_select_locker" type="button" id="select_locker" style="margin-left: 0px !important; margin-top: 10px;">Change locker</button> 
                             </div>
 
                         </div>
-
+                        {/if}
 
                         {if $allowLocker}
                         <!-- Locker !-->
@@ -541,24 +549,17 @@ function openLockers(){
         pluginInstance.open();
 
         pluginInstance.subscribe((message) => {
-            let lockerDetails = {};
-            lockerDetails.id = message.lockerId;
-            lockerDetails.name  = message.name;
-            lockerDetails.address = message.address;
-
             let samedayOrderLockerId = '{$samedayOrderLockerId|escape:'html':'UTF-8'}';
            
             pluginInstance.close();
+            
+            document.querySelector('#locker_id').value = message.lockerId;
+            document.querySelector('#locker_name').value = message.name;
+            document.querySelector('#locker_address').value = message.address;
+
             document.querySelector('#sameday_locker_name').value = message.name + " - " +message.address;
            console.log(JSON.stringify(lockerDetails));
-           jQuery.ajax({
-                type: "POST",
-                url: '{$ajaxRoute|escape:'html':'UTF-8'}' + '&updateStatus=true',
-                data: "lockerDetails=" + JSON.stringify(lockerDetails) + '&samedayOrderLockerId=' + samedayOrderLockerId,
-                success: function(msg){
-                    console.log(msg);
-                }
-            });
+           
 
 
             

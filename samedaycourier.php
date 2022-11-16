@@ -1539,6 +1539,9 @@ class SamedayCourier extends CarrierModule
                 'samedayUser'   => Configuration::get('SAMEDAY_ACCOUNT_USER'),
                 'hostCountry'   => Configuration::get('SAMEDAY_HOST_COUNTRY') ?? 'ro', // Default will always be 'ro'
                 'lockerDetails' => sprintf('%s  %s', $lockerName, $lockerAddress),
+                'idLocker'      => $lockerId,
+                'lockerName'    => $lockerName,
+                'lockerAddress' => $lockerAddress,
                 'allowLocker'   => ((int) $lockerId) > 0,
                 'samedayOrderLockerId'   => $samedayOrderLockerId,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
@@ -1854,11 +1857,13 @@ class SamedayCourier extends CarrierModule
         ); 
 
         $lockerId = null;
-        if ((null !== $locker = SamedayOrderLocker::getLockerForOrder($order->id))
-            && null !== $locker['name_locker']
-            && null !== $locker['address_locker']
+        if (('' !== Tools::getValue('locker_id'))
+            && '' !== Tools::getValue('locker_name')
+            && '' !== Tools::getValue('locker_address')
         ) {
-            $lockerId = (int) $locker['id_locker'];
+            $lockerId = (int) Tools::getValue('locker_id');
+            $lockerName = Tools::getValue('locker_name');
+            $lockerAddress = Tools::getValue('locker_address');
         }
 
         $serviceTaxIds = array();
@@ -1924,6 +1929,13 @@ class SamedayCourier extends CarrierModule
             $order->shipping_number = $samedayAwb->awb_number;
             $order->update();
 
+            if (null !== $lockerId) {
+                $orderLocker = new SamedayOrderLocker(Tools::getValue('samedayOrderLockerId'));
+                $orderLocker->id_locker = $lockerId;
+                $orderLocker->name_locker = $lockerName;
+                $orderLocker->address_locker = $lockerAddress;
+                $orderLocker->save();
+            }
             $this->addMessage('success', $this->l('AWB was generated.'));
 
             return $samedayAwb;
