@@ -1506,8 +1506,13 @@ class SamedayCourier extends CarrierModule
         }
 
         $service = SamedayService::findByCarrierId($order->id_carrier);
+        $serviceId = null;
+        $allowLocker = false;
         if ($service) {
-            $service = $service['id_service'];
+            $serviceId = $service['id_service'];
+            if ($service['code'] === self::LOCKER_NEXT_DAY) {
+                $allowLocker = true;
+            }
         }
 
         $repayment = 0.0;
@@ -1518,6 +1523,7 @@ class SamedayCourier extends CarrierModule
         $lockerId = null;
         $lockerName = null;
         $lockerAddress = null;
+        $samedayOrderLockerId = null;
         if (null !== $locker = SamedayOrderLocker::getLockerForOrder($order->id)) {
             $samedayOrderLockerId = isset($locker['id']) ? $locker['id'] : null;
             $lockerId = isset($locker['id_locker']) ? $locker['id_locker'] : null;
@@ -1530,7 +1536,8 @@ class SamedayCourier extends CarrierModule
                 'orderId'       => $order->id,
                 'pickup_points' => $pickupPoints,
                 'services'      => $services,
-                'current_service' => $service,
+                'current_service' => $serviceId,
+                'lockerNextDayCode' => self::LOCKER_NEXT_DAY,
                 'package_types' => $packageTypes,
                 'repayment'     => $repayment,
                 'awb'           => $awb,
@@ -1542,7 +1549,7 @@ class SamedayCourier extends CarrierModule
                 'idLocker'      => $lockerId,
                 'lockerName'    => $lockerName,
                 'lockerAddress' => $lockerAddress,
-                'allowLocker'   => ((int) $lockerId) > 0,
+                'allowLocker'   => $allowLocker,
                 'samedayOrderLockerId'   => $samedayOrderLockerId,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
                 'ajaxRoute'     => $this->ajaxRoute,
@@ -1857,14 +1864,15 @@ class SamedayCourier extends CarrierModule
         ); 
 
         $lockerId = null;
-        if (('' !== Tools::getValue('locker_id'))
+        $lockerName = null;
+        $lockerAddress = null;
+        if (($service['code'] === self::LOCKER_NEXT_DAY) && ('' !== Tools::getValue('locker_id'))
             && '' !== Tools::getValue('locker_name')
-            && '' !== Tools::getValue('locker_address')
-        ) {
-            $lockerId = (int) Tools::getValue('locker_id');
-            $lockerName = Tools::getValue('locker_name');
-            $lockerAddress = Tools::getValue('locker_address');
-        }
+            && '' !== Tools::getValue('locker_address')) {
+                $lockerId = (int) Tools::getValue('locker_id');
+                $lockerName = Tools::getValue('locker_name');
+                $lockerAddress = Tools::getValue('locker_address');
+            }
 
         $serviceTaxIds = array();
         if (!empty(Tools::getValue('sameday_open_package'))) {
@@ -1929,13 +1937,22 @@ class SamedayCourier extends CarrierModule
             $order->shipping_number = $samedayAwb->awb_number;
             $order->update();
 
-            if (null !== $lockerId) {
-                $orderLocker = new SamedayOrderLocker(Tools::getValue('samedayOrderLockerId'));
+            if (null !== $lockerId && $service['code'] === self::LOCKER_NEXT_DAY) {
+                $samedayOrderLockerId = Tools::getValue('samedayOrderLockerId');
+                if ('' === $samedayOrderLockerId) {
+                    $orderLocker = new SamedayOrderLocker();
+                    $orderLocker->id_order = $order->id;
+                } else {
+                    $orderLocker = new SamedayOrderLocker($samedayOrderLockerId);
+                }
+
                 $orderLocker->id_locker = $lockerId;
                 $orderLocker->name_locker = $lockerName;
                 $orderLocker->address_locker = $lockerAddress;
+
                 $orderLocker->save();
             }
+
             $this->addMessage('success', $this->l('AWB was generated.'));
 
             return $samedayAwb;

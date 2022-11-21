@@ -374,11 +374,54 @@
                                         class="form-control">
                                     {foreach from=$services item=service}
                                             {if $service.status > 0}
-                                                <option value="{$service.id_service|escape:'html':'UTF-8'}"
-                                                {if $service.id_service == $current_service}selected="selected"{/if}>{$service.name|escape:'html':'UTF-8'}</option>
+                                                <option
+                                                    value="{$service.id_service|escape:'html':'UTF-8'}"
+                                                    data-service_code="{$service.code|escape:'html':'UTF-8'}"
+                                                    data-locker_next_day_code="{$lockerNextDayCode|escape:'html':'UTF-8'}"
+                                                    {if $service.id_service == $current_service}selected="selected"{/if}
+                                                >
+                                                    {$service.name|escape:'html':'UTF-8'}
+                                                </option>
                                             {/if}
                                     {/foreach}
                                 </select>
+                            </div>
+                        </div>
+
+                        {if $allowLocker}
+                            <!-- Locker !-->
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label"><strong>{l s='Deliver to locker' mod='samedaycourier'}</strong></label>
+                            </div>
+                        {/if}
+
+                        {assign var="display" value = ($allowLocker) ? 'block' : 'none'}
+                        <div class="form-group" style="display: {$display}" id="showLockerDetails">
+                            <label class="col-sm-3 control-label"
+                                   for="input-status-sameday-locker-details">{l s='Locker Details' mod='samedaycourier'}
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" name="locker-details" id="sameday_locker_name" value="{$lockerDetails|escape:'html':'UTF-8'}" class="form-control" readonly>
+                            </div>
+
+                            <input type="hidden" id="locker_id" name="locker_id" value="{$idLocker|escape:'html':'UTF-8'}">
+                            <input type="hidden" id="locker_name" name="locker_name" value="{$lockerName|escape:'html':'UTF-8'}">
+                            <input type="hidden" id="locker_address" name="locker_address" value="{$lockerAddress|escape:'html':'UTF-8'}">
+                            <input type="hidden" id="samedayOrderLockerId" name="samedayOrderLockerId" value="{$samedayOrderLockerId|escape:'html':'UTF-8'}">
+
+                            <label class="col-sm-3 control-label"
+                                   for="input-status-select_locker">
+                            </label>
+
+                            <div class="col-sm-9">
+                                <button data-username="{$samedayUser}" data-country="{$hostCountry}"
+                                        class="btn btn-warning update-status ml-3 sameday_select_locker"
+                                        type="button"
+                                        id="select_locker"
+                                        style="margin-left: 0px !important; margin-top: 10px;"
+                                >
+                                    {l s='Change locker' mod='samedaycourier'}
+                                </button>
                             </div>
                         </div>
 
@@ -390,36 +433,6 @@
                                 <input type="checkbox" name="sameday_open_package" {if $isOpenPackage} checked="checked" {/if} id="input-status-sameday-open-package" class="form-control">
                             </div>
                         </div>
-
-
-                        <!-- Locker Details //-->
-                        {if $lockerId}
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label"
-                                   for="input-status-sameday-locker-details">{l s='Locker Details' mod='samedaycourier'}</label>
-                            <div class="col-sm-9">
-                                <input type="text" name="locker-details" id="sameday_locker_name" value="{$lockerDetails|escape:'html':'UTF-8'}" class="form-control" readonly>
-                            </div>
-
-                            <input type="hidden" id="locker_id" name="locker_id" value="{$idLocker|escape:'html':'UTF-8'}">
-                            <input type="hidden" id="locker_name" name="locker_name" value="{$lockerName|escape:'html':'UTF-8'}">
-                            <input type="hidden" id="locker_address" name="locker_address" value="{$lockerAddress|escape:'html':'UTF-8'}">
-                            <input type="hidden" id="samedayOrderLockerId" name="samedayOrderLockerId" value="{$samedayOrderLockerId|escape:'html':'UTF-8'}">
-
-                            
-                            <div class="col-sm-12">
-                                <button data-username="{$samedayUser}" data-country="{$hostCountry}" class="btn btn-primary update-status ml-3 sameday_select_locker" type="button" id="select_locker" style="margin-left: 0px !important; margin-top: 10px;">Change locker</button> 
-                            </div>
-
-                        </div>
-                        {/if}
-
-                        {if $allowLocker}
-                        <!-- Locker !-->
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label"><strong>{l s='Deliver to locker' mod='samedaycourier'}</strong></label>
-                        </div>
-                        {/if}
 
                         <!-- Awb Payment //-->
                         <div class="form-group hidden">
@@ -447,6 +460,22 @@
     </div>
     <script type="text/javascript">
         $(document).ready(function () {
+            $(document).on('change', '#input-status-sameday-service', (element) => {
+                const _target = element.target;
+                const selectedOption = _target.options[_target.selectedIndex];
+
+                const showLockerDetailsElement = document.getElementById('showLockerDetails');
+                showLockerDetailsElement.style.display = 'none';
+
+                let serviceCode = selectedOption.getAttribute('data-service_code');
+                let lockerNextDayCode = selectedOption.getAttribute('data-locker_next_day_code');
+
+                if (serviceCode === lockerNextDayCode) {
+                    showLockerDetailsElement.style.display = 'block';
+                }
+            });
+
+
             $('#plus-btn').click(function (e) {
                 e.preventDefault();
                 $('#sameday_package_qty').val(parseInt($('#sameday_package_qty').val()) + 1);
