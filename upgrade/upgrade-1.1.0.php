@@ -38,7 +38,7 @@ function upgrade_module_1_1_0($object)
           `long` varchar(32) NOT NULL DEFAULT '',
           `live_mode` tinyint(1) NOT NULL DEFAULT '0',
           PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;",
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;",
         'CREATE TABLE `'. _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
           `id_order` int(11) unsigned NOT NULL,

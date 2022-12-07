@@ -97,13 +97,6 @@ class SamedayCourier extends CarrierModule
      */
     const COD = ['Cod', 'Ramburs'];
 
-    const PRODUCTION_CODE = "1";
-    const PRODUCTION_URL_PARAM = "API_URL_PROD";
-    const DEMO_CODE = "0";
-    const DEMO_URL_PARAM = "API_URL_DEMO";
-    const ROMANIA_CODE = "ro";
-    const HUNGARY_CODE = "hu";
-
     /**
      * SamedayCourier constructor.
      */
@@ -111,7 +104,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.4.30';
+        $this->version = '1.5.0';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -233,10 +226,6 @@ class SamedayCourier extends CarrierModule
         $this->renderPickupPointsList();
         $this->renderLockersList();
 
-//        $this->addMessage('info', $this->l('Use this url for cron status sync ') .' ' .
-//            _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/sync.php?token='
-//            .Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10));
-
         if (Configuration::get('SAMEDAY_LIVE_MODE', 0) === 0) {
             $this->addMessage('warning', $this->l('Module Sameday Courier is working in testing mode'));
         }
@@ -245,14 +234,14 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @param null $user
-     * @param null $password
-     * @param null $url_env
-     * @param null $testing_mode
+     * @param $user
+     * @param $password
+     * @param $urlEnv
+     * @param $testingMode
      * @return Sameday\SamedayClient
      * @throws Sameday\Exceptions\SamedaySDKException
      */
-    private function getSamedayClient($user = null, $password = null, $url_env = null, $testing_mode = null)
+    private function getSamedayClient($user = null, $password = null, $urlEnv = null, $testingMode = null): Sameday\SamedayClient
     {
         if ($user === null) {
             $user = Configuration::get('SAMEDAY_ACCOUNT_USER');
@@ -262,25 +251,20 @@ class SamedayCourier extends CarrierModule
             $password = Configuration::get('SAMEDAY_ACCOUNT_PASSWORD');
         }
 
-        if($testing_mode === null){
-            $testing_mode = (Configuration::get('SAMEDAY_LIVE_MODE')) ? Configuration::get('SAMEDAY_LIVE_MODE') : self::DEMO_CODE;
+        if ($testingMode === null) {
+            $testingMode = (Configuration::get('SAMEDAY_LIVE_MODE')) ?: SamedayConstants::DEMO_MODE;
         }
 
-        if ($testing_mode == self::PRODUCTION_CODE) {
-            $url_env_param = self::PRODUCTION_URL_PARAM;
-        } else {
-            $url_env_param = self::DEMO_URL_PARAM;
-        }
+        $country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ?: SamedayConstants::API_HOST_LOCALE_RO;
 
-        if($url_env === null) {
-            $country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ? Configuration::get('SAMEDAY_HOST_COUNTRY') : self::ROMANIA_CODE;
-            $url_env = SamedayConstants::SAMEDAY_ENVS[$country][$url_env_param];
+        if ($urlEnv === null) {
+            $urlEnv = SamedayConstants::SAMEDAY_ENVS[$country][$testingMode];
         }
 
         return new Sameday\SamedayClient(
             $user,
             $password,
-            $url_env,
+            $urlEnv,
             'Prestashop',
             _PS_VERSION_,
             'curl',
@@ -443,25 +427,6 @@ class SamedayCourier extends CarrierModule
                     'icon'  => 'icon-cogs',
                 ),
                 'input'   => array(
-//                    array(
-//                        'type'    => 'switch',
-//                        'label'   => $this->l('Production mode'),
-//                        'name'    => 'SAMEDAY_LIVE_MODE',
-//                        'is_bool' => true,
-//                        'desc'    => $this->l('Use this module in production mode'),
-//                        'values'  => array(
-//                            array(
-//                                'id'    => 'active_on',
-//                                'value' => 1,
-//                                'label' => $this->l('Enabled'),
-//                            ),
-//                            array(
-//                                'id'    => 'active_off',
-//                                'value' => 0,
-//                                'label' => $this->l('Disabled'),
-//                            ),
-//                        ),
-//                    ),
                     array(
                         'col'    => 2,
                         'type'   => 'text',
@@ -489,17 +454,6 @@ class SamedayCourier extends CarrierModule
                             'name' => 'name'
                         ),
                     ),
-                    // array(
-                    //     'type'    => 'select',
-                    //     'name'    => 'SAMEDAY_ORDER_STATUS_AWB',
-                    //     'label'   => $this->l('Order status', 'sameday'),
-                    //     'desc'    => $this->l('Select order status that allow to generate AWB', 'sameday'),
-                    //     'options' => array(
-                    //         'query' => OrderState::getOrderStates((int)$this->context->language->id),
-                    //         'id'    => 'id_order_state',
-                    //         'name' => 'name',
-                    //     ),
-                    // ),
                     array(
                         'type'    => 'switch',
                         'label'   => $this->l('Use estimated cost'),
@@ -609,17 +563,7 @@ class SamedayCourier extends CarrierModule
                 ),
                 'submit'  => array(
                     'title' => $this->l('Save'),
-                ),
-                'buttons' => array(
-                    '0' => array(
-                        'type'  => 'submit',
-                        'title' => $this->l('Test connection'),
-                        'name'  => 'test_connection',
-                        'icon'  => 'process-icon-refresh',
-                        'class' => 'pull-right',
-                        'value' => 1,
-                    ),
-                ),
+                )
             ),
         );
     }
@@ -630,10 +574,6 @@ class SamedayCourier extends CarrierModule
     protected function getConfigFormValues()
     {
         return array(
-//            'SAMEDAY_LIVE_MODE'        => Tools::getValue(
-//                'SAMEDAY_LIVE_MODE',
-//                Configuration::get('SAMEDAY_LIVE_MODE', false)
-//            ),
             'SAMEDAY_STATUS_MODE'      => Tools::getValue(
                 'SAMEDAY_STATUS_MODE',
                 Configuration::get('SAMEDAY_STATUS_MODE', false)
@@ -674,10 +614,6 @@ class SamedayCourier extends CarrierModule
                 'SAMEDAY_AWB_PDF_FORMAT',
                 Configuration::get('SAMEDAY_AWB_PDF_FORMAT', null)
             ),
-//            'SAMEDAY_ORDER_STATUS_AWB' => Tools::getValue(
-//                'SAMEDAY_ORDER_STATUS_AWB',
-//                Configuration::get('SAMEDAY_ORDER_STATUS_AWB', [])
-//            ),
         );
     }
 
@@ -796,6 +732,10 @@ class SamedayCourier extends CarrierModule
 
         $helper = new HelperList();
         $helper->toolbar_btn = array();
+        $helper->toolbar_btn['new'] = array(
+            'href' => $this->currentIndex . '&import_pickup_points&token=' . Tools::getAdminTokenLite('AdminModules'),
+            'desc' => $this->l('Import pickup-points assigned to your Sameday account'),
+        );
         $helper->simple_header = false;
         $helper->listTotal = count($pickupPoints);
         $helper->identifier = 'id_pickup_point';
@@ -862,6 +802,10 @@ class SamedayCourier extends CarrierModule
 
         $helper = new HelperList();
         $helper->toolbar_btn = array();
+        $helper->toolbar_btn['new'] = array(
+            'href' => $this->currentIndex . '&import_lockers&token=' . Tools::getAdminTokenLite('AdminModules'),
+            'desc' => $this->l('Local import of easybox. !Note: If you choose for easyBox map, you don\'t need anymore a local import.'),
+        );
         $helper->simple_header = false;
         $helper->listTotal = count($lockers);
         $helper->identifier = 'id_locker';
@@ -1009,10 +953,11 @@ class SamedayCourier extends CarrierModule
 
     /**
      * Save form data.
+     * @throws Sameday\Exceptions\SamedaySDKException
      */
     protected function postProcess()
     {
-        if (((bool)Tools::isSubmit('submit_sameday')) == true) {
+        if ((Tools::isSubmit('submit_sameday')) === true) {
             $form_values = $this->getConfigFormValues();
 
             if ($this->connectionLogin($form_values)) {
@@ -1020,19 +965,20 @@ class SamedayCourier extends CarrierModule
                     Configuration::updateValue($key, Tools::getValue($key));
                 }
             } else {
-                $this->addMessage('danger', $this->l('Bad credential!'));
+                $this->addMessage('danger', $this->l('Connection failed! Verify your credentials and try again later!'));
             }
-
-            if ((bool)Tools::isSubmit('test_connection') == true) {
-                $this->testConnection();
-            }
-
-            $this->importPickupPoints();
-            $this->importLockers();
         }
 
         if (Tools::isSubmit('import_services')) {
             $this->importServices();
+        }
+
+        if (Tools::isSubmit('import_pickup_points')) {
+            $this->importPickupPoints();
+        }
+
+        if (Tools::isSubmit('import_lockers')) {
+            $this->importLockers();
         }
 
         if (Tools::isSubmit('save_sameday_service')) {
@@ -1091,7 +1037,7 @@ class SamedayCourier extends CarrierModule
                 $pickupPoint->city = $pickupPointObject->getCity()->getName();
                 $pickupPoint->address = $pickupPointObject->getAddress();
                 $pickupPoint->is_default = $pickupPointObject->isDefault();
-                $pickupPoint->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
+                $pickupPoint->live_mode = (int) Configuration::get('SAMEDAY_LIVE_MODE', 0);
                 $pickupPoint->save();
 
                 // Save as current pickup points.
@@ -1101,10 +1047,10 @@ class SamedayCourier extends CarrierModule
 
         // Build array of local pickup points.
         $localPickupPoints = array_map(
-            function ($pickupPoint) {
+            static function ($pickupPoint) {
                 return array(
-                    'id' => $pickupPoint['id'],
-                    'sameday_id' => $pickupPoint['id_pickup_point']
+                    'id' => (int) $pickupPoint['id'],
+                    'sameday_id' => (int) $pickupPoint['id_pickup_point']
                 );
             },
             SamedayPickupPoint::getPickupPoints()
@@ -1112,7 +1058,7 @@ class SamedayCourier extends CarrierModule
 
         // Delete local pickup points that aren't present in remote pickup points anymore.
         foreach ($localPickupPoints as $localPickupPoint) {
-            if (!in_array($localPickupPoint['sameday_id'], $remotePickupPoints)) {
+            if (!in_array($localPickupPoint['sameday_id'], $remotePickupPoints, true)) {
                 $toDelete = new SamedayPickupPoint($localPickupPoint['id']);
                 $toDelete->delete();
             }
@@ -1462,7 +1408,7 @@ class SamedayCourier extends CarrierModule
      * @return false|string
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
-     * @throws \Sameday\Exceptions\SamedaySDKException
+     * @throws SamedaySDKException
      * @throws \Sameday\Exceptions\SamedayAuthenticationException
      * @throws \Sameday\Exceptions\SamedayAuthorizationException
      * @throws \Sameday\Exceptions\SamedayBadRequestException
@@ -2028,11 +1974,11 @@ class SamedayCourier extends CarrierModule
     {
         try {
             $awb = SamedayAwb::getOrderAwb($order);
-            $sameday = new \Sameday\Sameday($this->getSamedayClient());
+            $sameday = new Sameday\Sameday($this->getSamedayClient());
 
             if (SamedayAwb::cancelAwbByOrderId($order)) {
                 SamedayAwbParcel::deleteAwbParcels($awb['id']);
-                $request = new \Sameday\Requests\SamedayDeleteAwbRequest($awb['awb_number']);
+                $request = new Sameday\Requests\SamedayDeleteAwbRequest($awb['awb_number']);
                 if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
                     $this->log('Cancel awb', SamedayConstants::DEBUG);
                     $this->log($request, SamedayConstants::DEBUG);
@@ -2045,32 +1991,32 @@ class SamedayCourier extends CarrierModule
 
                 $this->addMessage('success', $this->l('AWB was canceled'));
             }
-        } catch (\Sameday\Exceptions\SamedayOtherException $e) {
-            $response = json_decode($e->getRawResponse()->getBody());
+        } catch (Sameday\Exceptions\SamedayOtherException $e) {
+            $response = json_decode($e->getRawResponse()->getBody(), true);
             $this->addMessage('danger', $response->error->message);
             $this->log($e->getRawResponse()->getBody(), SamedayConstants::ERROR);
         } catch (Exception $e) {
             $this->log($e->getMessage(), SamedayConstants::ERROR);
-            $this->addMessage('danger', $this->l('An error occured while trying to cancel AWB'));
+            $this->addMessage('danger', $this->l('An error occurred while trying to cancel AWB'));
         }
     }
 
     /**
      * @param $order
      * @throws Sameday\Exceptions\SamedaySDKException
-     * @throws \Sameday\Exceptions\SamedayAuthenticationException
-     * @throws \Sameday\Exceptions\SamedayAuthorizationException
-     * @throws \Sameday\Exceptions\SamedayBadRequestException
-     * @throws \Sameday\Exceptions\SamedayNotFoundException
-     * @throws \Sameday\Exceptions\SamedayServerException
+     * @throws Sameday\Exceptions\SamedayAuthenticationException
+     * @throws Sameday\Exceptions\SamedayAuthorizationException
+     * @throws Sameday\Exceptions\SamedayBadRequestException
+     * @throws Sameday\Exceptions\SamedayNotFoundException
+     * @throws Sameday\Exceptions\SamedayServerException
      */
     private function downloadAwb($order)
     {
         $awb = SamedayAwb::getOrderAwb($order);
-        $sameday = new \Sameday\Sameday($this->getSamedayClient());
-        $request = new \Sameday\Requests\SamedayGetAwbPdfRequest(
+        $sameday = new Sameday\Sameday($this->getSamedayClient());
+        $request = new Sameday\Requests\SamedayGetAwbPdfRequest(
             $awb['awb_number'],
-            new \Sameday\Objects\Types\AwbPdfType(Configuration::get('SAMEDAY_AWB_PDF_FORMAT'))
+            new Sameday\Objects\Types\AwbPdfType(Configuration::get('SAMEDAY_AWB_PDF_FORMAT'))
         );
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
             $this->log('Download awb', SamedayConstants::DEBUG);
@@ -2107,71 +2053,75 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @param $form_values
-     * @param $testing_mode
-     * @param $country
+     * @param string $username
+     * @param string $password
+     * @param int $testing_mode
+     * @param string $country
+     * @param string $url
+     *
      * @return bool
-     * @throws \Sameday\Exceptions\SamedaySDKException
+     *
+     * @throws Sameday\Exceptions\SamedaySDKException
      */
-    private function loginClient($form_values, $testing_mode, $country)
+    private function loginClient(
+        string $username,
+        string $password,
+        int $testing_mode,
+        string $country,
+        string $url
+    ): bool
     {
-        if(!in_array($testing_mode, [self::DEMO_CODE, self::PRODUCTION_CODE])) return false;
-        if(!is_array($form_values)) return false;
-        if(!in_array($country, [self::ROMANIA_CODE, self::HUNGARY_CODE])) return false;
-
-        if($testing_mode === self::PRODUCTION_CODE){
-            $url = (!empty(SamedayConstants::SAMEDAY_ENVS)) ? SamedayConstants::SAMEDAY_ENVS[$country][self::PRODUCTION_URL_PARAM] : null;
-        }else{
-            $url =  (!empty(SamedayConstants::SAMEDAY_ENVS)) ? SamedayConstants::SAMEDAY_ENVS[$country][self::DEMO_URL_PARAM] : null;
-        }
-
         $client = $this->getSamedayClient(
-            $form_values['SAMEDAY_ACCOUNT_USER'],
-            $form_values['SAMEDAY_ACCOUNT_PASSWORD'],
+            $username,
+            $password,
             $url,
             $testing_mode
         );
 
         try{
-            if($client->login()){
+            if ($client->login()) {
                 Configuration::updateValue('SAMEDAY_LIVE_MODE', $testing_mode);
                 Configuration::updateValue('SAMEDAY_HOST_COUNTRY', $country);
+
                 return true;
             }
         } catch (Exception $exception) {
             $this->addMessage('danger', $this->l($exception->getMessage()));
         }
+
         return false;
     }
 
     /**
-     * @param null $form_values
+     * @param array $form_values
+     *
      * @return bool
-     * @throws SamedaySDKException
+     * @throws Sameday\Exceptions\SamedaySDKException
      */
-    private function connectionLogin($form_values = null)
+    private function connectionLogin(array $form_values): bool
     {
-        if(null === $form_values) $form_values = $this->getConfigFormValues();
-        $connected = false;
-        $arr_envs = (!empty(SamedayConstants::SAMEDAY_ENVS)) ? SamedayConstants::SAMEDAY_ENVS : null;
-        foreach($arr_envs as $index => $arr_env){
-            if($this->loginClient($form_values, self::PRODUCTION_CODE, $index) === true) $connected = true;
-            if($this->loginClient($form_values, self::DEMO_CODE, $index) === true) $connected = true;
-        }
-        return $connected;
-    }
+        $isLogged = false;
+        $envModes = SamedayConstants::SAMEDAY_ENVS;
 
-    private function testConnection()
-    {
-        try {
-            if ($this->connectionLogin()) {
-                $this->addMessage('success', $this->l('Connection successfully established'));
-            } else {
-                $this->addMessage('danger', $this->l('Connection could not be established.'));
+        foreach ($envModes as $hostCountry => $envModesByHosts) {
+            if ($isLogged === true) {
+                break;
             }
-        } catch (Sameday\Exceptions\SamedaySDKException $e) {
-            return;
+
+            foreach ($envModesByHosts as $envMode => $apiUrl) {
+                if ($this->loginClient(
+                    $form_values['SAMEDAY_ACCOUNT_USER'],
+                    $form_values['SAMEDAY_ACCOUNT_PASSWORD'],
+                    $envMode,
+                    $hostCountry,
+                    $apiUrl
+                )) {
+                    $isLogged = true;
+                }
+            }
         }
+
+        return $isLogged;
     }
 
     /**

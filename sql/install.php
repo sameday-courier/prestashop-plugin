@@ -31,7 +31,7 @@ $sql[] = "CREATE TABLE `". _DB_PREFIX_ . SamedayService::TABLE_NAME ."` (
           `disabled` tinyint(1) NOT NULL DEFAULT '0',
           `live_mode` tinyint(1) NOT NULL DEFAULT '0',
           PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
 $sql[] = "CREATE TABLE `". _DB_PREFIX_ . SamedayPickupPoint::TABLE_NAME . "` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -43,7 +43,7 @@ $sql[] = "CREATE TABLE `". _DB_PREFIX_ . SamedayPickupPoint::TABLE_NAME . "` (
           `is_default` tinyint(1) NOT NULL DEFAULT '0',
           `live_mode` tinyint(1) NOT NULL DEFAULT '0',
           PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
 $sql[] = "CREATE TABLE `". _DB_PREFIX_ . SamedayAwb::TABLE_NAME . "` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -52,7 +52,7 @@ $sql[] = "CREATE TABLE `". _DB_PREFIX_ . SamedayAwb::TABLE_NAME . "` (
           `awb_cost` decimal(10,2) DEFAULT NULL,
           `created` datetime DEFAULT NULL,
           PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
 $sql[] = "CREATE TABLE `". _DB_PREFIX_ . SamedayAwbParcel::TABLE_NAME . "` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -61,7 +61,7 @@ $sql[] = "CREATE TABLE `". _DB_PREFIX_ . SamedayAwbParcel::TABLE_NAME . "` (
           `position` tinyint(2) NOT NULL,
           `status_sync` text,
           PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
 $sql[] = "CREATE TABLE `". _DB_PREFIX_ . SamedayAwbParcelHistory::TABLE_NAME . "` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -70,7 +70,7 @@ $sql[] = "CREATE TABLE `". _DB_PREFIX_ . SamedayAwbParcelHistory::TABLE_NAME . "
           `history` text,
           `expedition` text,
           PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
 $sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayLocker::TABLE_NAME . "` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -84,14 +84,14 @@ $sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayLocker::TABLE_NAME . "` (
           `long` varchar(32) NOT NULL DEFAULT '',
           `live_mode` tinyint(1) NOT NULL DEFAULT '0',
           PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
 $sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . "` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
           `id_order` int(11) unsigned NOT NULL,
           `id_locker` int(11) unsigned NOT NULL,
           PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
 $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
             ADD `address_locker` TEXT';
@@ -107,7 +107,7 @@ $sql[] = 'CREATE TABLE `' . _DB_PREFIX_ . SamedayOpenPackage::TABLE_NAME ."` (
           `id_order` int(11) unsigned NOT NULL,
           `is_open_package` tinyint(1) NOT NULL DEFAULT '0',
           PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
 foreach ($sql as $query) {
     if (!Db::getInstance()->execute($query)) {

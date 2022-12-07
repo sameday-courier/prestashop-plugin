@@ -16,21 +16,30 @@
 
 final class SamedayConstants
 {
+    const LIVE_MODE = 1;
+    const DEMO_MODE = 0;
+
+    const API_HOST_LOCALE_RO = 'ro';
+    const API_HOST_LOCALE_HU = 'hu';
+    const API_HOST_LOCALE_BG = 'bg';
+
     const SAMEDAY_ENVS = [
-        'ro' => [
-            'API_URL_PROD' => 'https://api.sameday.ro',
-            'API_URL_DEMO' => 'https://sameday-api.demo.zitec.com',
+        self::API_HOST_LOCALE_RO => [
+            self::LIVE_MODE => 'https://api.sameday.ro',
+            self::DEMO_MODE => 'https://sameday-api.demo.zitec.com',
         ],
-        'hu' => [
-            'API_URL_PROD' => 'https://api.sameday.hu',
-            'API_URL_DEMO' => 'https://sameday-api-hu.demo.zitec.com',
+        self::API_HOST_LOCALE_HU => [
+            self::LIVE_MODE => 'https://api.sameday.hu',
+            self::DEMO_MODE => 'https://sameday-api-hu.demo.zitec.com',
+        ],
+        self::API_HOST_LOCALE_BG => [
+            self::LIVE_MODE => 'https://api.sameday.bg',
+            self::DEMO_MODE => 'https://sameday-api-bg.demo.zitec.com',
         ],
     ];
 
     const DEBUG = 0;
-    const INFO = 1;
     const WARNING = 2;
     const ERROR = 3;
-    const SYNC = 'samedaycourier/sync';
     const AJAX = 'samedaycourier/ajax';
 }
