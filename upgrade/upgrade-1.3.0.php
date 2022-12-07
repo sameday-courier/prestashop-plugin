@@ -32,7 +32,7 @@ function upgrade_module_1_3_0($object)
           `id_order` int(11) unsigned NOT NULL,
           `is_open_package` tinyint(1) NOT NULL DEFAULT '0',
           PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
     foreach ($sql as $query) {
         if (Db::getInstance()->execute($query) === false) {
