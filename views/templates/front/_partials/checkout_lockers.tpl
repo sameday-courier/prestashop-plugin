@@ -34,7 +34,7 @@
             }
         }
 
-        const is_set = (accessor) => {
+        var is_set = (accessor) => {
             try {
                 return accessor() !== undefined && accessor() !== null
             } catch (e) {
@@ -112,7 +112,7 @@
             }
         });
 
-        const set_cookie = (key, value, days) => {
+        var set_cookie = (key, value, days) => {
             let d = new Date();
             d.setTime(d.getTime() + (days*24*60*60*1000));
             let expires = "expires=" + d.toUTCString();
@@ -120,7 +120,7 @@
             document.cookie = key + "=" + value + ";" + expires + ";path=/";
         }
 
-        const get_cookie = (key) => {
+        var get_cookie = (key) => {
             let cookie = '';
             document.cookie.split(';').forEach(function (value) {
                 if (value.split('=')[0].trim() === key) {
