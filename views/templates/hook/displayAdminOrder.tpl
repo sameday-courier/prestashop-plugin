@@ -557,7 +557,7 @@
         });
     });
 
-    function init(){
+    function initialize(){
     let selectors = {
         selectLockerMap: document.querySelector('#select_locker')
     };
@@ -596,6 +596,6 @@ function openLockers(){
 
 }
 
-setTimeout(init, 2000);
+setTimeout(initialize, 2000);
 
 </script>
