@@ -376,7 +376,8 @@
                                             {if $service.status > 0}
                                                 <option
                                                     value="{$service.id_service|escape:'html':'UTF-8'}"
-                                                    data-service_code="{$service.code|escape:'html':'UTF-8'}"
+                                                    data-service_code="{$service.code|escape:'html':'UTF-8'}" 
+                                                    data-locker_fist_mile="{$allowFirstMile|escape:'html':'UTF-8'}"
                                                     data-locker_next_day_code="{$lockerNextDayCode|escape:'html':'UTF-8'}"
                                                     {if $service.id_service == $current_service}selected="selected"{/if}
                                                 >
@@ -425,6 +426,19 @@
                             </div>
                         </div>
 
+                        <!-- Personal delivery at locker //-->
+                        <div class="form-group" id="LockerFirstMile" style="display: {$display}">
+                            <label class="col-sm-12 control-label"
+                                   for="input-status-sameday-locker_first_mile">{l s='Personal delivery at locker' mod='samedaycourier'}</label>
+                            <input type="checkbox" name="sameday_locker_first_mile"  id="input-status-sameday-locker_first_mile" class="form-control col-sm-1">
+                            <div class="col-sm-12">
+                                <span style="display:block;width:100%">Check this field if you want to apply for Personal delivery of the package at an easyBox terminal</span>
+                                <span style="display:block;width:100%"><a href="https://sameday.ro/easybox#lockers-intro" target="_blank">Show map</a></span>
+                                <span class="custom_tooltip">Show locker dimensions<span class="tooltiptext">        <table class="table table-hover"> <tbody style="color: #ffffff"> <tr> <th></th> <th style="text-align: center;">L</th> <th style="text-align: center;">l</th> <th style="text-align: center;">h</th> </tr><tr> <td>Small (cm)</td><td> 47</td><td> 44.5</td><td> 10</td></tr><tr> <td>Medium (cm)</td><td> 47</td><td> 44.5</td><td> 19</td></tr><tr> <td>Large (cm)</td><td> 47</td><td> 44.5</td><td> 39</td></tr> </tbody></table>    </span></span>
+                                <tr></td>
+                            </div>
+                        </div>
+
                         <!-- Open Package //-->
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
@@ -460,20 +474,40 @@
     </div>
     <script type="text/javascript">
         $(document).ready(function () {
-            $(document).on('change', '#input-status-sameday-service', (element) => {
-                const _target = element.target;
-                const selectedOption = _target.options[_target.selectedIndex];
 
-                const showLockerDetailsElement = document.getElementById('showLockerDetails');
-                showLockerDetailsElement.style.display = 'none';
+            let samedayCourierService = document.getElementById('input-status-sameday-service');
 
-                let serviceCode = selectedOption.getAttribute('data-service_code');
-                let lockerNextDayCode = selectedOption.getAttribute('data-locker_next_day_code');
+            let serviceCode = samedayCourierService.selectedOptions[0].getAttribute("data-service_code");
+            let lockerNextDayCode = samedayCourierService.selectedOptions[0].getAttribute("data-locker_next_day_code");
+            let lockerFirstMile = samedayCourierService.selectedOptions[0].getAttribute("data-locker_fist_mile");
+          
+            CheckServices(serviceCode,lockerNextDayCode,lockerFirstMile);
 
-                if (serviceCode === lockerNextDayCode) {
-                    showLockerDetailsElement.style.display = 'block';
-                }
+            samedayCourierService.addEventListener('change', function() {
+
+                serviceCode = samedayCourierService.selectedOptions[0].getAttribute("data-service_code");
+                lockerNextDayCode = samedayCourierService.selectedOptions[0].getAttribute("data-locker_next_day_code");
+                lockerFirstMile = samedayCourierService.selectedOptions[0].getAttribute("data-locker_fist_mile");
+
+                CheckServices(serviceCode,lockerNextDayCode,lockerFirstMile);
             });
+
+        function CheckServices(serviceCode,lockerNextDayCode,lockerFirstMile){
+            const showLockerDetailsElement = document.getElementById('showLockerDetails');
+            showLockerDetailsElement.style.display = 'none';
+            
+            const showlockerFirstMile = document.getElementById('LockerFirstMile');
+            showlockerFirstMile.style.display = 'none';
+            document.getElementById("input-status-sameday-locker_first_mile").checked = false;
+
+            if (serviceCode === lockerNextDayCode) {
+                showLockerDetailsElement.style.display = 'block';
+            }
+
+            if (serviceCode === '24' && lockerFirstMile === '{$allowFirstMile|escape:'html':'UTF-8'}') {
+                showlockerFirstMile.style.display = 'block';
+            }
+        }
 
 
             $('#plus-btn').click(function (e) {
@@ -599,3 +633,33 @@ function openLockers(){
 setTimeout(init, 2000);
 
 </script>
+
+
+<style>
+/* Locker Dimensions Tooltip */
+.custom_tooltip {    
+    position: relative;    
+    display: inline-block;    
+    cursor: help;}
+.custom_tooltip .tooltiptext {    
+    visibility: hidden;    
+    width: auto;    
+    background-color: #523f6d;
+    color: #ffffff;    
+    text-align: center;    
+    border-radius: 5px;    padding: 10px;
+    /* Position the tooltip */    
+    position: absolute;    
+    z-index: 10000;
+}
+.custom_tooltip:hover .tooltiptext {    
+    color: #ffffff;    
+    visibility: visible;
+}
+
+#input-status-sameday-locker_first_mile {
+      width: 22.5px;
+      height: 22.5px;
+      margin-left: 15px;
+}
+</style>

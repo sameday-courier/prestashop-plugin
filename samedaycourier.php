@@ -90,6 +90,8 @@ class SamedayCourier extends CarrierModule
 
     const OPENPACKAGECODE = 'OPCG';
 
+    const PERSONAL_DELIVERY_OPTION_CODE = 'PDO';
+
     const LOCKER_NEXT_DAY = 'LN';
 
     /**
@@ -104,7 +106,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.5.0';
+        $this->version = '1.5.1';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1477,6 +1479,15 @@ class SamedayCourier extends CarrierModule
             $lockerAddress = isset($locker['address_locker']) ? $locker['address_locker'] : null;
         }
 
+
+        $allowFirstMile = null;
+        foreach ($optionalTaxIds as $optionalService) {
+            if ($optionalService['code'] === self::PERSONAL_DELIVERY_OPTION_CODE) {
+                $allowFirstMile = self::PERSONAL_DELIVERY_OPTION_CODE;
+                break;
+            }
+        }
+
         $this->smarty->assign(
             array(
                 'orderId'       => $order->id,
@@ -1497,6 +1508,7 @@ class SamedayCourier extends CarrierModule
                 'lockerAddress' => $lockerAddress,
                 'allowLocker'   => $allowLocker,
                 'samedayOrderLockerId'   => $samedayOrderLockerId,
+                'allowFirstMile'   => self::PERSONAL_DELIVERY_OPTION_CODE,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
                 'ajaxRoute'     => $this->ajaxRoute,
                 'messages' => $this->messages,
@@ -1809,13 +1821,13 @@ class SamedayCourier extends CarrierModule
             (!empty($address->postcode)) ? $address->postcode : null
         ); 
 
-        $lockerId = null;
+        $locker = null;
         $lockerName = null;
         $lockerAddress = null;
         if (($service['code'] === self::LOCKER_NEXT_DAY) && ('' !== Tools::getValue('locker_id'))
             && '' !== Tools::getValue('locker_name')
             && '' !== Tools::getValue('locker_address')) {
-                $lockerId = (int) Tools::getValue('locker_id');
+                $locker = (int) Tools::getValue('locker_id');
                 $lockerName = Tools::getValue('locker_name');
                 $lockerAddress = Tools::getValue('locker_address');
             }
@@ -1826,6 +1838,16 @@ class SamedayCourier extends CarrierModule
             foreach ($optionalTaxIds as $optionalService) {
                 if ($optionalService['code'] === self::OPENPACKAGECODE && $optionalService['type'] === (int) Tools::getValue('sameday_package_type')) {
                     $serviceTaxIds[] = $optionalService['id'];
+                    break;
+                }
+            }
+        }
+
+        if (!empty(Tools::getValue('sameday_locker_first_mile'))) {
+            $optionalTaxIds = unserialize($service['service_optional_taxes']);
+            foreach ($optionalTaxIds as $optionalService) {
+                if ($optionalService['code'] === self::PERSONAL_DELIVERY_OPTION_CODE) {
+                    $serviceTaxIds[] = self::PERSONAL_DELIVERY_OPTION_CODE;
                     break;
                 }
             }
@@ -1849,7 +1871,8 @@ class SamedayCourier extends CarrierModule
             Tools::getValue('sameday_observation'),
             '',
             '',
-            $lockerId
+            null,
+            $locker
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
