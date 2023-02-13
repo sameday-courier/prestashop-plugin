@@ -36,9 +36,9 @@ include(__DIR__ . '/classes/SamedayPersistenceDataHandler.php');
 class SamedayCourier extends CarrierModule
 {
     /**
-     * @var bool
+     * @var array
      */
-    protected $config_form = false;
+    protected $_errors = [];
 
     /**
      * @var string
@@ -120,7 +120,7 @@ class SamedayCourier extends CarrierModule
         $this->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
         $this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
         $this->logger = new FileLogger(0);
-        $this->logger->setFilename(dirname(__FILE__) . '/log/' . date('Ymd') . '_sameday.log');
+        $this->logger->setFilename(__DIR__ . '/log/' . date('Ymd') . '_sameday.log');
         $this->messages = array();
         $this->ajaxRoute = _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/ajax.php?token=' . Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10);
     }
@@ -128,7 +128,7 @@ class SamedayCourier extends CarrierModule
     /**
      * @return int
      */
-    private function getMinorVersion()
+    private function getMinorVersion(): int
     {
         return (int) explode('.', _PS_VERSION_, 3)[1];
     }
@@ -139,7 +139,7 @@ class SamedayCourier extends CarrierModule
      */
     public function install()
     {
-        if (extension_loaded('curl') == false) {
+        if (extension_loaded('curl') === false) {
             $this->_errors[] = $this->l('You have to enable the cURL extension on your server to install this module');
 
             return false;
@@ -200,7 +200,7 @@ class SamedayCourier extends CarrierModule
         }
 
         // Uninstall SQL
-        include(dirname(__FILE__) . '/sql/uninstall.php');
+        include(__DIR__ . '/sql/uninstall.php');
 
         return parent::uninstall();
     }
@@ -362,9 +362,7 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @return bool
-     * @throws PrestaShopDatabaseException
-     * @throws PrestaShopException
+     * @return void
      */
     private function processSaveSamedayService()
     {
@@ -379,13 +377,9 @@ class SamedayCourier extends CarrierModule
             $service->save();
 
             $this->html .= $this->displayConfirmation($this->l('Sameday service updated'));
-
-            return true;
         }
 
         $this->html .= $this->displayError($this->l('An error occurred while attempting to update Sameday service'));
-
-        return false;
     }
 
     /**
@@ -1110,7 +1104,7 @@ class SamedayCourier extends CarrierModule
             $locker->postal_code = $lockerObject->getPostalCode();
             $locker->lat = $lockerObject->getLat();
             $locker->long = $lockerObject->getLong();
-            $locker->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
+            $locker->live_mode = (int) Configuration::get('SAMEDAY_LIVE_MODE', 0);
             if (null !== $locker->name) {
                 $locker->save();
             }
@@ -1141,12 +1135,11 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $params
-     *
      * @param $shipping_cost
      *
-     * @return bool
+     * @return false|float|mixed
      *
-     * @throws Exception
+     * @throws \Sameday\Exceptions\SamedaySDKException
      */
     public function getOrderShippingCost($params, $shipping_cost)
     {
@@ -1209,21 +1202,18 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @param $id_carrier
+     * @param $service
+     *
      * @return bool
-     * @throws Exception
      */
-    private function carrierDeliveryAvailable($service)
+    private function carrierDeliveryAvailable($service): bool
     {
-        if ($service &&
-            $service['live_mode'] == Configuration::get('SAMEDAY_LIVE_MODE', 0)
-        ) {
-            return true;
-        }
+        return $service && $service['live_mode'] === ((bool)Configuration::get('SAMEDAY_LIVE_MODE', 0));
     }
 
     /**
      * @param $params
+     *
      * @return bool
      */
     public function getOrderShippingCostExternal($params)
@@ -1245,9 +1235,7 @@ class SamedayCourier extends CarrierModule
                 $carrier->deleted = true;
                 try {
                     $carrier->save();
-                } catch (PrestaShopException $e) {
-                    // Ignore exception.
-                }
+                } catch (Exception $e) {}
             }
 
             if (!$service['disabled'] && $service['status'] > 0) {
@@ -1256,18 +1244,10 @@ class SamedayCourier extends CarrierModule
                 if (!$carrier->is_free) {
                     $this->addRanges($carrier, $service);
                 }
+
                 SamedayService::updateCarrierId($service['id'], $carrier->id);
             }
         }
-    }
-
-    /**
-     * @param $carrier
-     */
-    protected function deleteRanges($carrier)
-    {
-        Db::getInstance()->delete('carrier_zone', 'id_carrier = ' . (int)$carrier->id);
-        Db::getInstance()->delete('delivery', 'id_carrier =' . (int)$carrier->id);
     }
 
     /**
@@ -1406,14 +1386,12 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $params
-     * @return false|string
-     * @throws PrestaShopDatabaseException
-     * @throws PrestaShopException
-     * @throws SamedaySDKException
+     * @return mixed
      * @throws \Sameday\Exceptions\SamedayAuthenticationException
      * @throws \Sameday\Exceptions\SamedayAuthorizationException
      * @throws \Sameday\Exceptions\SamedayBadRequestException
      * @throws \Sameday\Exceptions\SamedayNotFoundException
+     * @throws \Sameday\Exceptions\SamedaySDKException
      * @throws \Sameday\Exceptions\SamedayServerException
      */
     private function displayAdminOrderContent($params)

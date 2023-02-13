@@ -39,6 +39,7 @@ class SamedayPickupPoint extends ObjectModel
     /** @var int */
     public $is_default;
 
+    /** @var int */
     public $live_mode = 0;
 
     /** @var array */
