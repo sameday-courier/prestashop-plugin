@@ -36,9 +36,9 @@ include(__DIR__ . '/classes/SamedayPersistenceDataHandler.php');
 class SamedayCourier extends CarrierModule
 {
     /**
-     * @var bool
+     * @var array
      */
-    protected $config_form = false;
+    protected $_errors = [];
 
     /**
      * @var string
@@ -90,6 +90,8 @@ class SamedayCourier extends CarrierModule
 
     const OPENPACKAGECODE = 'OPCG';
 
+    const PERSONAL_DELIVERY_OPTION_CODE = 'PDO';
+
     const LOCKER_NEXT_DAY = 'LN';
 
     /**
@@ -104,7 +106,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.5.0';
+        $this->version = '1.5.1';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -118,7 +120,7 @@ class SamedayCourier extends CarrierModule
         $this->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
         $this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
         $this->logger = new FileLogger(0);
-        $this->logger->setFilename(dirname(__FILE__) . '/log/' . date('Ymd') . '_sameday.log');
+        $this->logger->setFilename(__DIR__ . '/log/' . date('Ymd') . '_sameday.log');
         $this->messages = array();
         $this->ajaxRoute = _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/ajax.php?token=' . Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10);
     }
@@ -126,7 +128,7 @@ class SamedayCourier extends CarrierModule
     /**
      * @return int
      */
-    private function getMinorVersion()
+    private function getMinorVersion(): int
     {
         return (int) explode('.', _PS_VERSION_, 3)[1];
     }
@@ -137,13 +139,12 @@ class SamedayCourier extends CarrierModule
      */
     public function install()
     {
-        if (extension_loaded('curl') == false) {
+        if (extension_loaded('curl') === false) {
             $this->_errors[] = $this->l('You have to enable the cURL extension on your server to install this module');
 
             return false;
         }
 
-//        Configuration::updateValue('SAMEDAY_LIVE_MODE', 0);
         Configuration::updateValue('SAMEDAY_CRON_TOKEN', uniqid('', ''));
 
         include(__DIR__ . '/sql/install.php');
@@ -199,7 +200,7 @@ class SamedayCourier extends CarrierModule
         }
 
         // Uninstall SQL
-        include(dirname(__FILE__) . '/sql/uninstall.php');
+        include(__DIR__ . '/sql/uninstall.php');
 
         return parent::uninstall();
     }
@@ -361,9 +362,7 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @return bool
-     * @throws PrestaShopDatabaseException
-     * @throws PrestaShopException
+     * @return void
      */
     private function processSaveSamedayService()
     {
@@ -378,13 +377,9 @@ class SamedayCourier extends CarrierModule
             $service->save();
 
             $this->html .= $this->displayConfirmation($this->l('Sameday service updated'));
-
-            return true;
+        } else {
+            $this->html .= $this->displayError($this->l('An error occurred while attempting to update Sameday service'));
         }
-
-        $this->html .= $this->displayError($this->l('An error occurred while attempting to update Sameday service'));
-
-        return false;
     }
 
     /**
@@ -1109,7 +1104,7 @@ class SamedayCourier extends CarrierModule
             $locker->postal_code = $lockerObject->getPostalCode();
             $locker->lat = $lockerObject->getLat();
             $locker->long = $lockerObject->getLong();
-            $locker->live_mode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
+            $locker->live_mode = (int) Configuration::get('SAMEDAY_LIVE_MODE', 0);
             if (null !== $locker->name) {
                 $locker->save();
             }
@@ -1140,12 +1135,11 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $params
-     *
      * @param $shipping_cost
      *
-     * @return bool
+     * @return false|float|mixed
      *
-     * @throws Exception
+     * @throws \Sameday\Exceptions\SamedaySDKException
      */
     public function getOrderShippingCost($params, $shipping_cost)
     {
@@ -1208,21 +1202,18 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @param $id_carrier
+     * @param $service
+     *
      * @return bool
-     * @throws Exception
      */
-    private function carrierDeliveryAvailable($service)
+    private function carrierDeliveryAvailable($service): bool
     {
-        if ($service &&
-            $service['live_mode'] == Configuration::get('SAMEDAY_LIVE_MODE', 0)
-        ) {
-            return true;
-        }
+        return $service && $service['live_mode'] === ((bool)Configuration::get('SAMEDAY_LIVE_MODE', 0));
     }
 
     /**
      * @param $params
+     *
      * @return bool
      */
     public function getOrderShippingCostExternal($params)
@@ -1244,9 +1235,7 @@ class SamedayCourier extends CarrierModule
                 $carrier->deleted = true;
                 try {
                     $carrier->save();
-                } catch (PrestaShopException $e) {
-                    // Ignore exception.
-                }
+                } catch (Exception $e) {}
             }
 
             if (!$service['disabled'] && $service['status'] > 0) {
@@ -1255,18 +1244,10 @@ class SamedayCourier extends CarrierModule
                 if (!$carrier->is_free) {
                     $this->addRanges($carrier, $service);
                 }
+
                 SamedayService::updateCarrierId($service['id'], $carrier->id);
             }
         }
-    }
-
-    /**
-     * @param $carrier
-     */
-    protected function deleteRanges($carrier)
-    {
-        Db::getInstance()->delete('carrier_zone', 'id_carrier = ' . (int)$carrier->id);
-        Db::getInstance()->delete('delivery', 'id_carrier =' . (int)$carrier->id);
     }
 
     /**
@@ -1405,14 +1386,12 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $params
-     * @return false|string
-     * @throws PrestaShopDatabaseException
-     * @throws PrestaShopException
-     * @throws SamedaySDKException
+     * @return mixed
      * @throws \Sameday\Exceptions\SamedayAuthenticationException
      * @throws \Sameday\Exceptions\SamedayAuthorizationException
      * @throws \Sameday\Exceptions\SamedayBadRequestException
      * @throws \Sameday\Exceptions\SamedayNotFoundException
+     * @throws \Sameday\Exceptions\SamedaySDKException
      * @throws \Sameday\Exceptions\SamedayServerException
      */
     private function displayAdminOrderContent($params)
@@ -1436,7 +1415,21 @@ class SamedayCourier extends CarrierModule
         }
 
         $pickupPoints = SamedayPickupPoint::getPickupPoints();
-        $services = SamedayService::getServices(true);
+
+        $services = [];
+        $activeServices = SamedayService::getServices(true);
+        foreach ($activeServices as $service) {
+            $service['isPDOtoShow'] = $this->toggleHtmlElement(
+                $this->isServiceEligibleToPdo($service['service_optional_taxes'])
+            );
+
+            $service['isLastMileToShow'] = $this->toggleHtmlElement(
+                $this->isServiceEligibleToLocker($service['code'])
+            );
+
+            $services[] = $service;
+        }
+
         $packageTypes = array(
             0 => $this->l('Package'),
             1 => $this->l('Envelope'),
@@ -1452,12 +1445,13 @@ class SamedayCourier extends CarrierModule
         }
 
         $service = SamedayService::findByCarrierId($order->id_carrier);
+
         $serviceId = null;
-        $allowLocker = false;
+        $isLastMileToShow = $this->toggleHtmlElement(false);
         if ($service) {
             $serviceId = $service['id_service'];
             if ($service['code'] === self::LOCKER_NEXT_DAY) {
-                $allowLocker = true;
+                $isLastMileToShow = $this->toggleHtmlElement(true);
             }
         }
 
@@ -1471,10 +1465,10 @@ class SamedayCourier extends CarrierModule
         $lockerAddress = null;
         $samedayOrderLockerId = null;
         if (null !== $locker = SamedayOrderLocker::getLockerForOrder($order->id)) {
-            $samedayOrderLockerId = isset($locker['id']) ? $locker['id'] : null;
-            $lockerId = isset($locker['id_locker']) ? $locker['id_locker'] : null;
-            $lockerName = isset($locker['name_locker']) ? $locker['name_locker'] : null;
-            $lockerAddress = isset($locker['address_locker']) ? $locker['address_locker'] : null;
+            $samedayOrderLockerId = $locker['id'] ?? null;
+            $lockerId = $locker['id_locker'] ?? null;
+            $lockerName = $locker['name_locker'] ?? null;
+            $lockerAddress = $locker['address_locker'] ?? null;
         }
 
         $this->smarty->assign(
@@ -1483,7 +1477,6 @@ class SamedayCourier extends CarrierModule
                 'pickup_points' => $pickupPoints,
                 'services'      => $services,
                 'current_service' => $serviceId,
-                'lockerNextDayCode' => self::LOCKER_NEXT_DAY,
                 'package_types' => $packageTypes,
                 'repayment'     => $repayment,
                 'awb'           => $awb,
@@ -1495,8 +1488,9 @@ class SamedayCourier extends CarrierModule
                 'idLocker'      => $lockerId,
                 'lockerName'    => $lockerName,
                 'lockerAddress' => $lockerAddress,
-                'allowLocker'   => $allowLocker,
                 'samedayOrderLockerId'   => $samedayOrderLockerId,
+                'isPDOtoShow'   => $this->toggleHtmlElement($this->isServiceEligibleToPdo($service['service_optional_taxes'])),
+                'isLastMileToShow' => $isLastMileToShow,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
                 'ajaxRoute'     => $this->ajaxRoute,
                 'messages' => $this->messages,
@@ -1690,16 +1684,17 @@ class SamedayCourier extends CarrierModule
      *
      * @return bool
      */
-    private function checkForOpenPackageTax($serviceOptionalTaxes)
+    private function checkForOpenPackageTax($serviceOptionalTaxes): bool
     {
         $taxOpenPackage = 0;
-        $optionalServices = unserialize($serviceOptionalTaxes);
+        $optionalServices = unserialize($serviceOptionalTaxes, ['']);
 
         if (!empty($optionalServices)) {
             foreach ($optionalServices as $optionalService) {
 
                 if ($optionalService['code'] === self::OPENPACKAGECODE && $optionalService['type'] === \Sameday\Objects\Types\PackageType::PARCEL) {
                     $taxOpenPackage = $optionalService['id'];
+
                     break;
                 }
             }
@@ -1752,9 +1747,7 @@ class SamedayCourier extends CarrierModule
     public function hookActionValidateStepComplete($params)
     {
         $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
-        $lockerId = isset($_COOKIE['samedaycourier_locker_id']) ? $_COOKIE['samedaycourier_locker_id'] : null;
-        $lockerName = isset($_COOKIE['samedaycourier_locker_name']) ? $_COOKIE['samedaycourier_locker_name'] : null;
-        $lockerAddress = isset($_COOKIE['samedaycourier_locker_address']) ? $_COOKIE['samedaycourier_locker_address'] : null;
+        $lockerId = $_COOKIE['samedaycourier_locker_id'] ?? null;
 
         if (($service['code'] === self::LOCKER_NEXT_DAY) && null === $lockerId) {
             $this->context->controller->errors[] = $this->l('Please select your easyBox from lockers map');
@@ -1764,7 +1757,9 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $order
+     *
      * @return SamedayAwb|null
+     *
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
      */
@@ -1809,24 +1804,40 @@ class SamedayCourier extends CarrierModule
             (!empty($address->postcode)) ? $address->postcode : null
         ); 
 
-        $lockerId = null;
+        $lockerLastMileId = null;
         $lockerName = null;
         $lockerAddress = null;
         if (($service['code'] === self::LOCKER_NEXT_DAY) && ('' !== Tools::getValue('locker_id'))
             && '' !== Tools::getValue('locker_name')
             && '' !== Tools::getValue('locker_address')) {
-                $lockerId = (int) Tools::getValue('locker_id');
+                $lockerLastMileId = (int) Tools::getValue('locker_id');
                 $lockerName = Tools::getValue('locker_name');
                 $lockerAddress = Tools::getValue('locker_address');
             }
 
         $serviceTaxIds = array();
         if (!empty(Tools::getValue('sameday_open_package'))) {
-            $optionalTaxIds = unserialize($service['service_optional_taxes']);
-            foreach ($optionalTaxIds as $optionalService) {
-                if ($optionalService['code'] === self::OPENPACKAGECODE && $optionalService['type'] === (int) Tools::getValue('sameday_package_type')) {
-                    $serviceTaxIds[] = $optionalService['id'];
-                    break;
+            $optionalTaxIds = unserialize($service['service_optional_taxes'], ['']);
+            if (false !== $optionalTaxIds) {
+                foreach ($optionalTaxIds as $optionalService) {
+                    if ($optionalService['code'] === self::OPENPACKAGECODE && $optionalService['type'] === (int) Tools::getValue('sameday_package_type')) {
+                        $serviceTaxIds[] = $optionalService['id'];
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!empty(Tools::getValue('sameday_locker_first_mile'))) {
+            $optionalTaxIds = unserialize($service['service_optional_taxes'], ['']);
+            if (false !== $optionalTaxIds) {
+                foreach ($optionalTaxIds as $optionalService) {
+                    if ($optionalService['code'] === self::PERSONAL_DELIVERY_OPTION_CODE) {
+                        $serviceTaxIds[] = self::PERSONAL_DELIVERY_OPTION_CODE;
+
+                        break;
+                    }
                 }
             }
         }
@@ -1849,7 +1860,8 @@ class SamedayCourier extends CarrierModule
             Tools::getValue('sameday_observation'),
             '',
             '',
-            $lockerId
+            null,
+            $lockerLastMileId
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
@@ -1883,7 +1895,7 @@ class SamedayCourier extends CarrierModule
             $order->shipping_number = $samedayAwb->awb_number;
             $order->update();
 
-            if (null !== $lockerId && $service['code'] === self::LOCKER_NEXT_DAY) {
+            if (null !== $lockerLastMileId && $service['code'] === self::LOCKER_NEXT_DAY) {
                 $samedayOrderLockerId = Tools::getValue('samedayOrderLockerId');
                 if ('' === $samedayOrderLockerId) {
                     $orderLocker = new SamedayOrderLocker();
@@ -1892,7 +1904,7 @@ class SamedayCourier extends CarrierModule
                     $orderLocker = new SamedayOrderLocker($samedayOrderLockerId);
                 }
 
-                $orderLocker->id_locker = $lockerId;
+                $orderLocker->id_locker = $lockerLastMileId;
                 $orderLocker->name_locker = $lockerName;
                 $orderLocker->address_locker = $lockerAddress;
 
@@ -2141,5 +2153,42 @@ class SamedayCourier extends CarrierModule
     private function log($message, $level)
     {
         $this->logger->log($message, $level);
+    }
+
+    /**
+     * @param string $serviceCode
+     *
+     * @return bool
+     */
+    private function isServiceEligibleToLocker(string $serviceCode): bool
+    {
+        return $serviceCode === self::LOCKER_NEXT_DAY;
+    }
+
+    private function isServiceEligibleToPdo($serviceAdditionalTaxes): bool
+    {
+        if (('' !== $serviceAdditionalTaxes) && false !== $serviceAdditionalTaxes = unserialize($serviceAdditionalTaxes, [''])) {
+            foreach ($serviceAdditionalTaxes as $tax) {
+                if ($tax['code'] === self::PERSONAL_DELIVERY_OPTION_CODE) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param bool $toShow
+     *
+     * @return string
+     */
+    private function toggleHtmlElement(bool $toShow): string
+    {
+        if ($toShow) {
+            return SamedayConstants::TOGGLE_HTML_ELEMENT['show'];
+        }
+
+        return SamedayConstants::TOGGLE_HTML_ELEMENT['hide'];
     }
 }
