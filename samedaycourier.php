@@ -1747,9 +1747,7 @@ class SamedayCourier extends CarrierModule
     public function hookActionValidateStepComplete($params)
     {
         $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
-        $lockerId = isset($_COOKIE['samedaycourier_locker_id']) ? $_COOKIE['samedaycourier_locker_id'] : null;
-        $lockerName = isset($_COOKIE['samedaycourier_locker_name']) ? $_COOKIE['samedaycourier_locker_name'] : null;
-        $lockerAddress = isset($_COOKIE['samedaycourier_locker_address']) ? $_COOKIE['samedaycourier_locker_address'] : null;
+        $lockerId = $_COOKIE['samedaycourier_locker_id'] ?? null;
 
         if (($service['code'] === self::LOCKER_NEXT_DAY) && null === $lockerId) {
             $this->context->controller->errors[] = $this->l('Please select your easyBox from lockers map');
@@ -1759,7 +1757,9 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $order
+     *
      * @return SamedayAwb|null
+     *
      * @throws PrestaShopDatabaseException
      * @throws PrestaShopException
      */
