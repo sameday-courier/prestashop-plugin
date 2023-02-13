@@ -377,9 +377,9 @@ class SamedayCourier extends CarrierModule
             $service->save();
 
             $this->html .= $this->displayConfirmation($this->l('Sameday service updated'));
+        } else {
+            $this->html .= $this->displayError($this->l('An error occurred while attempting to update Sameday service'));
         }
-
-        $this->html .= $this->displayError($this->l('An error occurred while attempting to update Sameday service'));
     }
 
     /**
