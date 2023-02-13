@@ -1706,16 +1706,17 @@ class SamedayCourier extends CarrierModule
      *
      * @return bool
      */
-    private function checkForOpenPackageTax($serviceOptionalTaxes)
+    private function checkForOpenPackageTax($serviceOptionalTaxes): bool
     {
         $taxOpenPackage = 0;
-        $optionalServices = unserialize($serviceOptionalTaxes);
+        $optionalServices = unserialize($serviceOptionalTaxes, ['']);
 
         if (!empty($optionalServices)) {
             foreach ($optionalServices as $optionalService) {
 
                 if ($optionalService['code'] === self::OPENPACKAGECODE && $optionalService['type'] === \Sameday\Objects\Types\PackageType::PARCEL) {
                     $taxOpenPackage = $optionalService['id'];
+
                     break;
                 }
             }
@@ -1825,13 +1826,13 @@ class SamedayCourier extends CarrierModule
             (!empty($address->postcode)) ? $address->postcode : null
         ); 
 
-        $lockerId = null;
+        $lockerLastMileId = null;
         $lockerName = null;
         $lockerAddress = null;
         if (($service['code'] === self::LOCKER_NEXT_DAY) && ('' !== Tools::getValue('locker_id'))
             && '' !== Tools::getValue('locker_name')
             && '' !== Tools::getValue('locker_address')) {
-                $lockerId = (int) Tools::getValue('locker_id');
+                $lockerLastMileId = (int) Tools::getValue('locker_id');
                 $lockerName = Tools::getValue('locker_name');
                 $lockerAddress = Tools::getValue('locker_address');
             }
@@ -1882,7 +1883,7 @@ class SamedayCourier extends CarrierModule
             '',
             '',
             null,
-            $locker
+            $lockerLastMileId
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
@@ -1916,7 +1917,7 @@ class SamedayCourier extends CarrierModule
             $order->shipping_number = $samedayAwb->awb_number;
             $order->update();
 
-            if (null !== $lockerId && $service['code'] === self::LOCKER_NEXT_DAY) {
+            if (null !== $lockerLastMileId && $service['code'] === self::LOCKER_NEXT_DAY) {
                 $samedayOrderLockerId = Tools::getValue('samedayOrderLockerId');
                 if ('' === $samedayOrderLockerId) {
                     $orderLocker = new SamedayOrderLocker();
@@ -1925,7 +1926,7 @@ class SamedayCourier extends CarrierModule
                     $orderLocker = new SamedayOrderLocker($samedayOrderLockerId);
                 }
 
-                $orderLocker->id_locker = $lockerId;
+                $orderLocker->id_locker = $lockerLastMileId;
                 $orderLocker->name_locker = $lockerName;
                 $orderLocker->address_locker = $lockerAddress;
 
