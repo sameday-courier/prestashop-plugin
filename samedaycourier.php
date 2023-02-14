@@ -1208,7 +1208,7 @@ class SamedayCourier extends CarrierModule
      */
     private function carrierDeliveryAvailable($service): bool
     {
-        return $service && $service['live_mode'] === ((bool)Configuration::get('SAMEDAY_LIVE_MODE', 0));
+        return $service && $service['live_mode'] === Configuration::get('SAMEDAY_LIVE_MODE', 0);
     }
 
     /**
