@@ -34,7 +34,7 @@
             }
         }
 
-        const is_set = (accessor) => {
+        const _isSet = (accessor) => {
             try {
                 return accessor() !== undefined && accessor() !== null
             } catch (e) {
@@ -43,10 +43,10 @@
         }
 
         docReady(function () {
-            if (is_set( () => document.getElementById("locker_name"))) {
-                if(get_cookie("samedaycourier_locker_name").length > 1){
-                    let lockerNamesCookie = get_cookie("samedaycourier_locker_name");
-                    let lockerAddressCookie = get_cookie("samedaycourier_locker_address");
+            if (_isSet( () => document.getElementById("locker_name"))) {
+                if(_getCookie("samedaycourier_locker_name").length > 1) {
+                    let lockerNamesCookie = _getCookie("samedaycourier_locker_name");
+                    let lockerAddressCookie = _getCookie("samedaycourier_locker_address");
                     document.getElementById("locker_name").value = lockerNamesCookie;
                     document.getElementById("locker_address").value = lockerAddressCookie;
 
@@ -65,9 +65,7 @@
             let showLockerMap = document.getElementById('showLockerMap');
             let showLockerSelector = document.getElementById('lockerIdSelector');
 
-            console.log(showLockerMap);
-
-            if (is_set(() => showLockerMap)) {
+            if (_isSet(() => showLockerMap)) {
                 const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have a unique clientId
                 const countryCode= document.getElementById('showLockerMap').getAttribute('data-country').toUpperCase(); //country for which the plugin is used
                 const langCode= document.getElementById('showLockerMap').getAttribute('data-country');  //language of the plugin
@@ -86,13 +84,13 @@
                     let lockerName = locker.name;
                     let lockerAddress = locker.address;
 
-                    set_cookie(cookie_locker_id, lockerId, 30);
+                    _setCookie(cookie_locker_id, lockerId, 30);
 
                     document.getElementById("locker_name").value = lockerName;
-                    set_cookie(cookie_locker_name, lockerName, 30);
+                    _setCookie(cookie_locker_name, lockerName, 30);
 
                     document.getElementById("locker_address").value = lockerAddress;
-                    set_cookie(cookie_locker_address, lockerAddress, 30);
+                    _setCookie(cookie_locker_address, lockerAddress, 30);
 
                     document.getElementById("showLockerDetails").style.display = "block";
                     document.getElementById("showLockerDetails").innerHTML = lockerName + '<br/>' + lockerAddress;
@@ -105,14 +103,14 @@
                     let _target = event.target;
                     let option = _target.options[_target.selectedIndex];
 
-                    set_cookie(cookie_locker_id, _target.value, 30);
-                    set_cookie(cookie_locker_name, option.getAttribute('data-name'), 30);
-                    set_cookie(cookie_locker_address, option.getAttribute('data-address'), 30);
+                    _setCookie(cookie_locker_id, _target.value, 30);
+                    _setCookie(cookie_locker_name, option.getAttribute('data-name'), 30);
+                    _setCookie(cookie_locker_address, option.getAttribute('data-address'), 30);
                 }
             }
         });
 
-        const set_cookie = (key, value, days) => {
+        const _setCookie = (key, value, days) => {
             let d = new Date();
             d.setTime(d.getTime() + (days*24*60*60*1000));
             let expires = "expires=" + d.toUTCString();
@@ -120,7 +118,7 @@
             document.cookie = key + "=" + value + ";" + expires + ";path=/";
         }
 
-        const get_cookie = (key) => {
+        const _getCookie = (key) => {
             let cookie = '';
             document.cookie.split(';').forEach(function (value) {
                 if (value.split('=')[0].trim() === key) {
