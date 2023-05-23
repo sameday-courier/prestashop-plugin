@@ -125,6 +125,11 @@ class SamedayCourier extends CarrierModule
         $this->ajaxRoute = _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/ajax.php?token=' . Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10);
     }
 
+    private function getMajorVersion(): int
+    {
+        return (int) explode('.', _PS_VERSION_, 3)[0];
+    }
+
     /**
      * @return int
      */
@@ -149,9 +154,9 @@ class SamedayCourier extends CarrierModule
 
         include(__DIR__ . '/sql/install.php');
 
-        $hookDisplayAdminOrder = 'displayAdminOrderContentShip';
-        if ($this->getMinorVersion() > 6) {
-            $hookDisplayAdminOrder = 'displayAdminOrderSide';
+        $hookDisplayAdminOrder = 'displayAdminOrderSide';
+        if (($this->getMajorVersion() === 1) && ($this->getMinorVersion() === 6)) {
+            $hookDisplayAdminOrder = 'displayAdminOrderContentShip';
         }
 
         return parent::install() &&
