@@ -21,14 +21,11 @@ class SamedayOrderLocker extends ObjectModel
     /** @var integer */
     public $id_order;
 
-    /** @var integer */
-    public $id_locker;
+    /** @var string */
+    public $locker;
 
     /** @var string */
-    public $name_locker;
-
-     /** @var string */
-     public $address_locker;
+    public $destination_address_hd;
 
     /** @var array */
     public static $definition = array(
@@ -38,9 +35,8 @@ class SamedayOrderLocker extends ObjectModel
         'multilang_shop' => false,
         'fields' => array(
             'id_order' => array('type' => self::TYPE_INT, 'required' => true, 'validate' => 'isUnsignedInt'),
-            'id_locker' => array('type' => self::TYPE_INT, 'required' => true, 'validate' => 'isUnsignedInt'),
-            'name_locker' => array('type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'),
-            'address_locker' => array('type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'),
+            'locker' => array('type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'),
+            'destination_address_hd' => array('type' => self::TYPE_STRING, 'required' => false, 'validate' => 'isCleanHtml'),
         ),
     );
 
@@ -58,5 +54,23 @@ class SamedayOrderLocker extends ObjectModel
         }
 
         return null;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function buildSamedayDestinationAddressHd(
+        string $city,
+        string $county,
+        string $address,
+        string $zip = null
+    ): string
+    {
+        return json_encode([
+            'city' => $city,
+            'county' => $county,
+            'address' => $address,
+            'zip' => $zip ?? ''
+        ]);
     }
 }
