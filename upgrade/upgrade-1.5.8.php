@@ -23,7 +23,7 @@ if (!defined('_PS_VERSION_')) {
  * useful when you modify your database, or register a new hook ...
  * Don't forget to create one file per version.
  */
-function upgrade_module_1_5_7($object)
+function upgrade_module_1_5_8($object)
 {
     $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
             ADD `locker` TEXT';

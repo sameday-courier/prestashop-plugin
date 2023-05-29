@@ -20,9 +20,6 @@
 class SamedayService extends ObjectModel
 {
     const TABLE_NAME = "sameday_services";
-    const STATUS_DISABLED = 0;
-    const STATUS_ALWAYS_ACTIVE = 1;
-    const STATUS_INTERVAL_ACTIVE = 2;
 
     /** @var integer */
     public $id;
