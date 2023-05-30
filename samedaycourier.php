@@ -30,6 +30,7 @@ include(__DIR__ . '/classes/SamedayAwbParcelHistory.php');
 include(__DIR__ . '/classes/SamedayConstants.php');
 include(__DIR__ . '/classes/SamedayPersistenceDataHandler.php');
 include(__DIR__ . '/classes/SamedayState.php');
+include(__DIR__ . '/classes/SamedayAddress.php');
 
 /**
  * Class SamedayCourier
@@ -1750,28 +1751,31 @@ class SamedayCourier extends CarrierModule
 
                 if (null !== $locker) {
                     $orderLocker->locker = $locker;
-
                     $locker = json_decode($locker, false);
 
-                    /** @var Address $newAddress */
-                    $newAddress = $address->duplicateObject();
+                    if (
+                        SamedayAddress::findOneByCustomerAndAlias($address->id_customer, $locker->name)['alias'] !== $locker->name
+                    ) {
+                        /** @var Address $newAddress */
+                        $newAddress = $address->duplicateObject();
 
-                    /** @var SamedayState $state */
-                    $state = SamedayState::findOneByName($locker->county);
+                        /** @var SamedayState $state */
+                        $state = SamedayState::findOneByName($locker->county);
 
-                    $newAddress->alias = strtoupper($locker->name);
-                    $newAddress->city = $locker->city;
-                    $newAddress->address1 = $locker->address;
-                    $newAddress->address2 = '';
-                    $newAddress->id_state = $state['id_state'];
-                    $newAddress->postcode = '123456';
-                    $newAddress->id_country = $state['id_country'];
+                        $newAddress->alias = $locker->name;
+                        $newAddress->city = $locker->city;
+                        $newAddress->address1 = $locker->address;
+                        $newAddress->address2 = '';
+                        $newAddress->id_state = $state['id_state'];
+                        $newAddress->postcode = '123456';
+                        $newAddress->id_country = $state['id_country'];
 
-                    $newAddress->save();
+                        $newAddress->save();
 
-                    $order->id_address_delivery = $newAddress->id;
+                        $order->id_address_delivery = $newAddress->id;
 
-                    $order->save();
+                        $order->save();
+                    }
                 }
             }
 
