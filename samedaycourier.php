@@ -1753,12 +1753,25 @@ class SamedayCourier extends CarrierModule
 
                     $locker = json_decode($locker, false);
 
+                    /** @var Address $newAddress */
+                    $newAddress = $address->duplicateObject();
+
                     /** @var SamedayState $state */
                     $state = SamedayState::findOneByName($locker->county);
 
-                    $address->city = $locker->city;
-                    $address->address1 = $locker->address;
-                    $address->id_state = $state['id'];
+                    $newAddress->alias = strtoupper($locker->name);
+                    $newAddress->city = $locker->city;
+                    $newAddress->address1 = $locker->address;
+                    $newAddress->address2 = '';
+                    $newAddress->id_state = $state['id_state'];
+                    $newAddress->postcode = '123456';
+                    $newAddress->id_country = $state['id_country'];
+
+                    $newAddress->save();
+
+                    $order->id_address_delivery = $newAddress->id;
+
+                    $order->save();
                 }
             }
 
