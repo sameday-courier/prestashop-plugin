@@ -19,7 +19,7 @@ class SamedayAddress extends Address
 {
     const TABLE_NAME = 'address';
 
-    public static function findOneByCustomerAndAlias(int $customerId, string $alias): array
+    public static function findOneByCustomerAndAlias(int $customerId, string $alias)
     {
         $alias = pSQL($alias);
 

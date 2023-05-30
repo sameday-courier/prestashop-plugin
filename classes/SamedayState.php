@@ -19,7 +19,7 @@ class SamedayState extends State
 {
     const TABLE_NAME = 'state';
 
-    public static function findOneByName(string $stateName): array
+    public static function findOneByName(string $stateName)
     {
         $stateName = pSQL($stateName);
 

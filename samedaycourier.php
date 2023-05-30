@@ -1754,7 +1754,7 @@ class SamedayCourier extends CarrierModule
                     $locker = json_decode($locker, false);
 
                     if (
-                        SamedayAddress::findOneByCustomerAndAlias($address->id_customer, $locker->name)['alias'] !== $locker->name
+                        false === SamedayAddress::findOneByCustomerAndAlias($address->id_customer, $locker->name)
                     ) {
                         /** @var Address $newAddress */
                         $newAddress = $address->duplicateObject();
