@@ -1471,11 +1471,22 @@ class SamedayCourier extends CarrierModule
         $lockerName = null;
         $lockerAddress = null;
         $samedayOrderLockerId = null;
-        if (null !== $locker = SamedayOrderLocker::getLockerForOrder($order->id)) {
+        if (null !== $lockerOrder = SamedayOrderLocker::getLockerForOrder($order->id)) {
             $samedayOrderLockerId = $locker['id'] ?? null;
-            $lockerId = $locker['id_locker'] ?? null;
-            $lockerName = $locker['name_locker'] ?? null;
-            $lockerAddress = $locker['address_locker'] ?? null;
+            $lockerId = $lockerOrder['id_locker'] > 0 ? $lockerOrder['id_locker'] : null;
+            if (null === $lockerId) {
+                $locker = json_decode($lockerOrder['locker'], false);
+
+                $lockerId = $locker->lockerId;
+                $lockerName = $locker->name;
+                $lockerAddress = $locker->address;
+            } else {
+                $locker = SamedayLocker::findBySamedayId($lockerId);
+
+                $lockerId = $locker['id_locker'];
+                $lockerName = $locker['name'];
+                $lockerAddress = $locker['address'];
+            }
         }
 
         $this->smarty->assign(
@@ -1772,9 +1783,10 @@ class SamedayCourier extends CarrierModule
 
                         $newAddress->save();
 
-                        $order->id_address_delivery = $newAddress->id;
+                        $cart = new Cart($order->id_cart);
+                        $cart->id_address_delivery = $newAddress->id;
 
-                        $order->save();
+                        $cart->update();
                     }
                 }
             }
@@ -1860,13 +1872,15 @@ class SamedayCourier extends CarrierModule
         $lockerLastMileId = null;
         $lockerName = null;
         $lockerAddress = null;
-        if (($service['code'] === self::LOCKER_NEXT_DAY) && ('' !== Tools::getValue('locker_id'))
-            && '' !== Tools::getValue('locker_name')
-            && '' !== Tools::getValue('locker_address')) {
-                $lockerLastMileId = (int) Tools::getValue('locker_id');
-                $lockerName = Tools::getValue('locker_name');
-                $lockerAddress = Tools::getValue('locker_address');
-            }
+        if (($service['code'] === self::LOCKER_NEXT_DAY)
+            && ('' !== Tools::getValue('locker_id'))
+            && ('' !== Tools::getValue('locker_name'))
+            && ('' !== Tools::getValue('locker_address'))
+        ) {
+            $lockerLastMileId = (int) Tools::getValue('locker_id');
+            $lockerName = Tools::getValue('locker_name');
+            $lockerAddress = Tools::getValue('locker_address');
+        }
 
         $serviceTaxIds = array();
         if (!empty(Tools::getValue('sameday_open_package'))) {
