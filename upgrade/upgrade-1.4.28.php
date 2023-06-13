@@ -42,8 +42,9 @@ function upgrade_module_1_4_28($object)
     }
 
     return (version_compare(_PS_VERSION_, '1.7.0.0') < 0
-            ? $object->registerHook('extraCarrier')
-            : $object->registerHook('displayCarrierExtraContent')) &&
+        ? $object->registerHook('extraCarrier')
+        : $object->registerHook('displayCarrierExtraContent')) &&
         $object->registerHook('actionValidateOrder') &&
-        $object->registerHook('actionCarrierProcess');
+        $object->registerHook('actionCarrierProcess')
+    ;
 }

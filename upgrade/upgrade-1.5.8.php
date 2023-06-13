@@ -29,13 +29,13 @@ function upgrade_module_1_5_8($object)
             ADD `locker` TEXT';
 
     $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
-            ADD `destination_address_hd` TEXT';
+            ADD `destination_address_hd_id` INT';
 
     $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
-            DROP COLUMN `address_locker` ';
+            DROP COLUMN IF EXISTS `address_locker` ';
 
     $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
-            DROP COLUMN `name_locker` ';
+            DROP COLUMN IF EXISTS `name_locker` ';
 
     foreach ($sql as $query) {
         if (Db::getInstance()->execute($query) === false) {

@@ -1721,6 +1721,11 @@ class SamedayCourier extends CarrierModule
         return $taxOpenPackage > 0;
     }
 
+    public function hookActionCarrierProcess()
+    {
+        //
+    }
+
     /**
      * @param $params
      * @throws PrestaShopException
@@ -1746,14 +1751,7 @@ class SamedayCourier extends CarrierModule
         $orderLocker = new SamedayOrderLocker();
         $orderLocker->id_order = $orderId;
         if (isset($address, $state)) {
-            $orderLocker->destination_address_hd = $orderLocker->buildSamedayDestinationAddressHd(
-                $address->city,
-                $state->id,
-                $state->name,
-                $address->address1,
-                $address->address2,
-                $address->postcode
-            );
+            $orderLocker->destination_address_hd_id = $order->id_address_delivery;
 
             if ($service['code'] === self::LOCKER_NEXT_DAY) {
                 if (null !== $lockerId) {
