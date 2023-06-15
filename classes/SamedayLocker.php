@@ -108,7 +108,7 @@ class SamedayLocker extends ObjectModel
     {
         $liveMode = self::checkMode();
 
-        return Db::getInstance()->getRow(
+        return (object) Db::getInstance()->getRow(
             "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME .
             " s WHERE s.live_mode = '{$liveMode}' AND s.id_locker = " . (int) $id
         );

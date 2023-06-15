@@ -31,6 +31,6 @@ class SamedayAddress extends Address
             $alias
         );
 
-        return Db::getInstance()->getRow($sql);
+        return (object) Db::getInstance()->getRow($sql);
     }
 }

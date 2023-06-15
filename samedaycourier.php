@@ -1100,7 +1100,7 @@ class SamedayCourier extends CarrierModule
                 // Locker not found, add it.
                 $locker = new SamedayLocker();
             } else {
-                $locker = new SamedayLocker($locker['id']);
+                $locker = new SamedayLocker($locker->id);
             }
 
             $locker->id_locker = $lockerObject->getId();
@@ -1467,26 +1467,23 @@ class SamedayCourier extends CarrierModule
             $repayment = number_format($order->total_paid, 2);
         }
 
-        $lockerId = null;
-        $lockerName = null;
-        $lockerAddress = null;
-        $samedayOrderLockerId = null;
+        $locker = null;
         if (null !== $lockerOrder = SamedayOrderLocker::getLockerForOrder($order->id)) {
-            $samedayOrderLockerId = $locker['id'] ?? null;
             $lockerId = $lockerOrder['id_locker'] > 0 ? $lockerOrder['id_locker'] : null;
             if (null === $lockerId) {
-                $locker = json_decode($lockerOrder['locker'], false);
-
-                $lockerId = $locker->lockerId;
-                $lockerName = $locker->name;
-                $lockerAddress = $locker->address;
+                $samedayLocker = json_decode($lockerOrder['locker'], false);
             } else {
-                $locker = SamedayLocker::findBySamedayId($lockerId);
-
-                $lockerId = $locker['id_locker'];
-                $lockerName = $locker['name'];
-                $lockerAddress = $locker['address'];
+                $samedayLocker = SamedayLocker::findBySamedayId($lockerId);
             }
+
+            $locker = [
+                'lockerId' => $samedayLocker->id_locker ?? $samedayLocker->lockerId,
+                'name' => $samedayLocker->name,
+                'address' => $samedayLocker->address,
+                'city' => $samedayLocker->city,
+                'county' => $samedayLocker->county,
+                'postalCode' => $samedayLocker->postal_code ?? '',
+            ];
         }
 
         $this->smarty->assign(
@@ -1499,14 +1496,10 @@ class SamedayCourier extends CarrierModule
                 'repayment'     => $repayment,
                 'awb'           => $awb,
                 'allowParcel'   => $allowParcel,
-                'lockerId'      => ((int) $lockerId) > 0,
                 'samedayUser'   => Configuration::get('SAMEDAY_ACCOUNT_USER'),
                 'hostCountry'   => Configuration::get('SAMEDAY_HOST_COUNTRY') ?? 'ro', // Default will always be 'ro'
-                'lockerDetails' => sprintf('%s  %s', $lockerName, $lockerAddress),
-                'idLocker'      => $lockerId,
-                'lockerName'    => $lockerName,
-                'lockerAddress' => $lockerAddress,
-                'samedayOrderLockerId'   => $samedayOrderLockerId,
+                'locker' => json_encode($locker),
+                'lockerDetails' => sprintf('%s  %s', $locker['name'], $locker['address']),
                 'isPDOtoShow'   => $this->toggleHtmlElement($this->isServiceEligibleToPdo($service['service_optional_taxes'])),
                 'isLastMileToShow' => $isLastMileToShow,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
@@ -1748,45 +1741,22 @@ class SamedayCourier extends CarrierModule
             $state = new State($address->id_state);
         }
 
-        $orderLocker = new SamedayOrderLocker();
-        $orderLocker->id_order = $orderId;
-        if (isset($address, $state)) {
+
+        if (isset($address, $state) && $service['code'] === self::LOCKER_NEXT_DAY) {
+            $orderLocker = new SamedayOrderLocker();
+
+            $orderLocker->id_order = $orderId;
             $orderLocker->destination_address_hd_id = $order->id_address_delivery;
 
-            if ($service['code'] === self::LOCKER_NEXT_DAY) {
-                if (null !== $lockerId) {
-                    $orderLocker->id_locker = $lockerId;
-                }
+            if (null !== $lockerId) {
+                $orderLocker->id_locker = $lockerId;
+            }
 
-                if (null !== $locker) {
-                    $orderLocker->locker = $locker;
-                    $locker = json_decode($locker, false);
+            if (null !== $locker) {
+                $orderLocker->locker = $locker;
+                $locker = json_decode($locker, false);
 
-                    if (
-                        false === SamedayAddress::findOneByCustomerAndAlias($address->id_customer, $locker->name)
-                    ) {
-                        /** @var Address $newAddress */
-                        $newAddress = $address->duplicateObject();
-
-                        /** @var SamedayState $state */
-                        $state = SamedayState::findOneByName($locker->county);
-
-                        $newAddress->alias = $locker->name;
-                        $newAddress->city = $locker->city;
-                        $newAddress->address1 = $locker->address;
-                        $newAddress->address2 = '';
-                        $newAddress->id_state = $state['id_state'];
-                        $newAddress->postcode = '123456';
-                        $newAddress->id_country = $state['id_country'];
-
-                        $newAddress->save();
-
-                        $cart = new Cart($order->id_cart);
-                        $cart->id_address_delivery = $newAddress->id;
-
-                        $cart->update();
-                    }
-                }
+                $this->storeNewAddressForLocker($locker, $address);
             }
 
             $orderLocker->save();
@@ -1842,9 +1812,11 @@ class SamedayCourier extends CarrierModule
         }
 
         $service = SamedayService::findByIdService(Tools::getValue('sameday_service'));
+
         $customer = new Customer($order->id_customer);
         $address = new Address($order->id_address_delivery);
         $state = new State($address->id_state);
+
         $company = null;
         if (!empty($address->company)) {
             $company = new \Sameday\Objects\PostAwb\Request\CompanyEntityObject(
@@ -1856,28 +1828,37 @@ class SamedayCourier extends CarrierModule
             );
         }
 
-        $recipient = new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
-            $address->city,
-            $state->name,
-            trim($address->address1 . ' ' . $address->address2),
-            $address->firstname . ' ' . $address->lastname,
-            !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone,
-            $customer->email,
-            $company,
-            (!empty($address->postcode)) ? $address->postcode : null
-        ); 
+        $city = $address->city;
+        $state = $state->name;
+        $recipientAddress = trim($address->address1 . ' ' . $address->address2);
+        $postalCode = (!empty($address->postcode)) ? $address->postcode : '';
 
+        $locker = Tools::getValue('sameday_locker');
         $lockerLastMileId = null;
-        $lockerName = null;
-        $lockerAddress = null;
-        if (($service['code'] === self::LOCKER_NEXT_DAY)
-            && ('' !== Tools::getValue('locker_id'))
-            && ('' !== Tools::getValue('locker_name'))
-            && ('' !== Tools::getValue('locker_address'))
-        ) {
-            $lockerLastMileId = (int) Tools::getValue('locker_id');
-            $lockerName = Tools::getValue('locker_name');
-            $lockerAddress = Tools::getValue('locker_address');
+        if (($service['code'] === self::LOCKER_NEXT_DAY) && ('' !== $locker)) {
+            $locker = json_decode($locker, false);
+
+            $city = $locker->city;
+            $state = $locker->county;
+            $recipientAddress = $locker->address;
+            $lockerLastMileId = $locker->lockerId;
+        }
+
+        $samedayOrderLocker = SamedayOrderLocker::getLockerForOrder($order->id);
+        $samedayOrderLockerId = null;
+        if (false !== $samedayOrderLocker) {
+            $samedayOrderLockerId = $samedayOrderLocker['id'];
+        }
+
+        if (null !== $samedayOrderLockerId && $service['code'] !== self::LOCKER_NEXT_DAY) {
+            $order->id_address_delivery = $samedayOrderLocker['destination_address_hd_id'];
+            $address = new Address($order->id_address_delivery);
+            $state = new State($address->id_state);
+
+            $city = $address->city;
+            $state = $state->name;
+            $recipientAddress = trim($address->address1 . ' ' . $address->address2);
+            $postalCode = (!empty($address->postcode)) ? $address->postcode : '';
         }
 
         $serviceTaxIds = array();
@@ -1914,7 +1895,16 @@ class SamedayCourier extends CarrierModule
             $parcelDimensions,
             $service['id_service'],
             new \Sameday\Objects\Types\AwbPaymentType(Tools::getValue('sameday_awb_payment')),
-            $recipient,
+            new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
+                $city,
+                $state,
+                $recipientAddress,
+                sprintf('%s %s', $address->firstname, $address->lastname),
+                !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone,
+                $customer->email,
+                $company,
+                $postalCode
+            ),
             $insuredValue,
             Tools::getValue('sameday_repayment'),
             new \Sameday\Objects\Types\CodCollectorType(\Sameday\Objects\Types\CodCollectorType::CLIENT),
@@ -1945,36 +1935,39 @@ class SamedayCourier extends CarrierModule
             if ($samedayAwb->save()) {
                 foreach ($response->getParcels() as $parcel) {
                     $samedayAwbParcel = new SamedayAwbParcel();
+
                     $samedayAwbParcel->id_awb = $samedayAwb->id;
                     $samedayAwbParcel->awb_number = $parcel->getAwbNumber();
                     $samedayAwbParcel->position = $parcel->getPosition();
+
                     $samedayAwbParcel->save();
                 }
             }
 
-            $orderCarrier = new OrderCarrier((int)$order->getIdOrderCarrier());
+            $orderCarrier = new OrderCarrier((int) $order->getIdOrderCarrier());
             $orderCarrier->tracking_number = $response->getAwbNumber();
             $orderCarrier->update();
 
             $order->id_carrier = $service['id_carrier'];
             $order->shipping_number = $samedayAwb->awb_number;
-            $order->update();
 
             if (null !== $lockerLastMileId && $service['code'] === self::LOCKER_NEXT_DAY) {
-                $samedayOrderLockerId = Tools::getValue('samedayOrderLockerId');
-                if ('' === $samedayOrderLockerId) {
+                if (null === $samedayOrderLockerId) {
                     $orderLocker = new SamedayOrderLocker();
                     $orderLocker->id_order = $order->id;
+                    $orderLocker->destination_address_hd_id = $address->id;
                 } else {
                     $orderLocker = new SamedayOrderLocker($samedayOrderLockerId);
                 }
 
-                $orderLocker->id_locker = $lockerLastMileId;
-                $orderLocker->name_locker = $lockerName;
-                $orderLocker->address_locker = $lockerAddress;
+                $orderLocker->locker = json_encode($locker);
 
                 $orderLocker->save();
+
+                $order->id_address_delivery = $this->storeNewAddressForLocker($locker, $address);
             }
+
+            $order->update();
 
             $this->addMessage('success', $this->l('AWB was generated.'));
 
@@ -1985,13 +1978,50 @@ class SamedayCourier extends CarrierModule
             foreach ($e->getErrors() as $error) {
                 $errors[] = implode(', ', $error['key']) . '- ' . implode(', ', $error['errors']);
             }
+
             $this->addMessage('danger', $errors);
         } catch (Exception $e) {
             $this->log($e->getMessage() . $e->getTraceAsString(), SamedayConstants::ERROR);
+
             $this->addMessage('danger', [sprintf('Error Nr. %s: %s', $e->getCode(), $this->l($e->getMessage()))]);
         }
 
         return null;
+    }
+
+    /**
+     * @param $locker
+     * @param $address
+     *
+     * @return int
+     *
+     * @throws PrestaShopException
+     */
+    private function storeNewAddressForLocker($locker, $address): int
+    {
+        if (
+            false === SamedayAddress::findOneByCustomerAndAlias($address->id_customer, $locker->name)
+        ) {
+            /** @var Address $newAddress */
+            $newAddress = $address->duplicateObject();
+
+            /** @var SamedayState $state */
+            $state = SamedayState::findOneByName($locker->county);
+
+            $newAddress->alias = $locker->name;
+            $newAddress->city = $locker->city;
+            $newAddress->address1 = $locker->address;
+            $newAddress->address2 = '';
+            $newAddress->id_state = $state['id_state'];
+            $newAddress->postcode = '';
+            $newAddress->id_country = $state['id_country'];
+
+            $newAddress->save();
+
+            return $newAddress->id;
+        }
+
+        return $address->id;
     }
 
     /**
