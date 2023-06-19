@@ -25,12 +25,12 @@ class SamedayAddress extends Address
 
         $tableName = _DB_PREFIX_ . self::TABLE_NAME;
         $sql = sprintf(
-            "SELECT * FROM %s AS t WHERE t.id_customer = '%s' AND t.alias='%s'",
+            "SELECT * FROM %s AS t WHERE t.id_customer = '%s' AND t.alias='%s' AND t.deleted=0",
             $tableName,
             $customerId,
             $alias
         );
 
-        return (object) Db::getInstance()->getRow($sql);
+        return Db::getInstance()->getRow($sql);
     }
 }

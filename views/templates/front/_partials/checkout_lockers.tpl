@@ -53,6 +53,7 @@
                     document.getElementById("showLockerDetails").style.display = "block";
                     document.getElementById("showLockerDetails").innerHTML = locker.name + '<br/>' + locker.address;
 
+                    _setCarrierOptionValue(JSON.stringify(locker));
                 } else {
                     document.getElementById("showLockerDetails").style.display = "none";
                 }
@@ -90,6 +91,8 @@
                     document.getElementById("showLockerDetails").style.display = "block";
                     document.getElementById("showLockerDetails").innerHTML = lockerName + '<br/>' + lockerAddress;
 
+                    _setCarrierOptionValue(JSON.stringify(locker));
+
                     lockerPlugin.close();
                 });
 
@@ -103,6 +106,12 @@
                 }
             }
         });
+
+        const _setCarrierOptionValue = (optionValue) => {
+            let carrierId = document.getElementById('locker_name').getAttribute('data-locker_carrier_id');
+            let deliveryOptionId = 'delivery_option_' + carrierId;
+            document.getElementById(deliveryOptionId).value = `${carrierId},${optionValue}`;
+        }
 
         const _setCookie = (key, value, days) => {
             let d = new Date();
