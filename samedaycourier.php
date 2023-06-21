@@ -1740,8 +1740,6 @@ class SamedayCourier extends CarrierModule
 
         $deliveryOption = explode(',', json_decode($params['cart']->delivery_option, true)[$idAddressDelivery], 2);
 
-        var_dump($params['cart']->delivery_option, $deliveryOption); die();
-
         list($idCarrier, $locker) = $deliveryOption;
 
         $service = SamedayService::findByCarrierId($idCarrier);
