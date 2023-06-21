@@ -1476,7 +1476,7 @@ class SamedayCourier extends CarrierModule
                 $samedayLocker = SamedayLocker::findBySamedayId($lockerId);
             }
 
-            if (is_object($locker)) {
+            if (is_object($samedayLocker)) {
                 $locker = [
                     'lockerId' => $samedayLocker->id_locker ?? $samedayLocker->lockerId,
                     'name' => $samedayLocker->name,
