@@ -109,15 +109,19 @@
 
         const _setCarrierOptionValue = (optionValue) => {
             let lockerCarrierId = document.getElementById('locker_name').getAttribute('data-locker_carrier_id');
+            let addressId = document.getElementById('locker_name').getAttribute('data-address_id');
 
-            let deliveryOptionsElements = document.getElementsByName('delivery_option');
+            let deliveryOptionsElements = document.getElementsByName(`delivery_option[${addressId}]`);
             deliveryOptionsElements = Array.from(deliveryOptionsElements);
+
             let lockerOption = deliveryOptionsElements.filter((element) => {
-                return element.getAttribute('data-key') === lockerCarrierId;
-            });
+                 if (element.getAttribute('data-key') === `${lockerCarrierId},`) {
+                    return element;
+                 }
+            })[0];
 
             if (undefined !== lockerOption) {
-                document.getElementById(lockerOption.id).value = `${lockerCarrierId},${optionValue}`;
+                document.getElementById(lockerOption.id).setAttribute('value', `${lockerCarrierId},${optionValue}`);
             }
         }
 

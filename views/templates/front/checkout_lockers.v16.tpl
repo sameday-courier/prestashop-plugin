@@ -32,7 +32,7 @@
                 <button type="button" name="samedaycourier_locker_id" id="showLockerMap" data-username='{$samedayUser}' data-country='{$hostCountry}' class="button-exclusive btn btn-default">
                     {l s='Show locker map' mod='samedaycourier'}
                 </button>
-                <input type="hidden" id="locker_name" name="locker_name" value="" data-locker_carrier_id="{$locker_carrier_id}">
+                <input type="hidden" id="locker_name" name="locker_name" value="" data-locker_carrier_id="{$lockerCarrierId}" data-address_id="{$addressId}">
                 <input type="text" id="locker_address" name="locker_address" style="width:0px;height:0px;opacity:0;" oninvalid="this.setCustomValidity('Please select locker')" value="" required>
             </td>
             <td>

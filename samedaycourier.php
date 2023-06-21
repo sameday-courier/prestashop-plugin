@@ -1591,6 +1591,7 @@ class SamedayCourier extends CarrierModule
             $params['cookie']->samedaycourier_locker_address,
             $service,
             $params['cart']->id_carrier,
+            $params['cart']->id_address_delivery,
             '1.6'
         );
     }
@@ -1613,6 +1614,7 @@ class SamedayCourier extends CarrierModule
             $params['cookie']->samedaycourier_locker_address,
             $service,
             $params['carrier']['id'],
+            '',
             '1.7'
         );
     }
@@ -1623,9 +1625,10 @@ class SamedayCourier extends CarrierModule
      * @param $samedaycourier_locker_address
      * @param $service
      * @param $carrierId
+     * @param $idAddress
      * @param $fileVersion
      *
-     * @return false|string
+     * @return string
      */
     private function displayCarrierExtraContent(
         $samedaycourier_locker_id,
@@ -1633,8 +1636,9 @@ class SamedayCourier extends CarrierModule
         $samedaycourier_locker_address,
         $service,
         $carrierId,
+        $addressId,
         $fileVersion
-    )
+    ): string
     {
         if ($service['code'] === self::LOCKER_NEXT_DAY) {
             $sameday_user = Configuration::get('SAMEDAY_ACCOUNT_USER');
@@ -1668,7 +1672,8 @@ class SamedayCourier extends CarrierModule
             $this->smarty->assign('lockerAddress', $samedaycourier_locker_address);
             $this->smarty->assign('hostCountry', $hostCountry);
             $this->smarty->assign('samedayUser', $sameday_user);
-            $this->smarty->assign('locker_carrier_id', $carrierId);
+            $this->smarty->assign('lockerCarrierId', $carrierId);
+            $this->smarty->assign('addressId', $addressId);
 
             if (Configuration::get('SAMEDAY_LOCKERS_MAP')) {
                 return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_map']);
@@ -1734,6 +1739,8 @@ class SamedayCourier extends CarrierModule
         $idAddressDelivery = $order->id_address_delivery;
 
         $deliveryOption = explode(',', json_decode($params['cart']->delivery_option, true)[$idAddressDelivery], 2);
+
+        var_dump($params['cart']->delivery_option, $deliveryOption); die();
 
         list($idCarrier, $locker) = $deliveryOption;
 
