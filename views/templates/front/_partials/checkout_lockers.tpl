@@ -108,9 +108,17 @@
         });
 
         const _setCarrierOptionValue = (optionValue) => {
-            let carrierId = document.getElementById('locker_name').getAttribute('data-locker_carrier_id');
-            let deliveryOptionId = 'delivery_option_' + carrierId;
-            document.getElementById(deliveryOptionId).value = `${carrierId},${optionValue}`;
+            let lockerCarrierId = document.getElementById('locker_name').getAttribute('data-locker_carrier_id');
+
+            let deliveryOptionsElements = document.getElementsByName('delivery_option');
+            deliveryOptionsElements = Array.from(deliveryOptionsElements);
+            let lockerOption = deliveryOptionsElements.filter((element) => {
+                return element.getAttribute('data-key') === lockerCarrierId;
+            });
+
+            if (undefined !== lockerOption) {
+                document.getElementById(lockerOption.id).value = `${lockerCarrierId},${optionValue}`;
+            }
         }
 
         const _setCookie = (key, value, days) => {

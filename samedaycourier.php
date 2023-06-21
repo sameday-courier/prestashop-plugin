@@ -1668,9 +1668,9 @@ class SamedayCourier extends CarrierModule
             $this->smarty->assign('lockerAddress', $samedaycourier_locker_address);
             $this->smarty->assign('hostCountry', $hostCountry);
             $this->smarty->assign('samedayUser', $sameday_user);
-            $this->smarty->assign('carrier_id', $carrierId);
+            $this->smarty->assign('locker_carrier_id', $carrierId);
 
-            if(Configuration::get('SAMEDAY_LOCKERS_MAP')) {
+            if (Configuration::get('SAMEDAY_LOCKERS_MAP')) {
                 return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_map']);
             }
 
