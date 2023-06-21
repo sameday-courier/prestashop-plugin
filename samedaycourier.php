@@ -1614,7 +1614,7 @@ class SamedayCourier extends CarrierModule
             $params['cookie']->samedaycourier_locker_address,
             $service,
             $params['carrier']['id'],
-            '',
+            $params['cart']->id_address_delivery,
             '1.7'
         );
     }

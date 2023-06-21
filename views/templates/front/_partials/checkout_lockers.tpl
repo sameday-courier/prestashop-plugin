@@ -115,7 +115,8 @@
             deliveryOptionsElements = Array.from(deliveryOptionsElements);
 
             let lockerOption = deliveryOptionsElements.filter((element) => {
-                 if (element.getAttribute('data-key') === `${lockerCarrierId},`) {
+                 if (element.value.split(',')[0] === `${lockerCarrierId}`) {
+
                     return element;
                  }
             })[0];
