@@ -1095,12 +1095,12 @@ class SamedayCourier extends CarrierModule
         }
 
         foreach ($lockers->getLockers() as $lockerObject) {
-            $locker = SamedayLocker::findBySamedayId($lockerObject->getId());
-            if (!$locker) {
+            $samedayLocker = SamedayLocker::findBySamedayId($lockerObject->getId());
+            if (!$samedayLocker) {
                 // Locker not found, add it.
                 $locker = new SamedayLocker();
             } else {
-                $locker = new SamedayLocker($locker->id);
+                $locker = new SamedayLocker($samedayLocker->id);
             }
 
             $locker->id_locker = $lockerObject->getId();
@@ -1476,14 +1476,16 @@ class SamedayCourier extends CarrierModule
                 $samedayLocker = SamedayLocker::findBySamedayId($lockerId);
             }
 
-            $locker = [
-                'lockerId' => $samedayLocker->id_locker ?? $samedayLocker->lockerId,
-                'name' => $samedayLocker->name,
-                'address' => $samedayLocker->address,
-                'city' => $samedayLocker->city,
-                'county' => $samedayLocker->county,
-                'postalCode' => $samedayLocker->postal_code ?? '',
-            ];
+            if (is_object($locker)) {
+                $locker = [
+                    'lockerId' => $samedayLocker->id_locker ?? $samedayLocker->lockerId,
+                    'name' => $samedayLocker->name,
+                    'address' => $samedayLocker->address,
+                    'city' => $samedayLocker->city,
+                    'county' => $samedayLocker->county,
+                    'postalCode' => $samedayLocker->postal_code ?? '',
+                ];
+            }
         }
 
         $this->smarty->assign(

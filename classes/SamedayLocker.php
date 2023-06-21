@@ -102,15 +102,22 @@ class SamedayLocker extends ObjectModel
 
     /**
      * @param $id
-     * @return array|bool|object|null
+     *
+     * @return false|object
      */
     public static function findBySamedayId($id)
     {
         $liveMode = self::checkMode();
 
-        return (object) Db::getInstance()->getRow(
+        $result = Db::getInstance()->getRow(
             "SELECT s.* FROM " . _DB_PREFIX_ . self::TABLE_NAME .
             " s WHERE s.live_mode = '{$liveMode}' AND s.id_locker = " . (int) $id
         );
+
+        if (!$result) {
+            return false;
+        }
+
+        return (object) $result;
     }
 }
