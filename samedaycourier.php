@@ -1755,22 +1755,43 @@ class SamedayCourier extends CarrierModule
         }
 
         if (isset($address, $state) && $service['code'] === self::LOCKER_NEXT_DAY) {
-            $orderLocker = new SamedayOrderLocker();
+            // Update Cart and Carrier:
+            $cart = new Cart($order->id_cart);
 
-            $orderLocker->id_order = $orderId;
-            $orderLocker->destination_address_hd_id = $order->id_address_delivery;
+            $cart->id_carrier = $idCarrier;
+            $cart->delivery_option = json_encode([$idAddressDelivery => sprintf('%s,', $idCarrier)]);
+
+            $cart->update();
+
+            $orderCarrier = new OrderCarrier($order->id);
+            $orderCarrier->id_carrier = $idCarrier;
+
+            $orderCarrier->update();
+
+            $order->id_carrier = $idCarrier;
+            $order->update();
+
+            // Store Locker details locally:
+            if (null === $samedayOrderLocker = SamedayOrderLocker::getLockerForOrder($order->id)) {
+                $SamedayOrderLocker = new SamedayOrderLocker();
+            } else {
+                $SamedayOrderLocker = new SamedayOrderLocker($samedayOrderLocker['id']);
+            }
+
+            $SamedayOrderLocker->id_order = $orderId;
+            $SamedayOrderLocker->destination_address_hd_id = $order->id_address_delivery;
 
             if (null !== $lockerId = (int) isset($_COOKIE['sameday_id_locker']) ? $_COOKIE['sameday_id_locker'] : null) {
-                $orderLocker->id_locker = $lockerId;
+                $SamedayOrderLocker->id_locker = $lockerId;
             }
 
             if ('' !== $locker) {
-                $orderLocker->locker = $locker;
+                $SamedayOrderLocker->locker = $locker;
 
                 $this->storeNewAddressForLocker(json_decode($locker, false), $address);
             }
 
-            $orderLocker->save();
+            $SamedayOrderLocker->save();
         }
 
         // OPEN-PACKAGE LOGIC:
@@ -1787,15 +1808,41 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $params
+     * @throws PrestaShopException
      */
     public function hookActionValidateStepComplete($params)
     {
-        $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
-        $locker = $_COOKIE['sameday_locker'] ?? null;
+        $idAddressDelivery = $params['cart']->id_address_delivery;
+        $deliveryOption = explode(',', $params['request_params']['delivery_option'][$idAddressDelivery], 2);
+
+        list($idCarrier, $locker) = $deliveryOption;
+
+        $service = SamedayService::findByCarrierId($idCarrier);
 
         if (($service['code'] === self::LOCKER_NEXT_DAY) && null === $locker) {
             $this->context->controller->errors[] = $this->l('Please select your easyBox from lockers map');
             $params['completed']  = false;
+        } else if (($service['code'] === self::LOCKER_NEXT_DAY) && null !== $locker) {
+            // Update Cart and Carrier:
+            $cart = new Cart($params['cart']->id);
+
+            $cart->id_carrier = $idCarrier;
+            $cart->delivery_option = json_encode([$idAddressDelivery => sprintf('%s,', $idCarrier)]);
+
+            $cart->save();
+
+            // Update SamedayOrderLocker
+            if (null === $samedayOrderLocker = SamedayOrderLocker::getLockerForOrder($cart->id)) {
+                $SamedayOrderLocker = new SamedayOrderLocker();
+            } else {
+                $SamedayOrderLocker = new SamedayOrderLocker($samedayOrderLocker['id']);
+            }
+
+            $SamedayOrderLocker->id_order = $cart->id;
+            $SamedayOrderLocker->locker = $locker;
+            $SamedayOrderLocker->destination_address_hd_id = $idAddressDelivery;
+
+            $SamedayOrderLocker->save();
         }
     }
 
