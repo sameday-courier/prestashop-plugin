@@ -1617,8 +1617,8 @@ class SamedayCourier extends CarrierModule
      * @param $params
      * @param $service
      * @param $fileVersion
-     *
      * @return string
+     * @throws PrestaShopDatabaseException
      */
     private function displayCarrierExtraContent(
             $params,
@@ -1626,7 +1626,9 @@ class SamedayCourier extends CarrierModule
             $fileVersion
         ): string
     {
+        $i = 0;
         if ($service['code'] === self::LOCKER_NEXT_DAY) {
+
             $sameday_user = Configuration::get('SAMEDAY_ACCOUNT_USER');
             $hostCountry = Configuration::get('SAMEDAY_HOST_COUNTRY') !== null ? Configuration::get('SAMEDAY_HOST_COUNTRY') : 'ro'; // Default will always be 'ro'
             $useLockerMap = (bool) Configuration::get('SAMEDAY_LOCKERS_MAP');
@@ -1668,8 +1670,7 @@ class SamedayCourier extends CarrierModule
             return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_selector']);
         }
 
-
-
+        // OPCG Logic:
         if (
             (int) Configuration::get('SAMEDAY_OPEN_PACKAGE')
             && $this->checkForOpenPackageTax($service['service_optional_taxes'])
@@ -1677,7 +1678,7 @@ class SamedayCourier extends CarrierModule
             $this->smarty->assign('carrier_id', $params['cart']->id_carrier);
             $this->smarty->assign('label', Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL'));
 
-            return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['open_package_option'], null);
+            return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['open_package_option']);
         }
 
         return '';
