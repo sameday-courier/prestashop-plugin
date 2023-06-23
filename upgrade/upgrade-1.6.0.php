@@ -37,7 +37,7 @@ function upgrade_module_1_6_0($object)
     $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
             DROP COLUMN `name_locker`';
 
-    $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayCart::TABLE_NAME . '
+    $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayCart::$definition['table'] . '
             ADD `sameday_locker` TEXT';
 
     foreach ($sql as $query) {

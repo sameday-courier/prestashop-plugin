@@ -2,25 +2,31 @@
 
 class SamedayCart extends Cart
 {
-    const TABLE_NAME = 'cart';
-
     /** @var string */
     public $sameday_locker;
-
-    public static $definition;
 
     public function __construct($id = null, $idLang = null)
     {
         parent::__construct($id, $idLang);
 
-        $parentDefinition = parent::$definition;
-
-        $parentDefinition['fields']['sameday_locker'] = [
+        self::$definition['fields']['sameday_locker'] = [
             'type' => self::TYPE_STRING,
             'required' => false,
             'validate' => 'isCleanHtml'
         ];
+    }
 
-        self::$definition = $parentDefinition;
+    public function save($null_values = false, $auto_date = true)
+    {
+        $tableName = _DB_PREFIX_ . self::$definition['table'];
+        $idCart = (int) $this->id;
+
+        $sql = sprintf("UPDATE %s SET `sameday_locker` = '%s' WHERE `id_cart` = '%s'",
+            $tableName,
+            $this->sameday_locker,
+            $idCart
+        );
+
+        Db::getInstance()->execute($sql);
     }
 }

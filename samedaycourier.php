@@ -1578,8 +1578,9 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $params
-     *
      * @return string
+     *
+     * @throws PrestaShopDatabaseException
      */
     public function hookExtraCarrier($params)
     {
@@ -1597,8 +1598,9 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $params
-     *
      * @return string
+     *
+     * @throws PrestaShopDatabaseException
      */
     public function hookDisplayCarrierExtraContent($params)
     {
@@ -1619,7 +1621,9 @@ class SamedayCourier extends CarrierModule
      * @param $service
      * @param $fileVersion
      * @return string
+     *
      * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
      */
     private function displayCarrierExtraContent(
             $params,
@@ -1627,8 +1631,11 @@ class SamedayCourier extends CarrierModule
             $fileVersion
         ): string
     {
-        $i = 0;
         if ($service['code'] === self::LOCKER_NEXT_DAY) {
+            $samedayCart = new SamedayCart($params['cart']->id);
+            $samedayCart->sameday_locker = $_COOKIE['sameday_locker'];
+
+            $samedayCart->save();
 
             $sameday_user = Configuration::get('SAMEDAY_ACCOUNT_USER');
             $hostCountry = Configuration::get('SAMEDAY_HOST_COUNTRY') !== null ? Configuration::get('SAMEDAY_HOST_COUNTRY') : 'ro'; // Default will always be 'ro'
