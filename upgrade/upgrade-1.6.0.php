@@ -32,10 +32,13 @@ function upgrade_module_1_6_0($object)
             ADD `destination_address_hd_id` INT';
 
     $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
-            DROP COLUMN IF EXISTS `address_locker` ';
+            DROP COLUMN `address_locker`';
 
     $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
-            DROP COLUMN IF EXISTS `name_locker` ';
+            DROP COLUMN `name_locker`';
+
+    $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayCart::TABLE_NAME . '
+            ADD `sameday_locker` TEXT';
 
     foreach ($sql as $query) {
         if (Db::getInstance()->execute($query) === false) {

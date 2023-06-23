@@ -31,6 +31,7 @@ include(__DIR__ . '/classes/SamedayConstants.php');
 include(__DIR__ . '/classes/SamedayPersistenceDataHandler.php');
 include(__DIR__ . '/classes/SamedayState.php');
 include(__DIR__ . '/classes/SamedayAddress.php');
+include(__DIR__ . '/classes/SamedayCart.php');
 
 /**
  * Class SamedayCourier
