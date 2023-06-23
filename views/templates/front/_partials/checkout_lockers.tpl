@@ -122,7 +122,7 @@
             })[0];
 
             if (undefined !== lockerOption) {
-                document.getElementById(lockerOption.id).setAttribute('value', `${lockerCarrierId},${optionValue}`);
+                document.getElementById(lockerOption.id).setAttribute('data-sameday_locker', `${lockerCarrierId},${optionValue}`);
             }
         }
 
