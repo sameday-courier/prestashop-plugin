@@ -14,14 +14,39 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
-include(dirname(__FILE__) . '/libs/sameday-php-sdk/src/Sameday/autoload.php');
-include(dirname(__FILE__).'/../../config/config.inc.php');
-include(dirname(__FILE__).'/../../init.php');
-include(dirname(__FILE__) . '/classes/SamedayAwbParcel.php');
-include(dirname(__FILE__) . '/classes/SamedayAwbParcelHistory.php');
-include(dirname(__FILE__) . '/classes/SamedayConstants.php');
-include(dirname(__FILE__) . '/classes/SamedayPersistenceDataHandler.php');
+include(__DIR__ . '/libs/sameday-php-sdk/src/Sameday/autoload.php');
+include(__DIR__ .'/../../config/config.inc.php');
+include(__DIR__ .'/../../init.php');
+include(__DIR__ . '/classes/SamedayAwbParcel.php');
+include(__DIR__ . '/classes/SamedayAwbParcelHistory.php');
+include(__DIR__ . '/classes/SamedayConstants.php');
+include(__DIR__ . '/classes/SamedayPersistenceDataHandler.php');
+include(__DIR__ . '/classes/SamedayCart.php');
 
+if (Tools::getValue('action') === 'store_locker') {
+    if (Tools::getValue('token') !== Tools::getAdminToken('Samedaycourier')) {
+        die('Bad request!');
+    }
+
+    $locker = json_decode(Tools::getValue('locker'), false);
+
+    $locker = json_encode([
+        'lockerId' => (int) $locker->lockerId,
+        'name' => strip_tags(stripslashes($locker->name)),
+        'address' => strip_tags(stripslashes($locker->address)),
+        'city' => strip_tags(stripslashes($locker->city)),
+        'county' => strip_tags(stripslashes($locker->county)),
+        'zip' => 0,
+    ]);
+
+    $cart = new Cart(Tools::getValue('idCart'));
+    $samedayCart = new SamedayCart($cart->id);
+    $samedayCart->sameday_locker = $locker;
+    $samedayCart->save();
+
+    header('Content-Type: application/json');
+    die(json_encode(['message' => 'Locker updated!']));
+}
 
 if (Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10) != Tools::getValue('token') ||
     !Module::isInstalled('samedaycourier')
@@ -90,4 +115,4 @@ if (Tools::getValue('awb_id')) {
     die(json_encode(array('summary' => $summaries, 'histories' => $histories)));
 }
 
-die('No records');
+die('No data to response');

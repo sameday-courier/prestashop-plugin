@@ -1683,7 +1683,15 @@ class SamedayCourier extends CarrierModule
             $this->smarty->assign('hostCountry', $hostCountry);
             $this->smarty->assign('samedayUser', $sameday_user);
             $this->smarty->assign('lockerCarrierId', $params['cart']->id_carrier);
-            $this->smarty->assign('addressId', $params['cart']->id_address_delivery);
+            $this->smarty->assign('idCart', $cart->id);
+
+            $storeLockerRoute = sprintf(
+                '%s%ssamedaycourier/ajax.php?token=%s',
+                _PS_BASE_URL_,
+                _MODULE_DIR_,
+                Tools::getAdminToken('Samedaycourier')
+            );
+            $this->smarty->assign('storeLockerRoute', $storeLockerRoute);
 
             if (Configuration::get('SAMEDAY_LOCKERS_MAP')) {
                 return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_map']);

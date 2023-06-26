@@ -52,8 +52,6 @@
 
                     document.getElementById("showLockerDetails").style.display = "block";
                     document.getElementById("showLockerDetails").innerHTML = locker.name + '<br/>' + locker.address;
-
-                    _setCarrierOptionValue(JSON.stringify(locker));
                 } else {
                     document.getElementById("showLockerDetails").style.display = "none";
                 }
@@ -91,7 +89,7 @@
                     document.getElementById("showLockerDetails").style.display = "block";
                     document.getElementById("showLockerDetails").innerHTML = lockerName + '<br/>' + lockerAddress;
 
-                    _setCarrierOptionValue(JSON.stringify(locker));
+                    _storeLocker(JSON.stringify(locker));
 
                     lockerPlugin.close();
                 });
@@ -107,23 +105,20 @@
             }
         });
 
-        const _setCarrierOptionValue = (optionValue) => {
-            let lockerCarrierId = document.getElementById('locker_name').getAttribute('data-locker_carrier_id');
-            let addressId = document.getElementById('locker_name').getAttribute('data-address_id');
+        const _storeLocker = (locker) => {
+            let storeLockerRoute = document.getElementById('locker_name').getAttribute('data-store_locker_route');
+            let idCart = document.getElementById('locker_name').getAttribute('data-id_cart');
 
-            let deliveryOptionsElements = document.getElementsByName(`delivery_option[${addressId}]`);
-            deliveryOptionsElements = Array.from(deliveryOptionsElements);
+            $.ajax({
+                url: storeLockerRoute,
+                method: 'POST',
+                data: {
+                    action: 'store_locker',
+                    locker: locker,
+                    idCart: idCart,
+                },
 
-            let lockerOption = deliveryOptionsElements.filter((element) => {
-                 if (element.value.split(',')[0] === `${lockerCarrierId}`) {
-
-                    return element;
-                 }
-            })[0];
-
-            if (undefined !== lockerOption) {
-                document.getElementById(lockerOption.id).setAttribute('data-sameday_locker', `${lockerCarrierId},${optionValue}`);
-            }
+            });
         }
 
         const _setCookie = (key, value, days) => {
