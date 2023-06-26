@@ -1632,10 +1632,24 @@ class SamedayCourier extends CarrierModule
         ): string
     {
         if ($service['code'] === self::LOCKER_NEXT_DAY) {
-            $samedayCart = new SamedayCart($params['cart']->id);
-            $samedayCart->sameday_locker = $_COOKIE['sameday_locker'];
+            $cart = new Cart($params['cart']->id);
+            $address = new Address($cart->id_address_delivery);
+            $samedayService = SamedayService::findByCode($service['code']);
+
+            $samedayCart = new SamedayCart($cart->id);
+
+            $samedayLockerCookie = $_COOKIE['sameday_locker'] ?? '';
+            $samedayCart->sameday_locker = $this->parseAndFilterLocker($samedayLockerCookie);
 
             $samedayCart->save();
+
+            $lockerName = json_decode($samedayCart->sameday_locker, false)->name;
+            if ($address->alias === $lockerName) {
+                $cart->delivery_option = json_encode([$address->id => sprintf("%s,", $samedayService['id_carrier'])]);
+                $cart->id_carrier = $samedayService['id_carrier'];
+            }
+
+            $cart->save();
 
             $sameday_user = Configuration::get('SAMEDAY_ACCOUNT_USER');
             $hostCountry = Configuration::get('SAMEDAY_HOST_COUNTRY') !== null ? Configuration::get('SAMEDAY_HOST_COUNTRY') : 'ro'; // Default will always be 'ro'
@@ -1731,16 +1745,15 @@ class SamedayCourier extends CarrierModule
         $orderId = $params['order']->id;
         $order = new Order($orderId);
 
-        $idAddressDelivery = $order->id_address_delivery;
+        $samedayCart = new SamedayCart($order->id_cart);
 
-        $deliveryOption = explode(',', json_decode($params['cart']->delivery_option, true)[$idAddressDelivery], 2);
-
-        list($idCarrier, $locker) = $deliveryOption;
+        $idCarrier = $samedayCart->id_carrier;
+        $locker = $samedayCart->sameday_locker;
 
         $service = SamedayService::findByCarrierId($idCarrier);
 
-        if (isset($order->id_address_delivery) && $order->id_address_delivery > 0) {
-            $address = new Address($order->id_address_delivery);
+        if (isset($samedayCart->id_address_delivery) && $samedayCart->id_address_delivery > 0) {
+            $address = new Address($samedayCart->id_address_delivery);
         }
 
         if (isset($address->id_state) && $address->id_state > 0) {
@@ -1748,22 +1761,6 @@ class SamedayCourier extends CarrierModule
         }
 
         if (isset($address, $state) && $service['code'] === self::LOCKER_NEXT_DAY) {
-            // Update Cart and Carrier:
-            $cart = new Cart($order->id_cart);
-
-            $cart->id_carrier = $idCarrier;
-            $cart->delivery_option = json_encode([$idAddressDelivery => sprintf('%s,', $idCarrier)]);
-
-            $cart->update();
-
-            $orderCarrier = new OrderCarrier($order->id);
-            $orderCarrier->id_carrier = $idCarrier;
-
-            $orderCarrier->update();
-
-            $order->id_carrier = $idCarrier;
-            $order->update();
-
             // Store Locker details locally:
             if (null === $samedayOrderLocker = SamedayOrderLocker::getLockerForOrder($order->id)) {
                 $SamedayOrderLocker = new SamedayOrderLocker();
@@ -2038,6 +2035,29 @@ class SamedayCourier extends CarrierModule
         }
 
         return null;
+    }
+
+    /**
+     * @param string $locker
+     *
+     * @return string|null
+     */
+    private function parseAndFilterLocker(string $locker)
+    {
+        if ('' === $locker) {
+            return '';
+        }
+
+        $locker = json_decode($locker, false);
+
+        return json_encode([
+            'lockerId' => (int) $locker->lockerId,
+            'name' => strip_tags(stripslashes($locker->name)),
+            'address' => strip_tags(stripslashes($locker->address)),
+            'city' => strip_tags(stripslashes($locker->city)),
+            'county' => strip_tags(stripslashes($locker->county)),
+            'zip' => 0,
+        ]);
     }
 
     /**

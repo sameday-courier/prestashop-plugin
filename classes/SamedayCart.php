@@ -18,13 +18,10 @@ class SamedayCart extends Cart
 
     public function save($null_values = false, $auto_date = true)
     {
-        $tableName = _DB_PREFIX_ . self::$definition['table'];
-        $idCart = (int) $this->id;
-
         $sql = sprintf("UPDATE %s SET `sameday_locker` = '%s' WHERE `id_cart` = '%s'",
-            $tableName,
+            _DB_PREFIX_ . self::$definition['table'],
             $this->sameday_locker,
-            $idCart
+            (int) $this->id
         );
 
         Db::getInstance()->execute($sql);
