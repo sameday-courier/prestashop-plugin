@@ -68,8 +68,17 @@
                 const countryCode= document.getElementById('showLockerMap').getAttribute('data-country').toUpperCase(); //country for which the plugin is used
                 const langCode= document.getElementById('showLockerMap').getAttribute('data-country');  //language of the plugin
                 const samedayUser= document.getElementById('showLockerMap').getAttribute('data-username'); //sameday username
+                const city = document.getElementById('locker_name').getAttribute('data-city');
 
-                window['LockerPlugin'].init({ clientId: clientId, countryCode: countryCode, langCode: langCode, apiUsername: samedayUser });
+                window['LockerPlugin'].init(
+                    {
+                        clientId: clientId,
+                        countryCode: countryCode,
+                        langCode: langCode,
+                        apiUsername: samedayUser,
+                        city: city,
+                    }
+                );
 
                 let lockerPlugin = window['LockerPlugin'].getInstance();
 

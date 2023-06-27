@@ -1683,6 +1683,7 @@ class SamedayCourier extends CarrierModule
             $this->smarty->assign('hostCountry', $hostCountry);
             $this->smarty->assign('samedayUser', $sameday_user);
             $this->smarty->assign('lockerCarrierId', $params['cart']->id_carrier);
+            $this->smarty->assign('city', $address->city);
             $this->smarty->assign('idCart', $cart->id);
 
             $storeLockerRoute = sprintf(
