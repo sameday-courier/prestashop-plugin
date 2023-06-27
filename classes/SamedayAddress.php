@@ -19,13 +19,13 @@ class SamedayAddress extends Address
 {
     const TABLE_NAME = 'address';
 
-    public static function findOneByCustomerAndAlias(int $customerId, string $alias)
+    public static function findOneByCustomerAndAlias(int $customerId)
     {
-        $alias = pSQL($alias);
+        $alias = "%easybox%";
 
         $tableName = _DB_PREFIX_ . self::TABLE_NAME;
         $sql = sprintf(
-            "SELECT * FROM %s AS t WHERE t.id_customer = '%s' AND t.alias='%s' AND t.deleted=0",
+            "SELECT * FROM %s AS t WHERE t.id_customer = '%s' AND t.alias LIKE '%s' AND t.deleted=0",
             $tableName,
             $customerId,
             $alias

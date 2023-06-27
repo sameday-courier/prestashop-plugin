@@ -30,6 +30,11 @@ class SamedayOrderLocker extends ObjectModel
     /** @var string */
     public $destination_address_hd_id;
 
+    public function __construct($id = null, $id_lang = null, $id_shop = null)
+    {
+        parent::__construct($id, $id_lang, $id_shop);
+    }
+
     /** @var array */
     public static $definition = array(
         'table' => self::TABLE_NAME,

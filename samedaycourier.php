@@ -2079,28 +2079,31 @@ class SamedayCourier extends CarrierModule
     private function storeNewAddressForLocker($locker, $address): int
     {
         if (
-            false === $samedayAddress = SamedayAddress::findOneByCustomerAndAlias($address->id_customer, $locker->name)
+            false === $samedayAddress = SamedayAddress::findOneByCustomerAndAlias($address->id_customer)
         ) {
             /** @var Address $newAddress */
             $newAddress = $address->duplicateObject();
-
-            /** @var SamedayState $state */
-            $state = SamedayState::findOneByName($locker->county);
-
-            $newAddress->alias = $locker->name;
-            $newAddress->city = $locker->city;
-            $newAddress->address1 = $locker->address;
-            $newAddress->address2 = '';
-            $newAddress->id_state = $state['id_state'];
-            $newAddress->postcode = '';
-            $newAddress->id_country = $state['id_country'];
-
-            $newAddress->save();
-
-            return $newAddress->id;
+        } else {
+            $newAddress = new Address($samedayAddress['id_address']);
         }
 
-        return $samedayAddress['id_address'];
+        /** @var SamedayState $state */
+        $state = SamedayState::findOneByName($locker->county);
+
+        $lockerName = (array) explode(' ', $locker->name);
+        $alias = sprintf('easybox %s %s', $lockerName[1] ?? '', $lockerName[2] ?? '');
+
+        $newAddress->alias = $alias;
+        $newAddress->city = $locker->city;
+        $newAddress->address1 = substr($locker->address, 0, 32);
+        $newAddress->address2 = '';
+        $newAddress->id_state = $state['id_state'];
+        $newAddress->postcode = '';
+        $newAddress->id_country = $state['id_country'];
+
+        $newAddress->save();
+
+        return $newAddress->id;
     }
 
     /**
