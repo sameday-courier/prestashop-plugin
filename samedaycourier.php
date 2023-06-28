@@ -2051,67 +2051,6 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @param string $locker
-     *
-     * @return string|null
-     */
-    private function parseAndFilterLocker(string $locker)
-    {
-        if ('' === $locker) {
-            return '';
-        }
-
-        $locker = json_decode($locker, false);
-
-        return json_encode([
-            'lockerId' => (int) $locker->lockerId,
-            'name' => strip_tags(stripslashes($locker->name)),
-            'address' => strip_tags(stripslashes($locker->address)),
-            'city' => strip_tags(stripslashes($locker->city)),
-            'county' => strip_tags(stripslashes($locker->county)),
-            'zip' => 0,
-        ]);
-    }
-
-//    /**
-//     * @param $locker
-//     * @param $address
-//     *
-//     * @return int
-//     *
-//     * @throws PrestaShopException
-//     */
-//    private function storeNewAddressForLocker($locker, $address): int
-//    {
-//        if (
-//            false === $samedayAddress = SamedayAddress::findOneByCustomerAndAlias($address->id_customer)
-//        ) {
-//            /** @var Address $newAddress */
-//            $newAddress = $address->duplicateObject();
-//        } else {
-//            $newAddress = new Address($samedayAddress['id_address']);
-//        }
-//
-//        /** @var SamedayState $state */
-//        $state = SamedayState::findOneByName($locker->county);
-//
-//        $lockerName = (array) explode(' ', $locker->name);
-//        $alias = sprintf('easybox %s %s', $lockerName[1] ?? '', $lockerName[2] ?? '');
-//
-//        $newAddress->alias = $alias;
-//        $newAddress->city = $locker->city;
-//        $newAddress->address1 = substr($locker->address, 0, 32);
-//        $newAddress->address2 = '';
-//        $newAddress->id_state = $state['id_state'];
-//        $newAddress->postcode = '';
-//        $newAddress->id_country = $state['id_country'];
-//
-//        $newAddress->save();
-//
-//        return $newAddress->id;
-//    }
-
-    /**
      * @param $order
      * @throws PrestaShopException
      * @throws Sameday\Exceptions\SamedaySDKException

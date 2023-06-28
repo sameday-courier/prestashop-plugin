@@ -27,7 +27,7 @@ class SamedayCart extends Cart
 
         $sql = sprintf("UPDATE %s SET `sameday_locker` = '%s', `id_address_delivery` = '%s', `delivery_option` = '%s' WHERE `id_cart` = '%s'",
             _DB_PREFIX_ . self::$definition['table'],
-            $this->sameday_locker,
+            $this->parseAndFilterLocker($this->sameday_locker),
             $idAddressDelivery,
             $deliveryOption,
             (int) $this->id
@@ -64,5 +64,28 @@ class SamedayCart extends Cart
         $newAddress->save();
 
         return $newAddress->id;
+    }
+
+    /**
+     * @param string $locker
+     *
+     * @return string|null
+     */
+    private function parseAndFilterLocker(string $locker)
+    {
+        if ('' === $locker) {
+            return '';
+        }
+
+        $locker = json_decode($locker, false);
+
+        return json_encode([
+            'lockerId' => (int) $locker->lockerId,
+            'name' => strip_tags(stripslashes($locker->name)),
+            'address' => strip_tags(stripslashes($locker->address)),
+            'city' => strip_tags(stripslashes($locker->city)),
+            'county' => strip_tags(stripslashes($locker->county)),
+            'zip' => 0,
+        ]);
     }
 }
