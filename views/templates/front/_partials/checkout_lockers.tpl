@@ -52,6 +52,8 @@
 
                     document.getElementById("showLockerDetails").style.display = "block";
                     document.getElementById("showLockerDetails").innerHTML = locker.name + '<br/>' + locker.address;
+
+                    _storeLocker(JSON.stringify(locker));
                 } else {
                     document.getElementById("showLockerDetails").style.display = "none";
                 }
@@ -126,7 +128,6 @@
                     locker: locker,
                     idCart: idCart,
                 },
-
             });
         }
 

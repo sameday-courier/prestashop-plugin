@@ -1746,8 +1746,8 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $params
-     * @throws PrestaShopException
-     * @throws Exception
+     *
+     * @return void
      */
     public function hookActionValidateOrder($params)
     {
@@ -1787,7 +1787,9 @@ class SamedayCourier extends CarrierModule
             if ('' !== $locker) {
                 $SamedayOrderLocker->locker = $locker;
 
-                $this->storeNewAddressForLocker(json_decode($locker, false), $address);
+                $order->id_address_delivery = $samedayCart->storeNewAddressForLocker(json_decode($locker, false), $address);
+
+                $order->save();
             }
 
             $SamedayOrderLocker->save();
@@ -2021,7 +2023,9 @@ class SamedayCourier extends CarrierModule
 
                 $orderLocker->save();
 
-                $order->id_address_delivery = $this->storeNewAddressForLocker($locker, $address);
+                $samedayCart = new SamedayCart();
+
+                $order->id_address_delivery = $samedayCart->storeNewAddressForLocker($locker, $address);
             }
 
             $order->update();
@@ -2069,43 +2073,43 @@ class SamedayCourier extends CarrierModule
         ]);
     }
 
-    /**
-     * @param $locker
-     * @param $address
-     *
-     * @return int
-     *
-     * @throws PrestaShopException
-     */
-    private function storeNewAddressForLocker($locker, $address): int
-    {
-        if (
-            false === $samedayAddress = SamedayAddress::findOneByCustomerAndAlias($address->id_customer)
-        ) {
-            /** @var Address $newAddress */
-            $newAddress = $address->duplicateObject();
-        } else {
-            $newAddress = new Address($samedayAddress['id_address']);
-        }
-
-        /** @var SamedayState $state */
-        $state = SamedayState::findOneByName($locker->county);
-
-        $lockerName = (array) explode(' ', $locker->name);
-        $alias = sprintf('easybox %s %s', $lockerName[1] ?? '', $lockerName[2] ?? '');
-
-        $newAddress->alias = $alias;
-        $newAddress->city = $locker->city;
-        $newAddress->address1 = substr($locker->address, 0, 32);
-        $newAddress->address2 = '';
-        $newAddress->id_state = $state['id_state'];
-        $newAddress->postcode = '';
-        $newAddress->id_country = $state['id_country'];
-
-        $newAddress->save();
-
-        return $newAddress->id;
-    }
+//    /**
+//     * @param $locker
+//     * @param $address
+//     *
+//     * @return int
+//     *
+//     * @throws PrestaShopException
+//     */
+//    private function storeNewAddressForLocker($locker, $address): int
+//    {
+//        if (
+//            false === $samedayAddress = SamedayAddress::findOneByCustomerAndAlias($address->id_customer)
+//        ) {
+//            /** @var Address $newAddress */
+//            $newAddress = $address->duplicateObject();
+//        } else {
+//            $newAddress = new Address($samedayAddress['id_address']);
+//        }
+//
+//        /** @var SamedayState $state */
+//        $state = SamedayState::findOneByName($locker->county);
+//
+//        $lockerName = (array) explode(' ', $locker->name);
+//        $alias = sprintf('easybox %s %s', $lockerName[1] ?? '', $lockerName[2] ?? '');
+//
+//        $newAddress->alias = $alias;
+//        $newAddress->city = $locker->city;
+//        $newAddress->address1 = substr($locker->address, 0, 32);
+//        $newAddress->address2 = '';
+//        $newAddress->id_state = $state['id_state'];
+//        $newAddress->postcode = '';
+//        $newAddress->id_country = $state['id_country'];
+//
+//        $newAddress->save();
+//
+//        return $newAddress->id;
+//    }
 
     /**
      * @param $order

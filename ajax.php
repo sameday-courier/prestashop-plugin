@@ -22,6 +22,8 @@ include(__DIR__ . '/classes/SamedayAwbParcelHistory.php');
 include(__DIR__ . '/classes/SamedayConstants.php');
 include(__DIR__ . '/classes/SamedayPersistenceDataHandler.php');
 include(__DIR__ . '/classes/SamedayCart.php');
+include(__DIR__ . '/classes/SamedayAddress.php');
+include(__DIR__ . '/classes/SamedayState.php');
 
 if (Tools::getValue('action') === 'store_locker') {
     if (Tools::getValue('token') !== Tools::getAdminToken('Samedaycourier')) {
@@ -42,6 +44,7 @@ if (Tools::getValue('action') === 'store_locker') {
     $cart = new Cart(Tools::getValue('idCart'));
     $samedayCart = new SamedayCart($cart->id);
     $samedayCart->sameday_locker = $locker;
+
     $samedayCart->save();
 
     header('Content-Type: application/json');
