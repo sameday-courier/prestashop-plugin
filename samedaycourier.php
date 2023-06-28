@@ -1639,7 +1639,7 @@ class SamedayCourier extends CarrierModule
             $samedayCart = new SamedayCart($cart->id);
 
             $samedayLockerCookie = $_COOKIE['sameday_locker'] ?? '';
-            $samedayCart->sameday_locker = $this->parseAndFilterLocker($samedayLockerCookie);
+            $samedayCart->sameday_locker = $samedayLockerCookie;
 
             $samedayCart->save();
 
