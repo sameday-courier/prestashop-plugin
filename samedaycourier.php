@@ -106,7 +106,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.5.5';
+        $this->version = '1.5.6';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -961,9 +961,17 @@ class SamedayCourier extends CarrierModule
             $form_values = $this->getConfigFormValues();
 
             if ($this->connectionLogin($form_values)) {
+                //Reset old token
+                $form_values[SamedayPersistenceDataHandler::KEYS[\Sameday\SamedayClient::KEY_TOKEN]] = '';
+                $form_values[SamedayPersistenceDataHandler::KEYS[\Sameday\SamedayClient::KEY_TOKEN_EXPIRES]] = '';
+
                 foreach (array_keys($form_values) as $key) {
                     Configuration::updateValue($key, Tools::getValue($key));
                 }
+
+                // Import local data Services and PickupPoints
+                $this->importServices();
+                $this->importPickupPoints();
             } else {
                 $this->addMessage('danger', $this->l('Connection failed! Verify your credentials and try again later!'));
             }
@@ -1076,47 +1084,51 @@ class SamedayCourier extends CarrierModule
         $sameday = new \Sameday\Sameday($client);
 
         $remoteLockers = [];
-        $request = new \Sameday\Requests\SamedayGetLockersRequest();
+        $page = 1;
+        do {
+            $request = new \Sameday\Requests\SamedayGetLockersRequest();
+            $request->setPage($page++);
 
-        if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
-            $this->log('Import lockers', SamedayConstants::DEBUG);
-            $this->log($request, SamedayConstants::DEBUG);
-        }
-
-        try {
-            $lockers = $sameday->getLockers($request);
-        } catch (Exception $e) {
-            $this->addMessage('danger', $e->getMessage());
-            $this->log($e->getMessage(), SamedayConstants::ERROR);
-
-            return;
-        }
-
-        foreach ($lockers->getLockers() as $lockerObject) {
-            $locker = SamedayLocker::findBySamedayId($lockerObject->getId());
-            if (!$locker) {
-                // Locker not found, add it.
-                $locker = new SamedayLocker();
-            } else {
-                $locker = new SamedayLocker($locker['id']);
+            if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
+                $this->log('Import lockers', SamedayConstants::DEBUG);
+                $this->log($request, SamedayConstants::DEBUG);
             }
 
-            $locker->id_locker = $lockerObject->getId();
-            $locker->name = $lockerObject->getName();
-            $locker->county = $lockerObject->getCounty();
-            $locker->city = $lockerObject->getCity();
-            $locker->address = $lockerObject->getAddress();
-            $locker->postal_code = $lockerObject->getPostalCode();
-            $locker->lat = $lockerObject->getLat();
-            $locker->long = $lockerObject->getLong();
-            $locker->live_mode = (int) Configuration::get('SAMEDAY_LIVE_MODE', 0);
-            if (null !== $locker->name) {
-                $locker->save();
+            try {
+                $lockers = $sameday->getLockers($request);
+            } catch (Exception $e) {
+                $this->addMessage('danger', $e->getMessage());
+                $this->log($e->getMessage(), SamedayConstants::ERROR);
+
+                return;
             }
 
-            // Save as current lockers.
-            $remoteLockers[] = $lockerObject->getId();
-        }
+            foreach ($lockers->getLockers() as $lockerObject) {
+                $locker = SamedayLocker::findBySamedayId($lockerObject->getId());
+                if (!$locker) {
+                    // Locker not found, add it.
+                    $locker = new SamedayLocker();
+                } else {
+                    $locker = new SamedayLocker($locker['id']);
+                }
+
+                $locker->id_locker = $lockerObject->getId();
+                $locker->name = $lockerObject->getName();
+                $locker->county = $lockerObject->getCounty();
+                $locker->city = $lockerObject->getCity();
+                $locker->address = $lockerObject->getAddress();
+                $locker->postal_code = $lockerObject->getPostalCode();
+                $locker->lat = $lockerObject->getLat();
+                $locker->long = $lockerObject->getLong();
+                $locker->live_mode = (int) Configuration::get('SAMEDAY_LIVE_MODE', 0);
+                if (null !== $locker->name) {
+                    $locker->save();
+                }
+
+                // Save as current lockers.
+                $remoteLockers[] = $lockerObject->getId();
+            }
+        } while ($page <= $lockers->getPages());
 
         // Build array of local lockers.
         $localLockers = array_map(
