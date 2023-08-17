@@ -961,9 +961,17 @@ class SamedayCourier extends CarrierModule
             $form_values = $this->getConfigFormValues();
 
             if ($this->connectionLogin($form_values)) {
+                //Reset old token
+                $form_values[SamedayPersistenceDataHandler::KEYS[\Sameday\SamedayClient::KEY_TOKEN]] = '';
+                $form_values[SamedayPersistenceDataHandler::KEYS[\Sameday\SamedayClient::KEY_TOKEN_EXPIRES]] = '';
+
                 foreach (array_keys($form_values) as $key) {
                     Configuration::updateValue($key, Tools::getValue($key));
                 }
+
+                // Import local data Services and PickupPoints
+                $this->importServices();
+                $this->importPickupPoints();
             } else {
                 $this->addMessage('danger', $this->l('Connection failed! Verify your credentials and try again later!'));
             }
