@@ -21,14 +21,19 @@ class SamedayOrderLocker extends ObjectModel
     /** @var integer */
     public $id_order;
 
-    /** @var integer */
+    /** @var int */
     public $id_locker;
 
     /** @var string */
-    public $name_locker;
+    public $locker;
 
-     /** @var string */
-     public $address_locker;
+    /** @var string */
+    public $destination_address_hd_id;
+
+    public function __construct($id = null, $id_lang = null, $id_shop = null)
+    {
+        parent::__construct($id, $id_lang, $id_shop);
+    }
 
     /** @var array */
     public static $definition = array(
@@ -38,9 +43,9 @@ class SamedayOrderLocker extends ObjectModel
         'multilang_shop' => false,
         'fields' => array(
             'id_order' => array('type' => self::TYPE_INT, 'required' => true, 'validate' => 'isUnsignedInt'),
-            'id_locker' => array('type' => self::TYPE_INT, 'required' => true, 'validate' => 'isUnsignedInt'),
-            'name_locker' => array('type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'),
-            'address_locker' => array('type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'),
+            'id_locker' => array('type' => self::TYPE_INT, 'required' => false, 'validate' => 'isCleanHtml'),
+            'locker' => array('type' => self::TYPE_STRING, 'required' => false, 'validate' => 'isCleanHtml'),
+            'destination_address_hd_id' => array('type' => self::TYPE_INT, 'required' => false),
         ),
     );
 

@@ -94,13 +94,16 @@ $sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . "` (
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
 $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
-            ADD `address_locker` TEXT';
+            ADD `destination_address_hd_id` INT';
 
 $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
-            ADD `name_locker` TEXT';
+            ADD `locker` TEXT';
 
 $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayService::TABLE_NAME . '
             ADD `service_optional_taxes` TEXT';
+
+$sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayCart::$definition['table'] . '
+            ADD `sameday_locker` TEXT';
 
 $sql[] = 'CREATE TABLE `' . _DB_PREFIX_ . SamedayOpenPackage::TABLE_NAME ."` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,

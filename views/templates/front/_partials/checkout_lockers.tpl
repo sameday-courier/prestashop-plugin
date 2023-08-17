@@ -44,34 +44,43 @@
 
         docReady(function () {
             if (_isSet( () => document.getElementById("locker_name"))) {
-                if(_getCookie("samedaycourier_locker_name").length > 1) {
-                    let lockerNamesCookie = _getCookie("samedaycourier_locker_name");
-                    let lockerAddressCookie = _getCookie("samedaycourier_locker_address");
-                    document.getElementById("locker_name").value = lockerNamesCookie;
-                    document.getElementById("locker_address").value = lockerAddressCookie;
+                if('' !== _getCookie("sameday_locker")) {
+                    let locker = JSON.parse(_getCookie("sameday_locker"));
+
+                    document.getElementById("locker_name").value = locker.name;
+                    document.getElementById("locker_address").value = locker.address;
 
                     document.getElementById("showLockerDetails").style.display = "block";
-                    document.getElementById("showLockerDetails").innerHTML = lockerNamesCookie + '<br/>' + lockerAddressCookie;
+                    document.getElementById("showLockerDetails").innerHTML = locker.name + '<br/>' + locker.address;
 
-                }else{
+                    _storeLocker(JSON.stringify(locker));
+                } else {
                     document.getElementById("showLockerDetails").style.display = "none";
                 }
             }
 
-            const cookie_locker_id = 'samedaycourier_locker_id';
-            const cookie_locker_name = 'samedaycourier_locker_name';
-            const cookie_locker_address = 'samedaycourier_locker_address';
+            const sameday_id_locker = 'sameday_id_locker';
+            const sameday_locker = 'sameday_locker';
 
             let showLockerMap = document.getElementById('showLockerMap');
             let showLockerSelector = document.getElementById('lockerIdSelector');
 
             if (_isSet(() => showLockerMap)) {
-                const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have a unique clientId
+                const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e"; // each integrator will have a unique clientId
                 const countryCode= document.getElementById('showLockerMap').getAttribute('data-country').toUpperCase(); //country for which the plugin is used
                 const langCode= document.getElementById('showLockerMap').getAttribute('data-country');  //language of the plugin
                 const samedayUser= document.getElementById('showLockerMap').getAttribute('data-username'); //sameday username
+                const city = document.getElementById('locker_name').getAttribute('data-city');
 
-                window['LockerPlugin'].init({ clientId: clientId, countryCode: countryCode, langCode: langCode, apiUsername: samedayUser });
+                window['LockerPlugin'].init(
+                    {
+                        clientId: clientId,
+                        countryCode: countryCode,
+                        langCode: langCode,
+                        apiUsername: samedayUser,
+                        city: city,
+                    }
+                );
 
                 let lockerPlugin = window['LockerPlugin'].getInstance();
 
@@ -80,35 +89,47 @@
                 }, false);
 
                 lockerPlugin.subscribe((locker) => {
-                    let lockerId = locker.lockerId;
                     let lockerName = locker.name;
                     let lockerAddress = locker.address;
 
-                    _setCookie(cookie_locker_id, lockerId, 30);
+                    _setCookie(sameday_locker, JSON.stringify(locker), 30);
 
                     document.getElementById("locker_name").value = lockerName;
-                    _setCookie(cookie_locker_name, lockerName, 30);
-
                     document.getElementById("locker_address").value = lockerAddress;
-                    _setCookie(cookie_locker_address, lockerAddress, 30);
 
                     document.getElementById("showLockerDetails").style.display = "block";
                     document.getElementById("showLockerDetails").innerHTML = lockerName + '<br/>' + lockerAddress;
+
+                    _storeLocker(JSON.stringify(locker));
 
                     lockerPlugin.close();
                 });
 
             } else {
+                // For Local data usage -- drop-down list
                 showLockerSelector.onchange = (event) => {
                     let _target = event.target;
                     let option = _target.options[_target.selectedIndex];
 
-                    _setCookie(cookie_locker_id, _target.value, 30);
-                    _setCookie(cookie_locker_name, option.getAttribute('data-name'), 30);
-                    _setCookie(cookie_locker_address, option.getAttribute('data-address'), 30);
+                    _setCookie(sameday_id_locker, _target.value, 30);
                 }
             }
         });
+
+        const _storeLocker = (locker) => {
+            let storeLockerRoute = document.getElementById('locker_name').getAttribute('data-store_locker_route');
+            let idCart = document.getElementById('locker_name').getAttribute('data-id_cart');
+
+            $.ajax({
+                url: storeLockerRoute,
+                method: 'POST',
+                data: {
+                    action: 'store_locker',
+                    locker: locker,
+                    idCart: idCart,
+                },
+            });
+        }
 
         const _setCookie = (key, value, days) => {
             let d = new Date();

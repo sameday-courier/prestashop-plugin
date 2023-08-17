@@ -34,7 +34,7 @@
     </button>
 
     <div style="display:inline-block;    vertical-align: middle;">
-        <input type="hidden" id="locker_name" name="locker_name" value="">
+        <input type="hidden" id="locker_name" name="locker_name" value="" data-locker_carrier_id="{$lockerCarrierId}" data-city="{$city}" data-id_cart="{$idCart}" data-store_locker_route="{$storeLockerRoute}">
         <input type="text" id="locker_address" name="locker_address" style="width:0px;height:0px;opacity:0;" oninvalid="this.setCustomValidity('Please select locker')" value="" >
         <span style="padding-bottom: 10px;font-size: 13px; font-weight: bold; line-height: 22px;width:100%;display:block" id="showLockerDetails"></span>
     </div>

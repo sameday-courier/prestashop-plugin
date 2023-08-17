@@ -210,7 +210,7 @@
     </div>
 {else}
     <div id="addAwb" class="modal fade" role="dialog">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-xl">
             <!-- Modal content-->
             <div class="modal-content">
                 <div class="modal-header">
@@ -395,12 +395,7 @@
                             <div class="col-sm-9">
                                 <input type="text" name="locker-details" id="sameday_locker_name" value="{$lockerDetails|escape:'html':'UTF-8'}" class="form-control" readonly>
                             </div>
-
-                            <input type="hidden" id="locker_id" name="locker_id" value="{$idLocker|escape:'html':'UTF-8'}">
-                            <input type="hidden" id="locker_name" name="locker_name" value="{$lockerName|escape:'html':'UTF-8'}">
-                            <input type="hidden" id="locker_address" name="locker_address" value="{$lockerAddress|escape:'html':'UTF-8'}">
-                            <input type="hidden" id="samedayOrderLockerId" name="samedayOrderLockerId" value="{$samedayOrderLockerId|escape:'html':'UTF-8'}">
-
+                            <input type="hidden" id="sameday_locker" name="sameday_locker" value="{$locker|escape:'html':'UTF-8'}">
                             <label class="col-sm-3 control-label"
                                    for="input-status-select_locker">
                             </label>
@@ -588,14 +583,11 @@
 
         pluginInstance.open();
 
-        pluginInstance.subscribe((message) => {
+        pluginInstance.subscribe((locker) => {
             pluginInstance.close();
 
-            document.querySelector('#locker_id').value = message.lockerId;
-            document.querySelector('#locker_name').value = message.name;
-            document.querySelector('#locker_address').value = message.address;
-
-            document.querySelector('#sameday_locker_name').value = message.name + " - " +message.address;
+            document.querySelector('#sameday_locker').value = JSON.stringify(locker);
+            document.querySelector('#sameday_locker_name').value = locker.name + " - " + locker.address;
         });
     }
 
