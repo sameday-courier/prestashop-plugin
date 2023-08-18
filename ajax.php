@@ -38,7 +38,7 @@ if (Tools::getValue('action') === 'store_locker') {
         'address' => strip_tags(stripslashes($locker->address)),
         'city' => strip_tags(stripslashes($locker->city)),
         'county' => strip_tags(stripslashes($locker->county)),
-        'zip' => 0,
+        'postalCode' => strip_tags(stripslashes($locker->postalCode)),
     ]);
 
     $cart = new Cart(Tools::getValue('idCart'));

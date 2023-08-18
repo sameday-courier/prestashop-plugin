@@ -1,6 +1,6 @@
 <?php
 
-class SamedayCart extends Cart
+class SamedayCart extends CartCore
 {
     /** @var string */
     public $sameday_locker;
@@ -18,22 +18,26 @@ class SamedayCart extends Cart
 
     public function save($null_values = false, $auto_date = true)
     {
-        $idAddressDelivery = $this->storeNewAddressForLocker(
-            json_decode($this->sameday_locker, false),
-            new Address($this->id_address_delivery)
-        );
+        if ('' !== $this->sameday_locker && null !== $this->sameday_locker) {
+            $idAddressDelivery = $this->storeNewAddressForLocker(
+                json_decode($this->sameday_locker, false),
+                new Address($this->id_address_delivery)
+            );
+        }
 
-        $deliveryOption = json_encode([$idAddressDelivery => sprintf('%s,', $this->id_carrier)]);
+        if (isset($idAddressDelivery)) {
+            $deliveryOption = json_encode([$idAddressDelivery => sprintf('%s,', $this->id_carrier)]);
 
-        $sql = sprintf("UPDATE %s SET `sameday_locker` = '%s', `id_address_delivery` = '%s', `delivery_option` = '%s' WHERE `id_cart` = '%s'",
-            _DB_PREFIX_ . self::$definition['table'],
-            $this->parseAndFilterLocker($this->sameday_locker),
-            $idAddressDelivery,
-            $deliveryOption,
-            (int) $this->id
-        );
+            $sql = sprintf("UPDATE %s SET `sameday_locker` = '%s', `id_address_delivery` = '%s', `delivery_option` = '%s' WHERE `id_cart` = '%s'",
+                _DB_PREFIX_ . self::$definition['table'],
+                $this->parseAndFilterLocker($this->sameday_locker),
+                $idAddressDelivery,
+                $deliveryOption,
+                (int) $this->id
+            );
 
-        Db::getInstance()->execute($sql);
+            Db::getInstance()->execute($sql);
+        }
     }
 
     public function storeNewAddressForLocker($locker, $address)
@@ -58,7 +62,7 @@ class SamedayCart extends Cart
         $newAddress->address1 = substr($locker->address, 0, 32);
         $newAddress->address2 = '';
         $newAddress->id_state = $state['id_state'];
-        $newAddress->postcode = '';
+        $newAddress->postcode = $locker->postalCode;
         $newAddress->id_country = $state['id_country'];
 
         $newAddress->save();
@@ -85,7 +89,7 @@ class SamedayCart extends Cart
             'address' => strip_tags(stripslashes($locker->address)),
             'city' => strip_tags(stripslashes($locker->city)),
             'county' => strip_tags(stripslashes($locker->county)),
-            'zip' => 0,
+            'postalCode' => strip_tags(stripslashes($locker->postalCode)),
         ]);
     }
 }

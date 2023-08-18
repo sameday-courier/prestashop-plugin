@@ -1646,22 +1646,6 @@ class SamedayCourier extends CarrierModule
         if ($service['code'] === self::LOCKER_NEXT_DAY) {
             $cart = new Cart($params['cart']->id);
             $address = new Address($cart->id_address_delivery);
-            $samedayService = SamedayService::findByCode($service['code']);
-
-            $samedayCart = new SamedayCart($cart->id);
-
-            $samedayLockerCookie = $_COOKIE['sameday_locker'] ?? '';
-            $samedayCart->sameday_locker = $samedayLockerCookie;
-
-            $samedayCart->save();
-
-            $lockerName = json_decode($samedayCart->sameday_locker, false)->name;
-            if ($address->alias === $lockerName) {
-                $cart->delivery_option = json_encode([$address->id => sprintf("%s,", $samedayService['id_carrier'])]);
-                $cart->id_carrier = $samedayService['id_carrier'];
-            }
-
-            $cart->save();
 
             $sameday_user = Configuration::get('SAMEDAY_ACCOUNT_USER');
             $hostCountry = Configuration::get('SAMEDAY_HOST_COUNTRY') !== null ? Configuration::get('SAMEDAY_HOST_COUNTRY') : 'ro'; // Default will always be 'ro'
@@ -1689,9 +1673,6 @@ class SamedayCourier extends CarrierModule
                 $this->smarty->assign('lockers', $lockers);
             }
 
-            $this->smarty->assign('lockerId', $params['cookie']->samedaycourier_locker_id);
-            $this->smarty->assign('lockerName', $params['cookie']->samedaycourier_locker_name);
-            $this->smarty->assign('lockerAddress', $params['cookie']->samedaycourier_locker_address);
             $this->smarty->assign('hostCountry', $hostCountry);
             $this->smarty->assign('samedayUser', $sameday_user);
             $this->smarty->assign('lockerCarrierId', $params['cart']->id_carrier);
@@ -1792,6 +1773,7 @@ class SamedayCourier extends CarrierModule
             $SamedayOrderLocker->id_order = $orderId;
             $SamedayOrderLocker->destination_address_hd_id = $order->id_address_delivery;
 
+            // For Drop-down field option
             if (null !== $lockerId = (int) isset($_COOKIE['sameday_id_locker']) ? $_COOKIE['sameday_id_locker'] : null) {
                 $SamedayOrderLocker->id_locker = $lockerId;
             }

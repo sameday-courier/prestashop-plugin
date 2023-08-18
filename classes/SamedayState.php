@@ -15,7 +15,7 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
-class SamedayState extends State
+class SamedayState extends StateCore
 {
     const TABLE_NAME = 'state';
 
