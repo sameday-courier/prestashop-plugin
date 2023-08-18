@@ -32,6 +32,7 @@ include(__DIR__ . '/classes/SamedayPersistenceDataHandler.php');
 include(__DIR__ . '/classes/SamedayState.php');
 include(__DIR__ . '/classes/SamedayAddress.php');
 include(__DIR__ . '/classes/SamedayCart.php');
+include(__DIR__ . '/classes/SamedayPsOrder.php');
 
 /**
  * Class SamedayCourier
@@ -1745,7 +1746,7 @@ class SamedayCourier extends CarrierModule
     public function hookActionValidateOrder($params)
     {
         $orderId = $params['order']->id;
-        $order = new Order($orderId);
+        $order = new SamedayPsOrder($orderId);
 
         $samedayCart = new SamedayCart($order->id_cart);
 
