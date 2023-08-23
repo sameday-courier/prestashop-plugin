@@ -29,28 +29,22 @@
     {l s='Select locker' mod='samedaycourier'}
 </div>
 <div class="col-sm-8">
-    <button type="button" style="display:inline-block"name="samedaycourier_locker_id" id="showLockerMap" data-username='{$samedayUser}' data-country='{$hostCountry}' class="button-exclusive btn btn-default">
+    <button type="button" style="display:inline-block"
+            name="samedaycourier_locker_id" id="showLockerMap"
+            data-username='{$samedayUser}'
+            data-country='{$hostCountry}'
+            data-id_cart='{$idCart}'
+            data-city='{$city}'
+            data-county='{$county}'
+            data-store_locker_route='{$storeLockerRoute}'
+            class="button-exclusive btn btn-default"
+    >
         {l s='Show locker map' mod='samedaycourier'}
     </button>
 
     <div style="display:inline-block;    vertical-align: middle;">
-        <input type="hidden" id="locker_name" name="locker_name" value="">
-        <input type="text" id="locker_address" name="locker_address" style="width:0px;height:0px;opacity:0;" oninvalid="this.setCustomValidity('Please select locker')" value="" >
+        <input type="hidden" id="locker_name" name="locker_name">
+        <input type="text" id="locker_address" name="locker_address" style="width:0px;height:0px;opacity:0;">
         <span style="padding-bottom: 10px;font-size: 13px; font-weight: bold; line-height: 22px;width:100%;display:block" id="showLockerDetails"></span>
     </div>
 </div>
-<script>
-setTimeout(function() {
-$(document).ready(function(){
-  $(".js-delivery-option").click(function(){
-    let contentCarrier = $(this).next('.js-carrier-extra-content').html();
-    if(contentCarrier.indexOf('samedaycourier_locker_id') != -1){
-        $("#locker_address").prop('required',true);
-    }else{
-        $("#locker_address").prop('required',false);
-    }
-    
-  });
-});
-}, 1000);
-</script>
