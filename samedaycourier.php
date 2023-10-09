@@ -97,7 +97,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.5.8';
+        $this->version = '1.5.9';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -113,12 +113,20 @@ class SamedayCourier extends CarrierModule
         $this->logger = new FileLogger(0);
         $this->logger->setFilename(__DIR__ . '/log/' . md5(date('Ymd')) . '_sameday.log');
         $this->messages = array();
-        $this->ajaxRoute = _PS_BASE_URL_._MODULE_DIR_.'samedaycourier/ajax.php?token=' . Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10);
+        $this->ajaxRoute = $this->baseUrl()._MODULE_DIR_.'samedaycourier/ajax.php?token=' . Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10);
     }
 
     private function getMajorVersion(): int
     {
         return (int) explode('.', _PS_VERSION_, 3)[0];
+    }
+
+    /**
+     * @return string
+     */
+    private function baseUrl(): string
+    {
+        return Tools::getShopDomainSsl(true);
     }
 
     /**
@@ -1667,7 +1675,7 @@ class SamedayCourier extends CarrierModule
             $this->smarty->assign('samedayUser', $sameday_user);
             $storeLockerRoute = sprintf(
                 '%s%ssamedaycourier/ajax.php?token=%s',
-                _PS_BASE_URL_,
+                $this->baseUrl(),
                 _MODULE_DIR_,
                 Tools::getAdminToken('Samedaycourier')
             );

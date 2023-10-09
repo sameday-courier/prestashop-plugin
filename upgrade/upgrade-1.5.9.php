@@ -19,25 +19,31 @@ if (!defined('_PS_VERSION_')) {
 }
 
 /**
- * This function updates your module from previous versions to the version 1.4.0,
+ * This function updates your module from previous versions to the version 1.4.28,
  * useful when you modify your database, or register a new hook ...
  * Don't forget to create one file per version.
  */
-function upgrade_module_1_5_8($object)
+function upgrade_module_1_5_9($object)
 {
-    $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . CartCore::$definition['table'] . '
-            ADD `sameday_locker` TEXT';
+    $table = _DB_PREFIX_ . CartCore::$definition['table'];
+    $newColumn = 'sameday_locker';
 
-    foreach ($sql as $query) {
-        if (Db::getInstance()->execute($query) === false) {
-            return false;
+    $searchedColumn = array_filter(
+        Db::getInstance()->executeS(sprintf("SHOW COLUMNS FROM %s", $table)),
+        static function ($column) use ($newColumn) {
+            return $column['Field'] === $newColumn;
         }
+    );
+
+    if (empty($searchedColumn)) {
+        Db::getInstance()->execute(sprintf("ALTER TABLE %s ADD %s TEXT", $table, $newColumn));
     }
 
     return (version_compare(_PS_VERSION_, '1.7.0.0') < 0
             ? $object->registerHook('extraCarrier')
             : $object->registerHook('displayCarrierExtraContent')) &&
         $object->registerHook('actionValidateOrder') &&
-        $object->registerHook('actionCarrierProcess');
+        $object->registerHook('actionCarrierProcess')
+    ;
 }
 
