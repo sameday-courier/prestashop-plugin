@@ -89,22 +89,22 @@
                                        for="input-length">{l s='Package dimension' mod='samedaycourier'}</label>
                                 <div class="col-sm-8" style="padding-bottom: 5px;">
                                     <div class="row">
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_weight" value="" min="1" step="0.1"
                                                    placeholder="Weight" id="input-weight"
                                                    class="form-control input-number" required>
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_width" value="" min="0"
                                                    placeholder="Width" id="input-width"
                                                    class="form-control input-number">
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_length" value="" min="0"
                                                    placeholder="Length" id="input-length"
                                                    class="form-control input-number">
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_height" value="" min="0"
                                                    placeholder="Height" id="input-height"
                                                    class="form-control input-number">
@@ -232,16 +232,6 @@
                                     </span>
                                 </div>
                             </div>
-                            <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Calculated weight' mod='samedaycourier'}</span></label>
-                            <div class="col-sm-2">
-                                <div class="input-group">
-                                    <label for="calculated-weight">
-                                        <input type="number" value="0" readonly="readonly" id="calculated-weight"
-                                               class="form-control input-number">
-                                    </label>
-                                </div>
-                            </div>
                         </div>
 
                         <!-- Package Number //-->
@@ -251,9 +241,9 @@
                                        for="input-length">{l s='Package dimension' mod='samedaycourier'}</label>
                                 <div class="col-sm-8" style="padding-bottom: 5px;">
                                     <div class="row">
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_weight[]"
-                                                   value=""
+                                                   value="{$packageWeight|escape:'html':'UTF-8'}"
                                                    min="1"
                                                    placeholder="Weight"
                                                    id="input-weight"
@@ -262,7 +252,7 @@
                                                    required
                                             >
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_width[]"
                                                    value=""
                                                    min="0"
@@ -270,7 +260,7 @@
                                                    id="input-width"
                                                    class="form-control input-number">
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_length[]"
                                                    value=""
                                                    min="0"
@@ -278,7 +268,7 @@
                                                    id="input-length"
                                                    class="form-control input-number">
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_height[]"
                                                    value=""
                                                    min="0"
@@ -465,7 +455,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="submit" name="addAwb" class="btn btn-success"><i
-                                    class="icon-plus"></i> {l s='Add AWB' mod='samedaycourier'}</button>
+                                    class="icon-plus"></i> {l s='Add AWB' mod='samedaycourier'}
+                        </button>
                         <button type="button" class="btn btn-default" data-dismiss="modal">{l s='Close' mod='samedaycourier'}</button>
                     </div>
                 </form>
@@ -487,14 +478,6 @@
                 $(this).parents('.parcel').remove();
                 $('#sameday_package_qty').val(parseInt($('#sameday_package_qty').val()) - 1);
             }
-        });
-
-        $('body').on('change', '.weight', function(){
-            $('#calculated-weight').val(0);
-            $.each($('input.weight'), function (i, el){
-                var weight = parseFloat($(el).val()) || 0;
-                $('#calculated-weight').val((parseFloat($('#calculated-weight').val()) || 0) + weight);
-            });
         });
 
         $('form#form-shipping').submit(function () {
