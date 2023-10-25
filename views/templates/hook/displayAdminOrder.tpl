@@ -90,7 +90,7 @@
                                 <div class="col-sm-8" style="padding-bottom: 5px;">
                                     <div class="row">
                                         <div class="col-sm-6">
-                                            <input type="number" name="sameday_package_weight" value="" min="1" step="0.1"
+                                            <input type="number" name="sameday_package_weight" value="" min="0.1" step="any"
                                                    placeholder="Weight" id="input-weight"
                                                    class="form-control input-number" required>
                                         </div>
@@ -244,7 +244,7 @@
                                         <div class="col-sm-6">
                                             <input type="number" name="sameday_package_weight[]"
                                                    value="{$packageWeight|escape:'html':'UTF-8'}"
-                                                   min="1"
+                                                   min="0.1"
                                                    placeholder="Weight"
                                                    id="input-weight"
                                                    class="form-control input-number weight"

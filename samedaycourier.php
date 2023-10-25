@@ -1505,7 +1505,7 @@ class SamedayCourier extends CarrierModule
                 'lockerName'    => $lockerName,
                 'lockerAddress' => $lockerAddress,
                 'samedayOrderLockerId'   => $samedayOrderLockerId,
-                'packageWeight' => '1',
+                'packageWeight' => $order->getTotalWeight() ?? 1,
                 'isPDOtoShow'   => $this->toggleHtmlElement($this->isServiceEligibleToPdo($service['service_optional_taxes'])),
                 'isLastMileToShow' => $isLastMileToShow,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
