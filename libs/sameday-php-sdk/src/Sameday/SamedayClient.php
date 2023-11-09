@@ -27,7 +27,7 @@ use Sameday\Responses\SamedayAuthenticateResponse;
  */
 class SamedayClient implements SamedayClientInterface
 {
-    const VERSION = '1.8.2';
+    const VERSION = '2.1.5';
     const API_HOST = 'https://api.sameday.ro';
     const KEY_TOKEN = 'token';
     const KEY_TOKEN_EXPIRES = 'expires_at';
@@ -116,7 +116,7 @@ class SamedayClient implements SamedayClientInterface
 
         $url = $this->host . $request->getEndpoint();
         if ($request->getQueryParams()) {
-            $params = http_build_query($request->getQueryParams(), null, '&');
+            $params = http_build_query($request->getQueryParams(), '', '&');
             if ($params !== '') {
                 $url .= '?' . $params;
             }

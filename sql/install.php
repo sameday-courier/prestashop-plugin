@@ -102,6 +102,9 @@ $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
 $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayService::TABLE_NAME . '
             ADD `service_optional_taxes` TEXT';
 
+$sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . CartCore::$definition['table'] . '
+            ADD `sameday_locker` TEXT';
+
 $sql[] = 'CREATE TABLE `' . _DB_PREFIX_ . SamedayOpenPackage::TABLE_NAME ."` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
           `id_order` int(11) unsigned NOT NULL,

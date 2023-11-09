@@ -29,11 +29,21 @@
         <tr>
             <td>{l s='Select locker' mod='samedaycourier'}</td>
             <td>
-                <button type="button" name="samedaycourier_locker_id" id="showLockerMap" data-username='{$samedayUser}' data-country='{$hostCountry}' class="button-exclusive btn btn-default">
+                <button type="button"
+                    name="samedaycourier_locker_id"
+                    id="showLockerMap"
+                    data-username='{$samedayUser}'
+                    data-country='{$hostCountry}'
+                    data-id_cart='{$idCart}'
+                    data-city='{$city}'
+                    data-county='{$county}'
+                    data-store_locker_route='{$storeLockerRoute}'
+                    class="button-exclusive btn btn-default"
+                >
                     {l s='Show locker map' mod='samedaycourier'}
                 </button>
-                <input type="hidden" id="locker_name" name="locker_name" value="">
-                <input type="text" id="locker_address" name="locker_address" style="width:0px;height:0px;opacity:0;" oninvalid="this.setCustomValidity('Please select locker')" value="" required>
+                <input type="hidden" id="locker_name" name="locker_name">
+                <input type="text" id="locker_address" name="locker_address" style="width:0px;height:0px;opacity:0;">
             </td>
             <td>
                 <span style="padding-bottom: 10px;font-size: 13px; font-weight: bold; line-height: 22px;width:100%;display:block" id="showLockerDetails"></span>
@@ -41,20 +51,3 @@
         </tr>
     </tbody>
 </table>
-
-<script>
-    setTimeout(function() {
-        $(document).ready(function(){
-            $(".delivery_option").click(function(){
-                setTimeout(function() {
-                    let contentCarrier = $('.hook_extracarrier').html();
-                    if(contentCarrier.indexOf('samedaycourier_locker_id') != -1){
-                        $("#locker_address").prop('required',true);
-                    }else{
-                        $("#locker_address").prop('required',false);
-                    }
-                }, 2000)
-            });
-        });
-    }, 1000);
-</script>

@@ -48,6 +48,9 @@ class SamedayLocker extends ObjectModel
     /** @var string */
     public $long;
 
+    /** @var int */
+    public $live_mode;
+
     /** @var array */
     public static $definition = array(
         'table' => self::TABLE_NAME,

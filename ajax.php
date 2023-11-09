@@ -17,11 +17,29 @@
 include(dirname(__FILE__) . '/libs/sameday-php-sdk/src/Sameday/autoload.php');
 include(dirname(__FILE__).'/../../config/config.inc.php');
 include(dirname(__FILE__).'/../../init.php');
-include(dirname(__FILE__) . '/classes/SamedayAwbParcel.php');
-include(dirname(__FILE__) . '/classes/SamedayAwbParcelHistory.php');
-include(dirname(__FILE__) . '/classes/SamedayConstants.php');
-include(dirname(__FILE__) . '/classes/SamedayPersistenceDataHandler.php');
+include __DIR__ . '/classes/autoload.php';
 
+if (Tools::getValue('action') === 'store_locker') {
+    if (Tools::getValue('token') !== Tools::getAdminToken('Samedaycourier')) {
+        die('Bad request!');
+    }
+
+    $locker = json_decode(Tools::getValue('locker'), false);
+
+    $locker = json_encode([
+        'locker_id' => $locker->locker_id,
+        'locker_name' => $locker->locker_name,
+        'locker_address' => $locker->locker_address,
+    ]);
+
+    $samedayCart = new SamedayCart(Tools::getValue('idCart'));
+    $samedayCart->sameday_locker = $locker;
+
+    $samedayCart->save();
+
+    header('Content-Type: application/json');
+    die(json_encode(['message' => 'Locker updated!']));
+}
 
 if (Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10) != Tools::getValue('token') ||
     !Module::isInstalled('samedaycourier')
