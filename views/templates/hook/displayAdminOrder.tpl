@@ -89,22 +89,22 @@
                                        for="input-length">{l s='Package dimension' mod='samedaycourier'}</label>
                                 <div class="col-sm-8" style="padding-bottom: 5px;">
                                     <div class="row">
-                                        <div class="col-sm-3">
-                                            <input type="number" name="sameday_package_weight" value="" min="1" step="0.1"
+                                        <div class="col-sm-6">
+                                            <input type="number" name="sameday_package_weight" value="" min="0.1" step="any"
                                                    placeholder="Weight" id="input-weight"
                                                    class="form-control input-number" required>
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_width" value="" min="0"
                                                    placeholder="Width" id="input-width"
                                                    class="form-control input-number">
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_length" value="" min="0"
                                                    placeholder="Length" id="input-length"
                                                    class="form-control input-number">
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_height" value="" min="0"
                                                    placeholder="Height" id="input-height"
                                                    class="form-control input-number">
@@ -232,16 +232,6 @@
                                     </span>
                                 </div>
                             </div>
-                            <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Calculated weight' mod='samedaycourier'}</span></label>
-                            <div class="col-sm-2">
-                                <div class="input-group">
-                                    <label for="calculated-weight">
-                                        <input type="number" value="0" readonly="readonly" id="calculated-weight"
-                                               class="form-control input-number">
-                                    </label>
-                                </div>
-                            </div>
                         </div>
 
                         <!-- Package Number //-->
@@ -251,10 +241,10 @@
                                        for="input-length">{l s='Package dimension' mod='samedaycourier'}</label>
                                 <div class="col-sm-8" style="padding-bottom: 5px;">
                                     <div class="row">
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_weight[]"
-                                                   value=""
-                                                   min="1"
+                                                   value="{$packageWeight|escape:'html':'UTF-8'}"
+                                                   min="0.1"
                                                    placeholder="Weight"
                                                    id="input-weight"
                                                    class="form-control input-number weight"
@@ -262,7 +252,7 @@
                                                    required
                                             >
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_width[]"
                                                    value=""
                                                    min="0"
@@ -270,7 +260,7 @@
                                                    id="input-width"
                                                    class="form-control input-number">
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_length[]"
                                                    value=""
                                                    min="0"
@@ -278,7 +268,7 @@
                                                    id="input-length"
                                                    class="form-control input-number">
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-6">
                                             <input type="number" name="sameday_package_height[]"
                                                    value=""
                                                    min="0"
@@ -376,9 +366,9 @@
                                             {if $service.status > 0}
                                                 <option
                                                     value="{$service.id_service|escape:'html':'UTF-8'}"
-                                                    data-service_code="{$service.code|escape:'html':'UTF-8'}"
-                                                    data-locker_next_day_code="{$lockerNextDayCode|escape:'html':'UTF-8'}"
-                                                    {if $service.id_service == $current_service}selected="selected"{/if}
+                                                    data-locker_fist_mile="{$service.isPDOtoShow|escape:'html':'UTF-8'}"
+                                                    data-locker_last_mile_code="{$service.isLastMileToShow|escape:'html':'UTF-8'}"
+                                                    {if $service.id_service == $current_service} selected="selected" {/if}
                                                 >
                                                     {$service.name|escape:'html':'UTF-8'}
                                                 </option>
@@ -388,15 +378,7 @@
                             </div>
                         </div>
 
-                        {if $allowLocker}
-                            <!-- Locker !-->
-                            <div class="form-group">
-                                <label class="col-sm-3 control-label"><strong>{l s='Deliver to locker' mod='samedaycourier'}</strong></label>
-                            </div>
-                        {/if}
-
-                        {assign var="display" value = ($allowLocker) ? 'block' : 'none'}
-                        <div class="form-group" style="display: {$display}" id="showLockerDetails">
+                        <div class="form-group" style="display: {$isLastMileToShow}" id="showLockerDetails">
                             <label class="col-sm-3 control-label"
                                    for="input-status-sameday-locker-details">{l s='Locker Details' mod='samedaycourier'}
                             </label>
@@ -425,10 +407,33 @@
                             </div>
                         </div>
 
+                        <!-- Personal delivery at locker //-->
+                        <div class="form-group" id="showLockerFirstMile" style="display: {$isPDOtoShow};">
+                            <label class="col-sm-3 control-label"
+                                   for="input-status-sameday-locker_first_mile">{l s='Personal delivery at locker' mod='samedaycourier'}
+                            </label>
+                            <div class="col-sm-1">
+                                <input type="checkbox" name="sameday_locker_first_mile"  id="input-status-sameday-locker_first_mile" class="form-control">
+                            </div>
+                            <label class="col-sm-3 control-label"
+                                   for="input-status-sameday-locker_first_mile_info_details">
+                            </label>
+                            <div class="col-sm-9" id="input-status-sameday-locker_first_mile_info_details">
+                                <span style="display:block;width:100%"> {l s='Check this field if you want to apply for Personal delivery of the package at an easyBox terminal' mod='samedaycourier'}</span>
+                                <span style="display:block;width:100%"><a href="https://sameday.ro/easybox#lockers-intro" target="_blank">{l s='Show map' mod='samedaycourier'}</a></span>
+                                <div class="custom_tooltip"> {l s='Show locker dimensions' mod='samedaycourier'}
+                                    <div class="tooltiptext">
+                                        <table class="table"> <tbody style="color: #ffffff"> <tr> <th></th> <th style="text-align: center;">L</th> <th style="text-align: center;">l</th> <th style="text-align: center;">h</th> </tr><tr> <td>Small (cm)</td><td> 47</td><td> 44.5</td><td> 10</td></tr><tr> <td>Medium (cm)</td><td> 47</td><td> 44.5</td><td> 19</td></tr><tr> <td>Large (cm)</td><td> 47</td><td> 44.5</td><td> 39</td></tr> </tbody></table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Open Package //-->
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
-                                   for="input-status-sameday-open-package">{l s='Open Package' mod='samedaycourier'}</label>
+                                   for="input-status-sameday-open-package">{l s='Open Package' mod='samedaycourier'}
+                            </label>
                             <div class="col-sm-1">
                                 <input type="checkbox" name="sameday_open_package" {if $isOpenPackage} checked="checked" {/if} id="input-status-sameday-open-package" class="form-control">
                             </div>
@@ -450,7 +455,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="submit" name="addAwb" class="btn btn-success"><i
-                                    class="icon-plus"></i> {l s='Add AWB' mod='samedaycourier'}</button>
+                                    class="icon-plus"></i> {l s='Add AWB' mod='samedaycourier'}
+                        </button>
                         <button type="button" class="btn btn-default" data-dismiss="modal">{l s='Close' mod='samedaycourier'}</button>
                     </div>
                 </form>
@@ -458,54 +464,30 @@
 
         </div>
     </div>
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $(document).on('change', '#input-status-sameday-service', (element) => {
-                const _target = element.target;
-                const selectedOption = _target.options[_target.selectedIndex];
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#plus-btn').click(function (e) {
+            e.preventDefault();
+            $('#sameday_package_qty').val(parseInt($('#sameday_package_qty').val()) + 1);
 
-                const showLockerDetailsElement = document.getElementById('showLockerDetails');
-                showLockerDetailsElement.style.display = 'none';
-
-                let serviceCode = selectedOption.getAttribute('data-service_code');
-                let lockerNextDayCode = selectedOption.getAttribute('data-locker_next_day_code');
-
-                if (serviceCode === lockerNextDayCode) {
-                    showLockerDetailsElement.style.display = 'block';
-                }
-            });
-
-
-            $('#plus-btn').click(function (e) {
-                e.preventDefault();
-                $('#sameday_package_qty').val(parseInt($('#sameday_package_qty').val()) + 1);
-
-                $('div.parcel').first().clone().appendTo('.package_dimension_field');
-            });
-
-            $('body').on('click', '#removePackageDimensionField', function () {
-                if (parseInt($('#sameday_package_qty').val()) > 1) {
-                    $(this).parents('.parcel').remove();
-                    $('#sameday_package_qty').val(parseInt($('#sameday_package_qty').val()) - 1);
-                }
-            });
-
-            $('body').on('change', '.weight', function(){
-                $('#calculated-weight').val(0);
-                $.each($('input.weight'), function (i, el){
-                    var weight = parseFloat($(el).val()) || 0;
-                    $('#calculated-weight').val((parseFloat($('#calculated-weight').val()) || 0) + weight);
-                });
-            });
-
-            $('form#form-shipping').submit(function () {
-                if ($(this).attr('submitted')) {
-                    return false;
-                }
-
-                $(this).attr('submitted', true);
-            });
+            $('div.parcel').first().clone().appendTo('.package_dimension_field');
         });
+
+        $('body').on('click', '#removePackageDimensionField', function () {
+            if (parseInt($('#sameday_package_qty').val()) > 1) {
+                $(this).parents('.parcel').remove();
+                $('#sameday_package_qty').val(parseInt($('#sameday_package_qty').val()) - 1);
+            }
+        });
+
+        $('form#form-shipping').submit(function () {
+            if ($(this).attr('submitted')) {
+                return false;
+            }
+
+            $(this).attr('submitted', true);
+        });
+    });
     </script>
 {/if}
 <script type="text/javascript">
@@ -557,45 +539,70 @@
         });
     });
 
-    function init(){
-    let selectors = {
-        selectLockerMap: document.querySelector('#select_locker')
-    };
-    
-    selectors.selectLockerMap.addEventListener('click', openLockers);
-}      
+    document.getElementById('select_locker').addEventListener('click', () => {
+        _openLockers();
+    });
 
-function openLockers(){
+    document.getElementById('input-status-sameday-service').addEventListener('change', (e) => {
+        const _target = e.target;
+        const currentService = _target.options[_target.selectedIndex];
 
+        const showLockerDetails = document.getElementById('showLockerDetails');
+        const showLockerFirstMile = document.getElementById('showLockerFirstMile');
+
+        // Unchecked element
+        document.getElementById('input-status-sameday-locker_first_mile').checked = false;
+
+        // Toggle Html Element
+        showLockerDetails.style.display = currentService.getAttribute('data-locker_last_mile_code');
+        showLockerFirstMile.style.display = currentService.getAttribute('data-locker_fist_mile');
+    });
+
+    const _openLockers = () => {
         /* DOM node selectors. */
         const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have unique clientId
         const countryCode= document.querySelector('#select_locker').getAttribute('data-country').toUpperCase(); //country for which the plugin is used
         const langCode= document.querySelector('#select_locker').getAttribute('data-country').toLowerCase(); //language of the plugin
         const samedayUser = document.querySelector('#select_locker').getAttribute('data-username').toLowerCase(); //sameday username
+
         window['LockerPlugin'].init({ clientId: clientId, countryCode: countryCode, langCode: langCode, apiUsername: samedayUser });
+
         let pluginInstance = window['LockerPlugin'].getInstance();
 
         pluginInstance.open();
 
         pluginInstance.subscribe((message) => {
-            let samedayOrderLockerId = '{$samedayOrderLockerId|escape:'html':'UTF-8'}';
-           
             pluginInstance.close();
-            
+
             document.querySelector('#locker_id').value = message.lockerId;
             document.querySelector('#locker_name').value = message.name;
             document.querySelector('#locker_address').value = message.address;
 
             document.querySelector('#sameday_locker_name').value = message.name + " - " +message.address;
-           console.log(JSON.stringify(lockerDetails));
-           
-
-
-            
-        })
-
-}
-
-setTimeout(init, 2000);
+        });
+    }
 
 </script>
+
+<style>
+/* Locker Dimensions Tooltip */
+.custom_tooltip {    
+    position: relative;    
+    display: inline-block;    
+    cursor: help;}
+.custom_tooltip .tooltiptext {    
+    visibility: hidden;    
+    width: auto;    
+    background-color: #363A41;
+    color: #ffffff;    
+    text-align: center;    
+    border-radius: 5px;    padding: 10px;
+    /* Position the tooltip */    
+    position: absolute;    
+    z-index: 10000;
+}
+.custom_tooltip:hover .tooltiptext {    
+    color: #ffffff;    
+    visibility: visible;
+}
+</style>

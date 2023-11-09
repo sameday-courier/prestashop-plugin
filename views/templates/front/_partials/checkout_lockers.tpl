@@ -34,7 +34,7 @@
             }
         }
 
-        var is_set = (accessor) => {
+        const _isSet = (accessor) => {
             try {
                 return accessor() !== undefined && accessor() !== null
             } catch (e) {
@@ -43,17 +43,23 @@
         }
 
         docReady(function () {
-            if (is_set( () => document.getElementById("locker_name"))) {
-                if(get_cookie("samedaycourier_locker_name").length > 1){
-                    let lockerNamesCookie = get_cookie("samedaycourier_locker_name");
-                    let lockerAddressCookie = get_cookie("samedaycourier_locker_address");
-                    document.getElementById("locker_name").value = lockerNamesCookie;
+            if (_isSet( () => document.getElementById("locker_name"))) {
+                if (_getCookie("samedaycourier_locker_name").length > 1) {
+                    let lockerIdCookie = _getCookie("samedaycourier_locker_id");
+                    let lockerNameCookie = _getCookie("samedaycourier_locker_name");
+                    let lockerAddressCookie = _getCookie("samedaycourier_locker_address");
+                    document.getElementById("locker_name").value = lockerNameCookie;
                     document.getElementById("locker_address").value = lockerAddressCookie;
 
                     document.getElementById("showLockerDetails").style.display = "block";
-                    document.getElementById("showLockerDetails").innerHTML = lockerNamesCookie + '<br/>' + lockerAddressCookie;
+                    document.getElementById("showLockerDetails").innerHTML = lockerNameCookie + '<br/>' + lockerAddressCookie;
 
-                }else{
+                    _storeLocker(JSON.stringify({
+                        'locker_id' : lockerIdCookie,
+                        'locker_name': lockerNameCookie,
+                        'locker_address': lockerAddressCookie,
+                    }));
+                } else {
                     document.getElementById("showLockerDetails").style.display = "none";
                 }
             }
@@ -65,15 +71,24 @@
             let showLockerMap = document.getElementById('showLockerMap');
             let showLockerSelector = document.getElementById('lockerIdSelector');
 
-            console.log(showLockerMap);
-
-            if (is_set(() => showLockerMap)) {
+            if (_isSet(() => showLockerMap)) {
                 const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have a unique clientId
+                const city = document.getElementById('showLockerMap').getAttribute('data-city');
+                const county = document.getElementById('showLockerMap').getAttribute('data-county');
                 const countryCode= document.getElementById('showLockerMap').getAttribute('data-country').toUpperCase(); //country for which the plugin is used
                 const langCode= document.getElementById('showLockerMap').getAttribute('data-country');  //language of the plugin
                 const samedayUser= document.getElementById('showLockerMap').getAttribute('data-username'); //sameday username
 
-                window['LockerPlugin'].init({ clientId: clientId, countryCode: countryCode, langCode: langCode, apiUsername: samedayUser });
+                window['LockerPlugin'].init(
+                    {
+                        clientId: clientId,
+                        city: city,
+                        county: county,
+                        countryCode: countryCode,
+                        langCode: langCode,
+                        apiUsername: samedayUser
+                    }
+                );
 
                 let lockerPlugin = window['LockerPlugin'].getInstance();
 
@@ -86,33 +101,53 @@
                     let lockerName = locker.name;
                     let lockerAddress = locker.address;
 
-                    set_cookie(cookie_locker_id, lockerId, 30);
+                    _setCookie(cookie_locker_id, lockerId, 30);
 
                     document.getElementById("locker_name").value = lockerName;
-                    set_cookie(cookie_locker_name, lockerName, 30);
+                    _setCookie(cookie_locker_name, lockerName, 30);
 
                     document.getElementById("locker_address").value = lockerAddress;
-                    set_cookie(cookie_locker_address, lockerAddress, 30);
+                    _setCookie(cookie_locker_address, lockerAddress, 30);
 
                     document.getElementById("showLockerDetails").style.display = "block";
                     document.getElementById("showLockerDetails").innerHTML = lockerName + '<br/>' + lockerAddress;
 
+                    _storeLocker(JSON.stringify({
+                        'locker_id' : lockerId,
+                        'locker_name': lockerName,
+                        'locker_address': lockerAddress,
+                    }));
+
                     lockerPlugin.close();
                 });
-
             } else {
                 showLockerSelector.onchange = (event) => {
                     let _target = event.target;
                     let option = _target.options[_target.selectedIndex];
 
-                    set_cookie(cookie_locker_id, _target.value, 30);
-                    set_cookie(cookie_locker_name, option.getAttribute('data-name'), 30);
-                    set_cookie(cookie_locker_address, option.getAttribute('data-address'), 30);
+                    _setCookie(cookie_locker_id, _target.value, 30);
+                    _setCookie(cookie_locker_name, option.getAttribute('data-name'), 30);
+                    _setCookie(cookie_locker_address, option.getAttribute('data-address'), 30);
                 }
             }
         });
 
-        var set_cookie = (key, value, days) => {
+        const _storeLocker = (locker) => {
+            let storeLockerRoute = document.getElementById('showLockerMap').getAttribute('data-store_locker_route');
+            let idCart = document.getElementById('showLockerMap').getAttribute('data-id_cart');
+
+            $.ajax({
+                url: storeLockerRoute,
+                method: 'POST',
+                data: {
+                    action: 'store_locker',
+                    locker: locker,
+                    idCart: idCart,
+                },
+            });
+        }
+
+        const _setCookie = (key, value, days) => {
             let d = new Date();
             d.setTime(d.getTime() + (days*24*60*60*1000));
             let expires = "expires=" + d.toUTCString();
@@ -120,7 +155,7 @@
             document.cookie = key + "=" + value + ";" + expires + ";path=/";
         }
 
-        var get_cookie = (key) => {
+        const _getCookie = (key) => {
             let cookie = '';
             document.cookie.split(';').forEach(function (value) {
                 if (value.split('=')[0].trim() === key) {

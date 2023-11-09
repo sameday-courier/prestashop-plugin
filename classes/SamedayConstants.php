@@ -38,6 +38,11 @@ final class SamedayConstants
         ],
     ];
 
+    const TOGGLE_HTML_ELEMENT = [
+        'show' => 'block',
+        'hide' => 'none',
+    ];
+
     const DEBUG = 0;
     const WARNING = 2;
     const ERROR = 3;
