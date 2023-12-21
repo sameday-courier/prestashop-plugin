@@ -1499,10 +1499,7 @@ class SamedayCourier extends CarrierModule
         $isLastMileToShow = $this->toggleHtmlElement(false);
         if ($service) {
             $serviceId = $service['id_service'];
-            if (
-                $service['code'] === self::LOCKER_NEXT_DAY
-                || $service['code'] === self::LOCKER_NEXT_DAY_CROSSBORDER
-            ) {
+            if ($this->isServiceEligibleToLocker($service['code'])) {
                 $isLastMileToShow = $this->toggleHtmlElement(true);
             }
         }
@@ -1675,10 +1672,7 @@ class SamedayCourier extends CarrierModule
         $fileVersion
     )
     {
-        if (
-            $service['code'] === self::LOCKER_NEXT_DAY
-            || $service['code'] === self::LOCKER_NEXT_DAY_CROSSBORDER
-        ) {
+        if ($this->isServiceEligibleToLocker($service['code'])) {
             $cart = new CartCore($params['cart']->id);
             $address = new AddressCore($cart->id_address_delivery);
             $stateName = StateCore::getNameById($address->id_state);
@@ -1782,10 +1776,7 @@ class SamedayCourier extends CarrierModule
     public function hookActionValidateOrder($params)
     {
         $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
-        if (
-            $service['code'] === self::LOCKER_NEXT_DAY
-            || $service['code'] === self::LOCKER_NEXT_DAY_CROSSBORDER
-        ) {
+        if ($this->isServiceEligibleToLocker($service['code'] === self::LOCKER_NEXT_DAY)) {
             $samedayCart = new SamedayCart($params['cart']->id);
             if (null !== $locker = $samedayCart->sameday_locker) {
                 $locker = json_decode($locker, false);
