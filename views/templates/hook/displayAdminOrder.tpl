@@ -396,7 +396,7 @@
                             </label>
 
                             <div class="col-sm-9">
-                                <button data-username="{$samedayUser}" data-country="{$hostCountry}"
+                                <button data-username="{$samedayUser}" data-country="{$countryCode}"
                                         class="btn btn-warning update-status ml-3 sameday_select_locker"
                                         type="button"
                                         id="select_locker"
