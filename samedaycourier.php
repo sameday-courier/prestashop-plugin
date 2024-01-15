@@ -1555,11 +1555,11 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @param string $paymentType
+     * @param $paymentType
      *
      * @return bool
      */
-    private function checkForCashPayment($paymentType)
+    private function checkForCashPayment($paymentType): bool
     {
         foreach (self::COD as $value) {
             if (stripos($paymentType, $value) !== false) {
@@ -1776,7 +1776,7 @@ class SamedayCourier extends CarrierModule
     public function hookActionValidateOrder($params)
     {
         $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
-        if ($this->isServiceEligibleToLocker($service['code'] === self::LOCKER_NEXT_DAY)) {
+        if ($this->isServiceEligibleToLocker($service['code'])) {
             $samedayCart = new SamedayCart($params['cart']->id);
             if (null !== $locker = $samedayCart->sameday_locker) {
                 $locker = json_decode($locker, false);

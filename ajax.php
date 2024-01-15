@@ -26,11 +26,14 @@ if (Tools::getValue('action') === 'store_locker') {
 
     $locker = json_decode(Tools::getValue('locker'), false);
 
-    $locker = json_encode([
-        'locker_id' => $locker->locker_id,
-        'locker_name' => $locker->locker_name,
-        'locker_address' => $locker->locker_address,
-    ]);
+    $locker = json_encode(
+        [
+            'locker_id' => $locker->locker_id,
+            'locker_name' => $locker->locker_name,
+            'locker_address' => $locker->locker_address,
+        ],
+        JSON_UNESCAPED_UNICODE
+    );
 
     $samedayCart = new SamedayCart(Tools::getValue('idCart'));
     $samedayCart->sameday_locker = $locker;
