@@ -1543,7 +1543,7 @@ class SamedayCourier extends CarrierModule
         $xBorderWarning = '';
         if (self::CURRENCIES[$orderCurrency] !== $destCountryCode) {
             $xBorderWarning = sprintf(
-                'Be aware that the intended currency is %s but the Repayment value is expressed in %s .Please consider a conversion !',
+                'Be aware that the intended currency is %s but the Repayment value is expressed in %s and please consider a conversion !!',
                 $destCurrency,
                 $orderCurrency
             );
