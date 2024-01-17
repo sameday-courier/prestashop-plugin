@@ -141,7 +141,7 @@
                 method: 'POST',
                 data: {
                     action: 'store_locker',
-                    locker: JSON.stringify(locker),
+                    locker: locker,
                     idCart: idCart,
                 },
             });
