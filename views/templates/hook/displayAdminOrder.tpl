@@ -286,6 +286,17 @@
                             </div>
                         </div>
 
+                        <!-- Repayment //-->
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="input-key">
+                                {l s='Repayment' mod='samedaycourier'} <span>({$orderCurrency|escape:'html':'UTF-8'})</span>
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" name="sameday_repayment" value="{$repayment|escape:'html':'UTF-8'}" class="form-control">
+                            </div>
+                            <span style="color: #b22222">{$xBorderWarning|escape:'html':'UTF-8'}</span>
+                        </div>
+
                         <!-- Insured Value //-->
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
@@ -314,15 +325,6 @@
                             <div class="col-sm-9">
                                 <input type="text" name="sameday_client_reference" value="{$orderId|escape:'html':'UTF-8'}" class="form-control" id="input-key-clientReference">
                                 <span> {l s='Default value for this field is Order ID' mod='samedaycourier'} </span>
-                            </div>
-                        </div>
-
-                        <!-- Repayment //-->
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Repayment' mod='samedaycourier'}</label>
-                            <div class="col-sm-9">
-                                <input type="text" name="sameday_repayment" value="{$repayment|escape:'html':'UTF-8'}" class="form-control">
                             </div>
                         </div>
 

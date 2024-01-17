@@ -96,6 +96,12 @@ class SamedayCourier extends CarrierModule
      */
     const COD = ['Cod', 'Ramburs'];
 
+    const CURRENCIES = [
+        'RON' => SamedayConstants::API_HOST_LOCALE_RO,
+        'HUF' => SamedayConstants::API_HOST_LOCALE_HU,
+        'BGN' => SamedayConstants::API_HOST_LOCALE_BG,
+    ];
+
     /**
      * SamedayCourier constructor.
      */
@@ -1520,9 +1526,28 @@ class SamedayCourier extends CarrierModule
             $lockerAddress = $locker['address_locker'] ?? null;
         }
 
-        $countryCode = strtolower(CountryCore::getIsoById((new AddressCore($order->id_address_delivery))->id_country))
+        $destCountryCode = strtolower(CountryCore::getIsoById((new AddressCore($order->id_address_delivery))->id_country))
             ?? self::DEFAULT_HOST_COUNTRY
         ;
+
+        $orderCurrency = CurrencyCore::getIsoCodeById($order->id_currency);
+
+        // Default Currency
+        $destCurrency = CurrencyCore::getDefaultCurrency();
+        foreach (self::CURRENCIES as $currency => $countryCode) {
+            if ($destCountryCode === $countryCode) {
+                $destCurrency = $currency;
+            }
+        }
+
+        $xBorderWarning = '';
+        if (self::CURRENCIES[$orderCurrency] !== $destCountryCode) {
+            $xBorderWarning = sprintf(
+                'Be aware that the intended currency is %s but the Repayment value is expressed in %s .Please consider a conversion !',
+                $destCurrency,
+                $orderCurrency
+            );
+        }
 
         $this->smarty->assign(
             array(
@@ -1532,11 +1557,13 @@ class SamedayCourier extends CarrierModule
                 'current_service' => $serviceId,
                 'package_types' => $packageTypes,
                 'repayment'     => $repayment,
+                'xBorderWarning' => $xBorderWarning,
+                'orderCurrency' => $orderCurrency,
                 'awb'           => $awb,
                 'allowParcel'   => $allowParcel,
                 'lockerId'      => ((int) $lockerId) > 0,
                 'samedayUser'   => Configuration::get('SAMEDAY_ACCOUNT_USER'),
-                'countryCode'   => $countryCode,
+                'countryCode'   => $destCountryCode,
                 'lockerDetails' => sprintf('%s  %s', $lockerName, $lockerAddress),
                 'idLocker'      => $lockerId,
                 'lockerName'    => $lockerName,
