@@ -1531,14 +1531,7 @@ class SamedayCourier extends CarrierModule
         ;
 
         $orderCurrency = CurrencyCore::getIsoCodeById($order->id_currency);
-
-        // Default Currency
-        $destCurrency = CurrencyCore::getDefaultCurrency();
-        foreach (self::CURRENCIES as $currency => $countryCode) {
-            if ($destCountryCode === $countryCode) {
-                $destCurrency = $currency;
-            }
-        }
+        $destCurrency = $this->getDestCurrencyByDestCountryCode($destCountryCode);
 
         $xBorderWarning = '';
         if (self::CURRENCIES[$orderCurrency] !== $destCountryCode) {
@@ -1595,6 +1588,15 @@ class SamedayCourier extends CarrierModule
         }
 
         return false;
+    }
+
+    /**
+     * @param $destCountryCode
+     * @return string
+     */
+    private function getDestCurrencyByDestCountryCode($destCountryCode)
+    {
+        return array_keys(self::CURRENCIES, $destCountryCode, true)[0] ?? null;
     }
 
     /**
@@ -1876,6 +1878,8 @@ class SamedayCourier extends CarrierModule
         $customer = new CustomerCore($order->id_customer);
         $address = new AddressCore($order->id_address_delivery);
         $stateName = StateCore::getNameById($order->id_address_delivery);
+        $currency = $this->getDestCurrencyByDestCountryCode(strtolower(CountryCore::getIsoById($address->id_country)));
+
         $company = null;
         if (!empty($address->company)) {
             $company = new \Sameday\Objects\PostAwb\Request\CompanyEntityObject(
@@ -1958,7 +1962,8 @@ class SamedayCourier extends CarrierModule
             '',
             '',
             null,
-            $lockerLastMileId
+            $lockerLastMileId,
+            $currency
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {

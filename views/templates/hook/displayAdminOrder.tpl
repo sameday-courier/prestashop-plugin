@@ -42,8 +42,8 @@
         {if $awb}
             {if $allowParcel}
                 <div class="col-md-3">
-                    <button class="btn btn-success" data-toggle="modal" data-target="#addParcel">
-                        <i class="icon-plus"></i> {l s='Add Parcel' mod='samedaycourier'}
+                    <button class="btn btn-success" data-toggle="modal" data-target="#addParcel"><i class="icon-plus"></i>
+                        {l s='Add Parcel' mod='samedaycourier'}
                     </button>
                 </div>
                 <div class="col-md-3">
@@ -78,49 +78,72 @@
             <!-- Modal content-->
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">×</button>
-                    <h4 class="modal-title">{l s='Add Parcel' mod='samedaycourier'}</h4>
+                    <button type="button" class="close" data-dismiss="modal">X</button>
                 </div>
                 <form action="" method="post" id="form-add-parcels" class="form-horizontal">
                     <div class="modal-body">
                         <!-- Package Number //-->
                         <div class="form-group package_dimension_field">
                             <div class="parcel row">
-                                <label class="col-sm-3 control-label" for="input-length">
+                                <label class="col-sm-3 control-label" for="input-weight">
                                     {l s='Package dimension' mod='samedaycourier'}
                                 </label>
-                                <div class="col-sm-8">
-                                        <div class="col-sm-6">
-                                            <input type="number" name="sameday_package_weight" value="" min="0.1" step="any"
-                                                   placeholder="Weight" id="input-weight"
-                                                   class="form-control input-number" required>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <input type="number" name="sameday_package_width" value="" min="0"
-                                                   placeholder="Width" id="input-width"
-                                                   class="form-control input-number">
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <input type="number" name="sameday_package_length" value="" min="0"
-                                                   placeholder="Length" id="input-length"
-                                                   class="form-control input-number">
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <input type="number" name="sameday_package_height" value="" min="0"
-                                                   placeholder="Height" id="input-height"
-                                                   class="form-control input-number">
-                                        </div>
+                                <div class="col-sm-9">
+                                    <div class="form-group">
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <input type="number" name="sameday_package_weight[]"
+                                                           value="{$packageWeight|escape:'html':'UTF-8'}"
+                                                           min="0.1"
+                                                           placeholder="Weight"
+                                                           id="input-weight"
+                                                           class="form-control input-number weight"
+                                                           step="any"
+                                                           required
+                                                    >
+                                                </td>
+                                                <td>
+                                                    <input type="number" name="sameday_package_width[]"
+                                                           value=""
+                                                           min="0"
+                                                           placeholder="Width"
+                                                           id="input-width"
+                                                           class="form-control input-number"
+                                                    >
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <input type="number" name="sameday_package_length[]"
+                                                           value=""
+                                                           min="0"
+                                                           placeholder="Length"
+                                                           id="input-length"
+                                                           class="form-control input-number">
+                                                </td>
+                                                <td>
+                                                    <input type="number" name="sameday_package_height[]"
+                                                           value=""
+                                                           min="0"
+                                                           placeholder="Height"
+                                                           id="input-height"
+                                                           class="form-control input-number">
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Observation //-->
                         <div class="form-group">
-                            <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Observation' mod='samedaycourier'}
+                            <label class="col-sm-3 control-label" for="sameday_observation">
+                                {l s='Observation' mod='samedaycourier'}
                             </label>
-                            <div class="col-sm-8">
-                                <input type="text" name="sameday_observation" value="" class="form-control">
+                            <div class="col-sm-9">
+                                <input type="text" name="sameday_observation" id="sameday_observation" value="" class="form-control">
                             </div>
                         </div>
                     </div>
