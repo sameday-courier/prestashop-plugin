@@ -1530,7 +1530,7 @@ class SamedayCourier extends CarrierModule
             ?? self::DEFAULT_HOST_COUNTRY
         ;
 
-        $orderCurrency = CurrencyCore::getIsoCodeById($order->id_currency);
+        $orderCurrency = CurrencyCore::getCurrency($order->id_currency)['iso_code'];
         $destCurrency = $this->getDestCurrencyByDestCountryCode($destCountryCode);
 
         $xBorderWarning = '';
