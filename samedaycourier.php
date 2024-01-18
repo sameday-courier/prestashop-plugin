@@ -1877,7 +1877,7 @@ class SamedayCourier extends CarrierModule
         $service = SamedayService::findByIdService(Tools::getValue('sameday_service'));
         $customer = new CustomerCore($order->id_customer);
         $address = new AddressCore($order->id_address_delivery);
-        $stateName = StateCore::getNameById($order->id_address_delivery);
+        $stateName = StateCore::getNameById($address->id_state);
         $currency = $this->getDestCurrencyByDestCountryCode(strtolower(CountryCore::getIsoById($address->id_country)));
 
         $company = null;
