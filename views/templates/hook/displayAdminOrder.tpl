@@ -318,15 +318,6 @@
                             </div>
                         </div>
 
-                        <!-- Currency Warning if not math values -->
-                        {if !empty($xBorderWarning)}
-                            <div class="form-group">
-                                <div class="col-sm-12">
-                                    <span style="color: #b22222; font-weight: bolder" class="form-group">{$xBorderWarning|escape:'html':'UTF-8'}</span>
-                                </div>
-                            </div>
-                        {/if}
-
                         <!-- Repayment //-->
                         <div class="form-group">
                             <label class="col-sm-3 control-label" for="sameday_repayment">
@@ -337,6 +328,15 @@
                                 <input type="text" name="sameday_repayment" id="sameday_repayment" value="{$repayment|escape:'html':'UTF-8'}" class="form-control">
                             </div>
                         </div>
+
+                        <!-- Currency Warning if not math values -->
+                        {if !empty($xBorderWarning)}
+                            <div class="form-group">
+                                <div class="col-sm-12">
+                                    <span style="color: #b22222; font-weight: bolder" class="form-group">{$xBorderWarning|escape:'html':'UTF-8'}</span>
+                                </div>
+                            </div>
+                        {/if}
 
                         <!-- Insured Value //-->
                         <div class="form-group">
@@ -474,7 +474,7 @@
                             </div>
                         </div>
 
-                        <!-- Open Package //-->
+                        <!-- Open Package -->
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
                                    for="input-status-sameday-open-package">{l s='Open Package' mod='samedaycourier'}
