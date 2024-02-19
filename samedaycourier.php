@@ -85,10 +85,22 @@ class SamedayCourier extends CarrierModule
 
     const LOCKER_NEXT_DAY = 'LN';
 
+    const LOCKER_NEXT_DAY_CROSSBORDER = 'XL';
+
+    const DEFAULT_HOST_COUNTRY = 'ro';
+
+    const ELIGIBLE_FOR_CROSSBORDER = ['XB', 'XL'];
+
     /**
      * Cash on delivery
      */
     const COD = ['Cod', 'Ramburs'];
+
+    const CURRENCIES = [
+        'RON' => SamedayConstants::API_HOST_LOCALE_RO,
+        'HUF' => SamedayConstants::API_HOST_LOCALE_HU,
+        'BGN' => SamedayConstants::API_HOST_LOCALE_BG,
+    ];
 
     /**
      * SamedayCourier constructor.
@@ -97,7 +109,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.5.10';
+        $this->version = '1.6.0';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1165,13 +1177,42 @@ class SamedayCourier extends CarrierModule
             return false;
         }
 
-        if ($service['code'] === self::LOCKER_NEXT_DAY && $params->nbProducts() > Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS')) {
-            // Limit nr. of products to locker delivery
+        if (array_key_exists($service['id'], $this->servicePriceCache)) {
+            return $this->servicePriceCache[$service['id']];
+        }
+
+        $countryCode = self::DEFAULT_HOST_COUNTRY; // From delivery address
+        $hostCountry = Configuration::get('SAMEDAY_HOST_COUNTRY') ?? self::DEFAULT_HOST_COUNTRY; // From eAWB Instance
+
+        if (
+            (null !== $address_delivery_id = $params->id_address_delivery ?? null)
+            && (null !== $address = new AddressCore($address_delivery_id))
+        ) {
+            $countryCode = strtolower(CountryCore::getIsoById($address->id_country));
+        }
+
+        if (
+            ($hostCountry !== $countryCode)
+            && !in_array($service['code'], self::ELIGIBLE_FOR_CROSSBORDER, true)
+        ) {
+
             return false;
         }
 
-        if (array_key_exists($service['id'], $this->servicePriceCache)) {
-            return $this->servicePriceCache[$service['id']];
+        if (
+            ($hostCountry === $countryCode)
+            && in_array($service['code'], self::ELIGIBLE_FOR_CROSSBORDER, true)
+        ) {
+
+            return false;
+        }
+
+        if (
+            $this->isServiceEligibleToLocker($service['code'])
+            && $params->nbProducts() > Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS')
+        ) {
+            // Limit nr. of products to locker delivery
+            return false;
         }
 
         if (!Configuration::get('SAMEDAY_ESTIMATED_COST', 0)) {
@@ -1179,8 +1220,6 @@ class SamedayCourier extends CarrierModule
         }
 
         $pickupPoint = SamedayPickupPoint::getDefaultPickupPoint();
-        $address_delivery_id = $params->id_address_delivery;
-        $address = new Address($address_delivery_id);
         $weight = $params->getTotalWeight() < 1 ? 1 : $params->getTotalWeight();
 
         $sameday = new \Sameday\Sameday($this->getSamedayClient());
@@ -1193,7 +1232,7 @@ class SamedayCourier extends CarrierModule
             new \Sameday\Objects\Types\AwbPaymentType(\Sameday\Objects\Types\AwbPaymentType::CLIENT),
             new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
                 ucwords($address->city) !== 'Bucuresti' ? $address->city : 'Sector 1',
-                State::getNameById($address->id_state),
+                StateCore::getNameById($address->id_state),
                 ltrim($address->address1) . $address->address2,
                 null,
                 null,
@@ -1338,7 +1377,7 @@ class SamedayCourier extends CarrierModule
 
         $name = $this->l('Sameday Courier');
         if (Configuration::get('SAMEDAY_LIVE_MODE', 0) == 0) {
-            $name .= ' ' . $this->l('Test');
+            $name .= ' ' . $this->l('SamedayCourier');
         }
         $carrier = new Carrier();
         $carrier->name = $name;
@@ -1466,7 +1505,7 @@ class SamedayCourier extends CarrierModule
         $isLastMileToShow = $this->toggleHtmlElement(false);
         if ($service) {
             $serviceId = $service['id_service'];
-            if ($service['code'] === self::LOCKER_NEXT_DAY) {
+            if ($this->isServiceEligibleToLocker($service['code'])) {
                 $isLastMileToShow = $this->toggleHtmlElement(true);
             }
         }
@@ -1487,6 +1526,24 @@ class SamedayCourier extends CarrierModule
             $lockerAddress = $locker['address_locker'] ?? null;
         }
 
+        $destCountryCode = strtolower(CountryCore::getIsoById((new AddressCore($order->id_address_delivery))->id_country))
+            ?? self::DEFAULT_HOST_COUNTRY
+        ;
+
+        $orderCurrency = CurrencyCore::getCurrency($order->id_currency)['iso_code'];
+        $destCurrency = $this->getDestCurrencyByDestCountryCode($destCountryCode);
+
+        $xBorderWarning = '';
+        if (self::CURRENCIES[$orderCurrency] !== $destCountryCode
+            && $repayment > 0
+        ) {
+            $xBorderWarning = sprintf(
+                'Be aware that the intended currency is %s but the Repayment value is expressed in %s and please consider a conversion !!',
+                $destCurrency,
+                $orderCurrency
+            );
+        }
+
         $this->smarty->assign(
             array(
                 'orderId'       => $order->id,
@@ -1495,16 +1552,18 @@ class SamedayCourier extends CarrierModule
                 'current_service' => $serviceId,
                 'package_types' => $packageTypes,
                 'repayment'     => $repayment,
+                'xBorderWarning' => $xBorderWarning,
+                'orderCurrency' => $orderCurrency,
                 'awb'           => $awb,
                 'allowParcel'   => $allowParcel,
                 'lockerId'      => ((int) $lockerId) > 0,
                 'samedayUser'   => Configuration::get('SAMEDAY_ACCOUNT_USER'),
-                'hostCountry'   => Configuration::get('SAMEDAY_HOST_COUNTRY') ?? 'ro', // Default will always be 'ro'
+                'countryCode'   => $destCountryCode,
                 'lockerDetails' => sprintf('%s  %s', $lockerName, $lockerAddress),
                 'idLocker'      => $lockerId,
                 'lockerName'    => $lockerName,
                 'lockerAddress' => $lockerAddress,
-                'samedayOrderLockerId'   => $samedayOrderLockerId,
+                'samedayOrderLockerId' => $samedayOrderLockerId,
                 'packageWeight' => $order->getTotalWeight() ?? 1,
                 'isPDOtoShow'   => $this->toggleHtmlElement($this->isServiceEligibleToPdo($service['service_optional_taxes'])),
                 'isLastMileToShow' => $isLastMileToShow,
@@ -1518,11 +1577,11 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @param string $paymentType
+     * @param $paymentType
      *
      * @return bool
      */
-    private function checkForCashPayment($paymentType)
+    private function checkForCashPayment($paymentType): bool
     {
         foreach (self::COD as $value) {
             if (stripos($paymentType, $value) !== false) {
@@ -1531,6 +1590,15 @@ class SamedayCourier extends CarrierModule
         }
 
         return false;
+    }
+
+    /**
+     * @param $destCountryCode
+     * @return string
+     */
+    private function getDestCurrencyByDestCountryCode($destCountryCode)
+    {
+        return array_keys(self::CURRENCIES, $destCountryCode, true)[0] ?? null;
     }
 
     /**
@@ -1635,13 +1703,13 @@ class SamedayCourier extends CarrierModule
         $fileVersion
     )
     {
-        if ($service['code'] === self::LOCKER_NEXT_DAY) {
-            $cart = new Cart($params['cart']->id);
-            $address = new Address($cart->id_address_delivery);
-            $state = new State($address->id_state);
+        if ($this->isServiceEligibleToLocker($service['code'])) {
+            $cart = new CartCore($params['cart']->id);
+            $address = new AddressCore($cart->id_address_delivery);
+            $stateName = StateCore::getNameById($address->id_state);
 
             $sameday_user = Configuration::get('SAMEDAY_ACCOUNT_USER');
-            $hostCountry = Configuration::get('SAMEDAY_HOST_COUNTRY') !== null ? Configuration::get('SAMEDAY_HOST_COUNTRY') : 'ro'; // Default will always be 'ro'
+            $countryCode = strtolower(CountryCore::getIsoById($address->id_country));
             $useLockerMap = (bool) Configuration::get('SAMEDAY_LOCKERS_MAP');
 
             $lockers = null;
@@ -1671,8 +1739,8 @@ class SamedayCourier extends CarrierModule
             $this->smarty->assign('lockerAddress', $params['cookie']->samedaycourier_locker_address);
             $this->smarty->assign('idCart', $params['cart']->id);
             $this->smarty->assign('city', $address->city);
-            $this->smarty->assign('county', $state->name);
-            $this->smarty->assign('hostCountry', $hostCountry);
+            $this->smarty->assign('county', $stateName);
+            $this->smarty->assign('countryCode', $countryCode);
             $this->smarty->assign('samedayUser', $sameday_user);
             $storeLockerRoute = sprintf(
                 '%s%ssamedaycourier/ajax.php?token=%s',
@@ -1714,8 +1782,9 @@ class SamedayCourier extends CarrierModule
 
         if (!empty($optionalServices)) {
             foreach ($optionalServices as $optionalService) {
-
-                if ($optionalService['code'] === self::OPENPACKAGECODE && $optionalService['type'] === \Sameday\Objects\Types\PackageType::PARCEL) {
+                if ($optionalService['code'] === self::OPENPACKAGECODE
+                    && $optionalService['type'] === \Sameday\Objects\Types\PackageType::PARCEL
+                ) {
                     $taxOpenPackage = $optionalService['id'];
 
                     break;
@@ -1738,7 +1807,7 @@ class SamedayCourier extends CarrierModule
     public function hookActionValidateOrder($params)
     {
         $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
-        if ($service['code'] === self::LOCKER_NEXT_DAY) {
+        if ($this->isServiceEligibleToLocker($service['code'])) {
             $samedayCart = new SamedayCart($params['cart']->id);
             if (null !== $locker = $samedayCart->sameday_locker) {
                 $locker = json_decode($locker, false);
@@ -1775,7 +1844,10 @@ class SamedayCourier extends CarrierModule
         $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
         $lockerId = $_COOKIE['samedaycourier_locker_id'] ?? null;
 
-        if (($service['code'] === self::LOCKER_NEXT_DAY) && null === $lockerId) {
+        if (
+            $this->isServiceEligibleToLocker($service['code'])
+            && null === $lockerId
+        ) {
             $this->context->controller->errors[] = $this->l('Please select your easyBox from lockers map');
             $params['completed']  = false;
         }
@@ -1805,9 +1877,11 @@ class SamedayCourier extends CarrierModule
         }
 
         $service = SamedayService::findByIdService(Tools::getValue('sameday_service'));
-        $customer = new Customer($order->id_customer);
-        $address = new Address($order->id_address_delivery);
-        $state = new State($address->id_state);
+        $customer = new CustomerCore($order->id_customer);
+        $address = new AddressCore($order->id_address_delivery);
+        $stateName = StateCore::getNameById($address->id_state);
+        $currency = $this->getDestCurrencyByDestCountryCode(strtolower(CountryCore::getIsoById($address->id_country)));
+
         $company = null;
         if (!empty($address->company)) {
             $company = new \Sameday\Objects\PostAwb\Request\CompanyEntityObject(
@@ -1821,7 +1895,7 @@ class SamedayCourier extends CarrierModule
 
         $recipient = new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
             $address->city,
-            $state->name,
+            $stateName,
             trim($address->address1 . ' ' . $address->address2),
             $address->firstname . ' ' . $address->lastname,
             !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone,
@@ -1833,13 +1907,16 @@ class SamedayCourier extends CarrierModule
         $lockerLastMileId = null;
         $lockerName = null;
         $lockerAddress = null;
-        if (($service['code'] === self::LOCKER_NEXT_DAY) && ('' !== Tools::getValue('locker_id'))
-            && '' !== Tools::getValue('locker_name')
-            && '' !== Tools::getValue('locker_address')) {
-                $lockerLastMileId = (int) Tools::getValue('locker_id');
-                $lockerName = Tools::getValue('locker_name');
-                $lockerAddress = Tools::getValue('locker_address');
-            }
+        if (
+            $this->isServiceEligibleToLocker($service['code'])
+            && ('' !== Tools::getValue('locker_id'))
+            && ('' !== Tools::getValue('locker_name'))
+            && ('' !== Tools::getValue('locker_address'))
+        ) {
+            $lockerLastMileId = (int) Tools::getValue('locker_id');
+            $lockerName = Tools::getValue('locker_name');
+            $lockerAddress = Tools::getValue('locker_address');
+        }
 
         $serviceTaxIds = array();
         if (!empty(Tools::getValue('sameday_open_package'))) {
@@ -1887,7 +1964,8 @@ class SamedayCourier extends CarrierModule
             '',
             '',
             null,
-            $lockerLastMileId
+            $lockerLastMileId,
+            $currency
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
@@ -2188,12 +2266,14 @@ class SamedayCourier extends CarrierModule
      */
     private function isServiceEligibleToLocker(string $serviceCode): bool
     {
-        return $serviceCode === self::LOCKER_NEXT_DAY;
+        return ($serviceCode === self::LOCKER_NEXT_DAY || $serviceCode === self::LOCKER_NEXT_DAY_CROSSBORDER);
     }
 
     private function isServiceEligibleToPdo($serviceAdditionalTaxes): bool
     {
-        if (('' !== $serviceAdditionalTaxes) && false !== $serviceAdditionalTaxes = unserialize($serviceAdditionalTaxes, [''])) {
+        if (('' !== $serviceAdditionalTaxes)
+            && false !== $serviceAdditionalTaxes = unserialize($serviceAdditionalTaxes, [''])
+        ) {
             foreach ($serviceAdditionalTaxes as $tax) {
                 if ($tax['code'] === self::PERSONAL_DELIVERY_OPTION_CODE) {
                     return true;

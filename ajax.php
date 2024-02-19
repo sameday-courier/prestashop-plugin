@@ -26,11 +26,14 @@ if (Tools::getValue('action') === 'store_locker') {
 
     $locker = json_decode(Tools::getValue('locker'), false);
 
-    $locker = json_encode([
-        'locker_id' => $locker->locker_id,
-        'locker_name' => $locker->locker_name,
-        'locker_address' => $locker->locker_address,
-    ]);
+    $locker = json_encode(
+        [
+            'locker_id' => $locker->locker_id,
+            'locker_name' => $locker->locker_name,
+            'locker_address' => $locker->locker_address,
+        ],
+        JSON_UNESCAPED_UNICODE
+    );
 
     $samedayCart = new SamedayCart(Tools::getValue('idCart'));
     $samedayCart->sameday_locker = $locker;
@@ -49,8 +52,8 @@ if (Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 1
 
 if (Tools::getValue('awb_id')) {
     $awbId = (int)Tools::getValue('awb_id');
-    $country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ? Configuration::get('SAMEDAY_HOST_COUNTRY') : 'ro';
-    $testingMode = (Configuration::get('SAMEDAY_LIVE_MODE')) ? Configuration::get('SAMEDAY_LIVE_MODE') : '0';
+    $country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ?: SamedayConstants::API_HOST_LOCALE_RO;
+    $testingMode = (Configuration::get('SAMEDAY_LIVE_MODE')) ?: '0';
     $api = $testingMode ? SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_PROD'] : SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_DEMO'];
 
     $sameday = new \Sameday\Sameday(

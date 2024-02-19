@@ -33,7 +33,7 @@
                     name="samedaycourier_locker_id"
                     id="showLockerMap"
                     data-username='{$samedayUser}'
-                    data-country='{$hostCountry}'
+                    data-country='{$countryCode}'
                     data-id_cart='{$idCart}'
                     data-city='{$city}'
                     data-county='{$county}'
