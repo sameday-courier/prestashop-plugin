@@ -1880,9 +1880,7 @@ class SamedayCourier extends CarrierModule
             $parcelDimensions[] = new \Sameday\Objects\ParcelDimensionsObject($weight, $width, $length, $height);
         }
 
-        if (null === $service = SamedayService::findByIdService(Tools::getValue('sameday_service'))) {
-            return null;
-        }
+        $service = SamedayService::findByIdService(Tools::getValue('sameday_service'));
 
         $customer = new CustomerCore($order->id_customer);
         $address = new AddressCore($order->id_address_delivery);
