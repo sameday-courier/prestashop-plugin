@@ -109,7 +109,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.6.0';
+        $this->version = '1.6.1';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1806,8 +1806,15 @@ class SamedayCourier extends CarrierModule
      */
     public function hookActionValidateOrder($params)
     {
-        $service = SamedayService::findByCarrierId($params['cart']->id_carrier);
-        if ($this->isServiceEligibleToLocker($service['code'])) {
+        if (false === $service = SamedayService::findByCarrierId($params['cart']->id_carrier)) {
+            return;
+        }
+
+        if (false === $serviceCode = $service['code'] ?? false) {
+            return;
+        }
+
+        if ($this->isServiceEligibleToLocker((string) $serviceCode)) {
             $samedayCart = new SamedayCart($params['cart']->id);
             if (null !== $locker = $samedayCart->sameday_locker) {
                 $locker = json_decode($locker, false);
@@ -1845,8 +1852,8 @@ class SamedayCourier extends CarrierModule
         $lockerId = $_COOKIE['samedaycourier_locker_id'] ?? null;
 
         if (
-            $this->isServiceEligibleToLocker($service['code'])
-            && null === $lockerId
+            null === $lockerId
+            && $this->isServiceEligibleToLocker($service['code'])
         ) {
             $this->context->controller->errors[] = $this->l('Please select your easyBox from lockers map');
             $params['completed']  = false;
@@ -1857,9 +1864,6 @@ class SamedayCourier extends CarrierModule
      * @param $order
      *
      * @return SamedayAwb|null
-     *
-     * @throws PrestaShopDatabaseException
-     * @throws PrestaShopException
      */
     private function addAwb($order)
     {
@@ -1877,6 +1881,7 @@ class SamedayCourier extends CarrierModule
         }
 
         $service = SamedayService::findByIdService(Tools::getValue('sameday_service'));
+
         $customer = new CustomerCore($order->id_customer);
         $address = new AddressCore($order->id_address_delivery);
         $stateName = StateCore::getNameById($address->id_state);
