@@ -118,13 +118,19 @@ class SamedayService extends ObjectModel
     public static function getServices($activeOnly = false, $limit = 0)
     {
         $liveMode = Configuration::get('SAMEDAY_LIVE_MODE', 0);
-        $query = 'SELECT * FROM ' . _DB_PREFIX_ . self::TABLE_NAME . ' WHERE live_mode = ' .(int) $liveMode;
+
+        $query = sprintf(
+            "SELECT * FROM %s WHERE `live_mode` = '%s' AND `status` = 1",
+            _DB_PREFIX_ . self::TABLE_NAME,
+            (int) $liveMode
+        );
+
         if ($activeOnly) {
             $query .= ' AND `disabled` = 0';
         }
 
         if ($limit) {
-            $query .= ' LIMIT ' . (int)$limit;
+            $query .= ' LIMIT ' . (int) $limit;
         }
 
         return Db::getInstance()->executeS($query);
@@ -184,11 +190,22 @@ class SamedayService extends ObjectModel
         );
     }
 
-    public static function updateCarrierId($id_service, $id_carrier)
+    /**
+     * @param $id_service
+     * @param $id_carrier
+     *
+     * @return bool
+     */
+    public static function updateCarrierId($id_service, $id_carrier): bool
     {
-        return Db::getInstance()->update('sameday_services', array(
-            'id_carrier' => (int)$id_carrier,
-        ), 'id = ' . (int)$id_service);
+        return Db::getInstance()->update(
+            self::TABLE_NAME,
+            [
+                'id_carrier' => (int) $id_carrier,
+            ]
+            ,
+            'id = ' . (int) $id_service
+        );
     }
 
     public static function findByCarrierId($id_carrier)

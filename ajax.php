@@ -44,8 +44,8 @@ if (Tools::getValue('action') === 'store_locker') {
     die(json_encode(['message' => 'Locker updated!']));
 }
 
-if (Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10) != Tools::getValue('token') ||
-    !Module::isInstalled('samedaycourier')
+if (!Module::isInstalled(SamedayConstants::MODULE_NAME)
+    || Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10) !== Tools::getValue('token')
 ) {
     die('Bad token');
 }
