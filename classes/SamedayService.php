@@ -142,6 +142,38 @@ class SamedayService extends ObjectModel
     }
 
     /**
+     * @return array
+     */
+    public static function getServicesToDisplay(): array
+    {
+        $services = self::getAllServices();
+
+        $oohService = array_values(array_filter(
+            $services,
+            static function (array $service) {
+                return $service['code'] === SamedayConstants::LOCKER_NEXT_DAY_CODE;
+            },
+            true
+        ))[0] ?? null;
+
+        $generalHelper = new SamedayGeneralHelper();
+
+        if (null !== $oohService) {
+            $oohService['name'] = SamedayConstants::OOH_SERVICES_LABELS[$generalHelper->getHostCountry()];
+            $oohService['code'] = SamedayConstants::OOH_SERVICE;
+
+            $services = array_merge([$oohService], $services);
+        }
+
+        return array_filter($services, static function($service) use ($generalHelper) {
+            return
+                !$generalHelper->isOohDeliveryOption($service['code'])
+                && !$generalHelper->isNotInUseService($service['code'])
+            ;
+        });
+    }
+
+    /**
      * @param $code
      * @param $optionalTaxes
      * @param $id

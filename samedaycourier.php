@@ -632,30 +632,7 @@ class SamedayCourier extends CarrierModule
      */
     private function renderServicesList(): void
     {
-        $services = SamedayService::getAllServices();
-
-        $oohService = array_values(array_filter(
-            $services,
-            static function (array $service) {
-                return $service['code'] === SamedayConstants::LOCKER_NEXT_DAY_CODE;
-            },
-            true
-        ))[0] ?? null;
-
-        if (null !== $oohService) {
-            $oohService['name'] = SamedayConstants::OOH_SERVICES_LABELS[$this->generalHelper->getHostCountry()];
-            $oohService['code'] = SamedayConstants::OOH_SERVICE;
-
-            $services = array_merge([$oohService], $services);
-        }
-
-        $generalHelper = $this->generalHelper;
-        $services = array_filter($services, static function($service) use ($generalHelper) {
-            return
-                !$generalHelper->isOohDeliveryOption($service['code'])
-                && !$generalHelper->isNotInUseService($service['code'])
-            ;
-        });
+        $services = SamedayService::getServicesToDisplay();
 
         $fields = array(
             'name' => array(
@@ -1036,18 +1013,18 @@ class SamedayCourier extends CarrierModule
         }
 
         if (Tools::isSubmit('update_carriers')) {
-            $services = SamedayService::getServices();
-            $serviceIds = [];
-            foreach ($services as $service) {
-                $serviceIds[] = $service['id_carrier'];
-            }
+            $services = SamedayService::getServicesToDisplay();
 
             // Deactivate unused Carriers
             SamedayCarrierCore::deactivateCarriers(
                 array_filter(
                     SamedayCarrierCore::getSamedayCarrier(),
-                    static function (array $carrier) use ($serviceIds) {
-                        return !in_array($carrier['id_carrier'], $serviceIds, true);
+                    static function (array $carrier) use ($services) {
+                        return !in_array(
+                            $carrier['id_carrier'],
+                            array_map(static function(array $service) { return $service['id_carrier']; }, $services),
+                            true
+                        );
                     }
                 )
             );
