@@ -9,7 +9,7 @@ class SamedayGeneralHelper
 
     public function isNotInUseService(string $samedayServiceCode): bool
     {
-        return in_array($samedayServiceCode, SamedayConstants::NOT_IN_USE_SERVICES, true);
+        return !in_array($samedayServiceCode, SamedayConstants::IN_USE_SERVICES, true);
     }
 
     public function isOohDeliveryOption(string $samedayServiceCode): bool

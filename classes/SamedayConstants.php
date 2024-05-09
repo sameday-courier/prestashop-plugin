@@ -29,7 +29,7 @@ final class SamedayConstants
     const PERSONAL_DELIVERY_OPTION_CODE = 'PDO';
 
     const SAMEDAY_6H_CODE = '6H';
-    const STANDARD_24_H = '24';
+    const STANDARD_24H_CODE = '24';
     const LOCKER_NEXT_DAY_CODE = 'LN';
     const PUDO_CODE = 'PD';
     // const PUDO_CROSSBORDER_CODE = '';
@@ -39,7 +39,7 @@ final class SamedayConstants
 
     const ELIGIBLE_SERVICES = [
         self::SAMEDAY_6H_CODE,
-        self::STANDARD_24_H,
+        self::STANDARD_24H_CODE,
         self::LOCKER_NEXT_DAY_CODE
     ];
 
@@ -62,8 +62,13 @@ final class SamedayConstants
 //        self::LOCKER_NEXT_DAY_CROSSBORDER_CODE,
 //    ];
 
-    const NOT_IN_USE_SERVICES = [
-        '1H', '2H', 'LS', '3H', 'LH', 'RS', 'XD', 'XR', 'L2', 'LR'
+    const IN_USE_SERVICES = [
+        self::SAMEDAY_6H_CODE,
+        self::STANDARD_24H_CODE,
+        self::LOCKER_NEXT_DAY_CODE,
+        self::OOH_SERVICE,
+        self::STANDARD_CROSSBORDER_CODE,
+        self::LOCKER_NEXT_DAY_CROSSBORDER_CODE,
     ];
 
     const OOH_SERVICES_LABELS = [
