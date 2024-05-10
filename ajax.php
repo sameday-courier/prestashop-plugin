@@ -31,6 +31,7 @@ if (Tools::getValue('action') === 'store_locker') {
             'locker_id' => $locker->locker_id,
             'locker_name' => $locker->locker_name,
             'locker_address' => $locker->locker_address,
+            'service_code' => $locker->service ?? 'PD',
         ],
         JSON_UNESCAPED_UNICODE
     );
@@ -38,7 +39,11 @@ if (Tools::getValue('action') === 'store_locker') {
     $samedayCart = new SamedayCart(Tools::getValue('idCart'));
     $samedayCart->sameday_locker = $locker;
 
-    $samedayCart->save();
+    try {
+        $samedayCart->save();
+    } catch (Exception $exception) {
+        die(json_encode(['message' => 'Something went wrong and locker could not be saved!']));
+    }
 
     header('Content-Type: application/json');
     die(json_encode(['message' => 'Locker updated!']));

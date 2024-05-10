@@ -30,6 +30,7 @@ $sql[] = "CREATE TABLE `". _DB_PREFIX_ . SamedayService::TABLE_NAME ."` (
           `status` tinyint(1) NOT NULL DEFAULT '0',
           `disabled` tinyint(1) NOT NULL DEFAULT '0',
           `live_mode` tinyint(1) NOT NULL DEFAULT '0',
+          `service_optional_taxes` TEXT,
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
@@ -86,21 +87,15 @@ $sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayLocker::TABLE_NAME . "` (
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
-$sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . "` (
+$sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayOrderLocker::$definition['table'] . "` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
           `id_order` int(11) unsigned NOT NULL,
           `id_locker` int(11) unsigned NOT NULL,
+          `name_locker` TEXT,
+          `address_locker` TEXT,
+          `service_code` varchar(5),
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
-
-$sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
-            ADD `address_locker` TEXT';
-
-$sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayOrderLocker::TABLE_NAME . '
-            ADD `name_locker` TEXT';
-
-$sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . SamedayService::TABLE_NAME . '
-            ADD `service_optional_taxes` TEXT';
 
 $sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . CartCore::$definition['table'] . '
             ADD `sameday_locker` TEXT';

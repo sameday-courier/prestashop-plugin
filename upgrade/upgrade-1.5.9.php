@@ -25,19 +25,12 @@ if (!defined('_PS_VERSION_')) {
  */
 function upgrade_module_1_5_9($object)
 {
-    $table = _DB_PREFIX_ . CartCore::$definition['table'];
-    $newColumn = 'sameday_locker';
+    $generalHelper = new SamedayGeneralQueryHelper();
 
-    $searchedColumn = array_filter(
-        Db::getInstance()->executeS(sprintf("SHOW COLUMNS FROM %s", $table)),
-        static function ($column) use ($newColumn) {
-            return $column['Field'] === $newColumn;
-        }
+    $generalHelper->alterColumn(
+        _DB_PREFIX_ . CartCore::$definition['table'],
+        'sameday_locker'
     );
-
-    if (empty($searchedColumn)) {
-        Db::getInstance()->execute(sprintf("ALTER TABLE %s ADD %s TEXT", $table, $newColumn));
-    }
 
     return (version_compare(_PS_VERSION_, '1.7.0.0') < 0
             ? $object->registerHook('extraCarrier')

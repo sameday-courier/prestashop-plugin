@@ -102,7 +102,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.6.1';
+        $this->version = '1.7.0';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1561,31 +1561,34 @@ class SamedayCourier extends CarrierModule
                 DateTime::createFromFormat('Y-m-d H:i:s', $awb['created'])->format('Ymd') === $now->format('Ymd');
         }
 
-        $service = SamedayService::findByCarrierId($order->id_carrier);
-
         $serviceId = null;
         $isLastMileToShow = $this->toggleHtmlElement(false);
-        if ($service) {
+        $lockerId = null;
+        $lockerName = null;
+        $lockerAddress = null;
+        $samedayOrderLockerId = null;
+        if (false !== $service = SamedayService::findByCarrierId($order->id_carrier)) {
             $serviceId = $service['id_service'];
             if ($this->isServiceEligibleToLocker($service['code'])) {
                 $isLastMileToShow = $this->toggleHtmlElement(true);
+
+                if (null !== $locker = SamedayOrderLocker::getLockerForOrder($order->id)) {
+                    $samedayOrderLockerId = $locker['id'] ?? null;
+                    $lockerId = $locker['id_locker'] ?? null;
+                    $lockerName = $locker['name_locker'] ?? null;
+                    $lockerAddress = $locker['address_locker'] ?? null;
+                    $lockerService = $locker['service_code'] ?? null;
+
+                    if (null !== $lockerService) {
+                        $serviceId = SamedayService::findByCode($lockerService)['id_service'];
+                    }
+                }
             }
         }
 
         $repayment = 0.0;
         if ($this->checkForCashPayment($order->payment)) {
             $repayment = number_format($order->total_paid, 2);
-        }
-
-        $lockerId = null;
-        $lockerName = null;
-        $lockerAddress = null;
-        $samedayOrderLockerId = null;
-        if (null !== $locker = SamedayOrderLocker::getLockerForOrder($order->id)) {
-            $samedayOrderLockerId = $locker['id'] ?? null;
-            $lockerId = $locker['id_locker'] ?? null;
-            $lockerName = $locker['name_locker'] ?? null;
-            $lockerAddress = $locker['address_locker'] ?? null;
         }
 
         $destCountryCode = strtolower(CountryCore::getIsoById((new AddressCore($order->id_address_delivery))->id_country))
@@ -1880,16 +1883,13 @@ class SamedayCourier extends CarrierModule
             $samedayCart = new SamedayCart($params['cart']->id);
             if (null !== $locker = $samedayCart->sameday_locker) {
                 $locker = json_decode($locker, false);
-                $lockerId = $locker->locker_id;
-                $lockerName = $locker->locker_name;
-                $lockerAddress = $locker->locker_address;
-
                 $orderLocker = new SamedayOrderLocker();
 
                 $orderLocker->id_order = $params['order']->id;
-                $orderLocker->id_locker = $lockerId;
-                $orderLocker->address_locker = $lockerAddress;
-                $orderLocker->name_locker = $lockerName;
+                $orderLocker->id_locker = $locker->locker_id;
+                $orderLocker->address_locker = $locker->locker_address;
+                $orderLocker->name_locker = $locker->locker_name;
+                $orderLocker->service_code = $locker->service_code;
 
                 $orderLocker->save();
             }
