@@ -638,6 +638,8 @@ class SamedayCourier extends CarrierModule
             'name' => array(
                 'title'   => $this->l('Name'),
                 'orderby' => false,
+                'hint' => $this->l('Optiunea Ridicare Personala include ambele servicii LockerNextDay, respectiv Pudo !'),
+                'tooltip' => 'Tooltip',
             ),
             'code'                    => array(
                 'title'   => $this->l('Service code'),
