@@ -39,7 +39,7 @@
             data-store_locker_route='{$storeLockerRoute}'
             class="button-exclusive btn btn-default"
     >
-        {l s='Show locker map' mod='samedaycourier'}
+        {l s='Show locations' mod='samedaycourier'}
     </button>
 
     <div style="display:inline-block;    vertical-align: middle;">

@@ -91,8 +91,8 @@ class SamedayLocker extends ObjectModel
             && (time() > ((int) Configuration::get('SAMEDAY_LAST_LOCKERS')) + 86400))
         {
             $module = Module::getInstanceByName('samedaycourier');
-            $module->importLockers();
-            Configuration::updateValue('SAMEDAY_LAST_LOCKERS', time());
+            // $module->importLockers();
+            // Configuration::updateValue('SAMEDAY_LAST_LOCKERS', time());
         }
 
         return Db::getInstance()->executeS(
