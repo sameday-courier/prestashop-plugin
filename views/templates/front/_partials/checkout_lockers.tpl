@@ -34,7 +34,7 @@
             }
         }
 
-        const _isSet = (accessor) => {
+        var _isSet = (accessor) => {
             try {
                 return accessor() !== undefined && accessor() !== null
             } catch (e) {
@@ -132,7 +132,7 @@
             }
         });
 
-        const _storeLocker = (locker) => {
+        var _storeLocker = (locker) => {
             let storeLockerRoute = document.getElementById('showLockerMap').getAttribute('data-store_locker_route');
             let idCart = document.getElementById('showLockerMap').getAttribute('data-id_cart');
 
@@ -147,7 +147,7 @@
             });
         }
 
-        const _setCookie = (key, value, days) => {
+        var _setCookie = (key, value, days) => {
             let d = new Date();
             d.setTime(d.getTime() + (days*24*60*60*1000));
             let expires = "expires=" + d.toUTCString();
@@ -155,7 +155,7 @@
             document.cookie = key + "=" + value + ";" + expires + ";path=/";
         }
 
-        const _getCookie = (key) => {
+        var _getCookie = (key) => {
             let cookie = '';
             document.cookie.split(';').forEach(function (value) {
                 if (value.split('=')[0].trim() === key) {
