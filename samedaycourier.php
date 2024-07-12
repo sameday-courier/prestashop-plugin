@@ -79,6 +79,8 @@ class SamedayCourier extends CarrierModule
         ]
     ];
 
+    const DEFAULT_VALUE_LOCKER_MAX_ITEMS = 5;
+
     const OPENPACKAGECODE = 'OPCG';
 
     const PERSONAL_DELIVERY_OPTION_CODE = 'PDO';
@@ -584,6 +586,15 @@ class SamedayCourier extends CarrierModule
      */
     protected function getConfigFormValues()
     {
+        $lockerMaxItems = Tools::getValue(
+            'SAMEDAY_LOCKER_MAX_ITEMS',
+            Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS', null)
+        );
+
+        if (false === $lockerMaxItems) {
+            $lockerMaxItems = self::DEFAULT_VALUE_LOCKER_MAX_ITEMS;
+        }
+
         return array(
             'SAMEDAY_STATUS_MODE'      => Tools::getValue(
                 'SAMEDAY_STATUS_MODE',
@@ -613,10 +624,7 @@ class SamedayCourier extends CarrierModule
                 'SAMEDAY_OPEN_PACKAGE_LABEL',
                 Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL', null)
             ),
-            'SAMEDAY_LOCKER_MAX_ITEMS' => Tools::getValue(
-                'SAMEDAY_LOCKER_MAX_ITEMS',
-                Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS', null)
-            ),
+            'SAMEDAY_LOCKER_MAX_ITEMS' => $lockerMaxItems,
             'SAMEDAY_DEBUG_MODE'       => Tools::getValue(
                 'SAMEDAY_DEBUG_MODE',
                 Configuration::get('SAMEDAY_DEBUG_MODE', null)
@@ -1207,12 +1215,15 @@ class SamedayCourier extends CarrierModule
             return false;
         }
 
-        if (
-            $this->isServiceEligibleToLocker($service['code'])
-            && $params->nbProducts() > Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS')
-        ) {
-            // Limit nr. of products to locker delivery
-            return false;
+        if ($this->isServiceEligibleToLocker($service['code'])) {
+            if (false === $lockerMaxItems = Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS')) {
+                $lockerMaxItems = self::DEFAULT_HOST_COUNTRY;
+            }
+
+            if ($params->nbProducts() > $lockerMaxItems) {
+                // Limit nr. of products to locker delivery
+                return false;
+            }
         }
 
         if (!Configuration::get('SAMEDAY_ESTIMATED_COST', 0)) {
