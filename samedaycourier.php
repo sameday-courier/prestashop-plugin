@@ -84,6 +84,21 @@ class SamedayCourier extends CarrierModule
         ]
     ];
 
+
+    const DEFAULT_VALUE_LOCKER_MAX_ITEMS = 5;
+
+    const OPENPACKAGECODE = 'OPCG';
+
+    const PERSONAL_DELIVERY_OPTION_CODE = 'PDO';
+
+    const LOCKER_NEXT_DAY = 'LN';
+
+    const LOCKER_NEXT_DAY_CROSSBORDER = 'XL';
+
+    const DEFAULT_HOST_COUNTRY = 'ro';
+
+    const ELIGIBLE_FOR_CROSSBORDER = ['XB', 'XL'];
+
     /**
      * Cash on delivery
      */
@@ -102,6 +117,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
+
         $this->version = '1.7.0';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
@@ -520,22 +536,19 @@ class SamedayCourier extends CarrierModule
                         ),
                     ),
                     array(
-                        'type'    => 'switch',
-                        'label'   => $this->l('Use locker map'),
+                        'type'    => 'select',
+                        'label'   => $this->l('Show locker map method'),
                         'name'    => 'SAMEDAY_LOCKERS_MAP',
                         'is_bool' => true,
-                        'desc'    => $this->l('Enable this for easyBox interactive map!'),
-                        'values'  => array(
-                            array(
-                                'id'    => 'active_on',
-                                'value' => true,
-                                'label' => $this->l('Enabled'),
+                        'desc'    => $this->l('This will show in the checkout page of your site as a drop-down list or 
+                        as interactive map'),
+                        'options'  => array(
+                            'query' => array(
+                                array('id' => 1, 'name' => 'Interactive map'),
+                                array('id' => 0, 'name' => 'Drop-down list'),
                             ),
-                            array(
-                                'id'    => 'active_off',
-                                'value' => false,
-                                'label' => $this->l('Disabled'),
-                            ),
+                            'id' => 'id',
+                            'name' => 'name'
                         ),
                     ),
                     array(
@@ -583,6 +596,15 @@ class SamedayCourier extends CarrierModule
      */
     protected function getConfigFormValues()
     {
+        $lockerMaxItems = Tools::getValue(
+            'SAMEDAY_LOCKER_MAX_ITEMS',
+            Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS', null)
+        );
+
+        if (false === $lockerMaxItems) {
+            $lockerMaxItems = self::DEFAULT_VALUE_LOCKER_MAX_ITEMS;
+        }
+
         return array(
             'SAMEDAY_STATUS_MODE'      => Tools::getValue(
                 'SAMEDAY_STATUS_MODE',
@@ -612,10 +634,7 @@ class SamedayCourier extends CarrierModule
                 'SAMEDAY_OPEN_PACKAGE_LABEL',
                 Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL', null)
             ),
-            'SAMEDAY_LOCKER_MAX_ITEMS' => Tools::getValue(
-                'SAMEDAY_LOCKER_MAX_ITEMS',
-                Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS', null)
-            ),
+            'SAMEDAY_LOCKER_MAX_ITEMS' => $lockerMaxItems,
             'SAMEDAY_DEBUG_MODE'       => Tools::getValue(
                 'SAMEDAY_DEBUG_MODE',
                 Configuration::get('SAMEDAY_DEBUG_MODE', null)
@@ -1246,12 +1265,15 @@ class SamedayCourier extends CarrierModule
             return false;
         }
 
-        if (
-            $this->isServiceEligibleToLocker($service['code'])
-            && $params->nbProducts() > Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS')
-        ) {
-            // Limit nr. of products to locker delivery
-            return false;
+        if ($this->isServiceEligibleToLocker($service['code'])) {
+            if (false === $lockerMaxItems = Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS')) {
+                $lockerMaxItems = self::DEFAULT_HOST_COUNTRY;
+            }
+
+            if ($params->nbProducts() > $lockerMaxItems) {
+                // Limit nr. of products to locker delivery
+                return false;
+            }
         }
 
         if (!Configuration::get('SAMEDAY_ESTIMATED_COST')) {
