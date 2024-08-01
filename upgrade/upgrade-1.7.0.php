@@ -23,13 +23,13 @@ if (!defined('_PS_VERSION_')) {
  * useful when you modify your database, or register a new hook ...
  * Don't forget to create one file per version.
  */
-function upgrade_module_1_5_9($object)
+function upgrade_module_1_7_0($object)
 {
     $generalHelper = new SamedayGeneralQueryHelper();
 
     $generalHelper->alterColumn(
-        _DB_PREFIX_ . CartCore::$definition['table'],
-        'sameday_locker'
+        _DB_PREFIX_ . SamedayOrderLocker::$definition['table'],
+        'service_code'
     );
 
     return (version_compare(_PS_VERSION_, '1.7.0.0') < 0
@@ -39,4 +39,3 @@ function upgrade_module_1_5_9($object)
         $object->registerHook('actionCarrierProcess')
     ;
 }
-

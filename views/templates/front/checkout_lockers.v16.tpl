@@ -40,7 +40,7 @@
                     data-store_locker_route='{$storeLockerRoute}'
                     class="button-exclusive btn btn-default"
                 >
-                    {l s='Show locker map' mod='samedaycourier'}
+                    {l s='Show locations' mod='samedaycourier'}
                 </button>
                 <input type="hidden" id="locker_name" name="locker_name">
                 <input type="text" id="locker_address" name="locker_address" style="width:0px;height:0px;opacity:0;">

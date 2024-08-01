@@ -16,12 +16,60 @@
 
 final class SamedayConstants
 {
+    const MODULE_NAME = 'samedaycourier';
+
     const LIVE_MODE = 1;
     const DEMO_MODE = 0;
 
     const API_HOST_LOCALE_RO = 'ro';
     const API_HOST_LOCALE_HU = 'hu';
     const API_HOST_LOCALE_BG = 'bg';
+
+    const OPENPACKAGECODE = 'OPCG';
+    const PERSONAL_DELIVERY_OPTION_CODE = 'PDO';
+
+    const SAMEDAY_6H_CODE = '6H';
+    const STANDARD_24H_CODE = '24';
+    const LOCKER_NEXT_DAY_CODE = 'LN';
+    const PUDO_CODE = 'PP';
+    const OOH_SERVICE = 'OOH';
+    const STANDARD_CROSSBORDER_CODE = 'XB';
+    const LOCKER_NEXT_DAY_CROSSBORDER_CODE = 'XL';
+
+    const ELIGIBLE_SERVICES = [
+        self::SAMEDAY_6H_CODE,
+        self::STANDARD_24H_CODE,
+        self::LOCKER_NEXT_DAY_CODE
+    ];
+
+    const ELIGIBLE_FOR_CROSSBORDER = [
+        self::STANDARD_CROSSBORDER_CODE,
+        self::LOCKER_NEXT_DAY_CROSSBORDER_CODE,
+    ];
+
+    const ELIGIBLE_TO_6H_SERVICE = [
+        'Bucuresti',
+    ];
+
+    const OOH_SERVICES = [
+        self::LOCKER_NEXT_DAY_CODE,
+        self::PUDO_CODE,
+    ];
+
+    const IN_USE_SERVICES = [
+        self::SAMEDAY_6H_CODE,
+        self::STANDARD_24H_CODE,
+        self::LOCKER_NEXT_DAY_CODE,
+        self::OOH_SERVICE,
+        self::STANDARD_CROSSBORDER_CODE,
+        self::LOCKER_NEXT_DAY_CROSSBORDER_CODE,
+    ];
+
+    const OOH_SERVICES_LABELS = [
+        self::API_HOST_LOCALE_RO => 'Ridicare personala',
+        self::API_HOST_LOCALE_BG => 'Персонален асансьор',
+        self::API_HOST_LOCALE_HU => 'Személyi lift',
+    ];
 
     const SAMEDAY_ENVS = [
         self::API_HOST_LOCALE_RO => [
@@ -37,6 +85,8 @@ final class SamedayConstants
             self::DEMO_MODE => 'https://sameday-api-bg.demo.zitec.com',
         ],
     ];
+
+    const DEFAULT_HOST_COUNTRY = 'ro';
 
     const TOGGLE_HTML_ELEMENT = [
         'show' => 'block',
