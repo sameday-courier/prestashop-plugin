@@ -1613,7 +1613,7 @@ class SamedayCourier extends CarrierModule
                     $lockerId = $locker['id_locker'] ?? null;
                     $lockerName = $locker['name_locker'] ?? null;
                     $lockerAddress = $locker['address_locker'] ?? null;
-                    $lockerService = SamedayConstants::OOH_SERVICES[$locker['ooh_type']] ?? null;
+                    $lockerService = $locker['service_code'] ?? null;
 
                     if (null !== $lockerService) {
                         $serviceId = SamedayService::findByCode($lockerService)['id_service'];
@@ -1925,7 +1925,7 @@ class SamedayCourier extends CarrierModule
                 $orderLocker->id_locker = $locker->locker_id;
                 $orderLocker->address_locker = $locker->locker_address;
                 $orderLocker->name_locker = $locker->locker_name;
-                $orderLocker->service_code = $locker->service_code;
+                $orderLocker->service_code = SamedayConstants::OOH_SERVICES[$locker->ooh_type ?? 0];
 
                 $orderLocker->save();
             }
@@ -2378,6 +2378,7 @@ class SamedayCourier extends CarrierModule
         return (
             $serviceCode === SamedayConstants::LOCKER_NEXT_DAY_CODE
             || $serviceCode === SamedayConstants::LOCKER_NEXT_DAY_CROSSBORDER_CODE
+            || $serviceCode === SamedayConstants::PUDO_CODE
         );
     }
 
