@@ -31,7 +31,7 @@ if (Tools::getValue('action') === 'store_locker') {
             'locker_id' => $locker->locker_id,
             'locker_name' => $locker->locker_name,
             'locker_address' => $locker->locker_address,
-            'service_code' => $locker->service ?? 'PD',
+            'ooh_type' => $locker->ooh_type,
         ],
         JSON_UNESCAPED_UNICODE
     );

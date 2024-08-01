@@ -100,6 +100,7 @@
                     let lockerId = locker.lockerId;
                     let lockerName = locker.name;
                     let lockerAddress = locker.address;
+                    let oohType = locker.oohType;
 
                     _setCookie(cookie_locker_id, lockerId, 30);
 
@@ -116,6 +117,7 @@
                         'locker_id' : lockerId,
                         'locker_name': lockerName,
                         'locker_address': lockerAddress,
+                        'ooh_type': oohType ?? 0,
                     }));
 
                     lockerPlugin.close();
