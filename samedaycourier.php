@@ -2378,6 +2378,7 @@ class SamedayCourier extends CarrierModule
         return (
             $serviceCode === SamedayConstants::LOCKER_NEXT_DAY_CODE
             || $serviceCode === SamedayConstants::LOCKER_NEXT_DAY_CROSSBORDER_CODE
+            || $serviceCode === SamedayConstants::PUDO_CODE
         );
     }
 
