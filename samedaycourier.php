@@ -1613,7 +1613,7 @@ class SamedayCourier extends CarrierModule
                     $lockerId = $locker['id_locker'] ?? null;
                     $lockerName = $locker['name_locker'] ?? null;
                     $lockerAddress = $locker['address_locker'] ?? null;
-                    $lockerService = $locker['service_code'] ?? null;
+                    $lockerService = SamedayConstants::OOH_SERVICES[$locker['ooh_type']] ?? null;
 
                     if (null !== $lockerService) {
                         $serviceId = SamedayService::findByCode($lockerService)['id_service'];
