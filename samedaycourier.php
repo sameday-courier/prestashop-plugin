@@ -111,7 +111,7 @@ class SamedayCourier extends CarrierModule
     {
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
-        $this->version = '1.6.2';
+        $this->version = '1.6.3';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -523,22 +523,19 @@ class SamedayCourier extends CarrierModule
                         ),
                     ),
                     array(
-                        'type'    => 'switch',
-                        'label'   => $this->l('Use locker map'),
+                        'type'    => 'select',
+                        'label'   => $this->l('Show locker map method'),
                         'name'    => 'SAMEDAY_LOCKERS_MAP',
                         'is_bool' => true,
-                        'desc'    => $this->l('Enable this for easyBox interactive map!'),
-                        'values'  => array(
-                            array(
-                                'id'    => 'active_on',
-                                'value' => true,
-                                'label' => $this->l('Enabled'),
+                        'desc'    => $this->l('This will show in the checkout page of your site as a drop-down list or 
+                        as interactive map'),
+                        'options'  => array(
+                            'query' => array(
+                                array('id' => 1, 'name' => 'Interactive map'),
+                                array('id' => 0, 'name' => 'Drop-down list'),
                             ),
-                            array(
-                                'id'    => 'active_off',
-                                'value' => false,
-                                'label' => $this->l('Disabled'),
-                            ),
+                            'id' => 'id',
+                            'name' => 'name'
                         ),
                     ),
                     array(
