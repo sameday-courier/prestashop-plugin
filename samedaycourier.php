@@ -84,20 +84,9 @@ class SamedayCourier extends CarrierModule
         ]
     ];
 
-
     const DEFAULT_VALUE_LOCKER_MAX_ITEMS = 5;
 
-    const OPENPACKAGECODE = 'OPCG';
-
-    const PERSONAL_DELIVERY_OPTION_CODE = 'PDO';
-
-    const LOCKER_NEXT_DAY = 'LN';
-
-    const LOCKER_NEXT_DAY_CROSSBORDER = 'XL';
-
     const DEFAULT_HOST_COUNTRY = 'ro';
-
-    const ELIGIBLE_FOR_CROSSBORDER = ['XB', 'XL'];
 
     /**
      * Cash on delivery
@@ -320,6 +309,7 @@ class SamedayCourier extends CarrierModule
 
             $sameday = new \Sameday\Sameday($client);
 
+            $lockerService = null;
             try {
                 $response = $sameday->getServices($servicesRequest);
                 SamedayService::deactivateAllServices();
@@ -351,6 +341,10 @@ class SamedayCourier extends CarrierModule
                         $samedayService->save();
                     } else {
                         SamedayService::updateService($service->getCode(), $optionalTaxes, $oldService['id']);
+
+                        if ($oldService['code'] === SamedayConstants::LOCKER_NEXT_DAY_CODE) {
+                            $lockerService = $oldService;
+                        }
                     }
 
                     // Save as current sameday service.
@@ -384,6 +378,15 @@ class SamedayCourier extends CarrierModule
             }
         }
 
+        // Update PUDO status to be same as Locker NextDay
+        if (null !== $lockerService) {
+            if (false !== $pudoService = SamedayService::findByCode(SamedayConstants::PUDO_CODE) ?? false) {
+                $pudoService['status'] = $lockerService['status'];
+
+                SamedayService::updateServiceStatus($pudoService);
+            }
+        }
+
         $this->addMessage('success', $this->l('The services were successfully imported'));
     }
 
@@ -406,6 +409,15 @@ class SamedayCourier extends CarrierModule
         $service->status = Tools::getValue('status');
         if (true === $service->validateFields()) {
             $service->save();
+
+            // Update PUDO status to be same as Locker NextDay
+            if ($service->code === SamedayConstants::LOCKER_NEXT_DAY_CODE) {
+                if (false !== $pudoService = SamedayService::findByCode(SamedayConstants::PUDO_CODE) ?? false) {
+                    $pudoService['status'] = $service->status;
+
+                    SamedayService::updateServiceStatus($pudoService);
+                }
+            }
 
             $this->html .= $this->displayConfirmation($this->l('Sameday service updated'));
         } else {

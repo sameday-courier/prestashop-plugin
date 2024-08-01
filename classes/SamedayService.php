@@ -191,6 +191,22 @@ class SamedayService extends ObjectModel
     }
 
     /**
+     * @param array $service
+     *
+     * @return bool
+     */
+    public static function updateServiceStatus(array $service): bool
+    {
+        return Db::getInstance()->update(
+            self::TABLE_NAME,
+            array(
+                'status' => $service['status'],
+            ),
+            'id =' . $service['id']
+        );
+    }
+
+    /**
      * @param $id
      *
      * @return bool

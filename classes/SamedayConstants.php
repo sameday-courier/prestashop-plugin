@@ -31,8 +31,7 @@ final class SamedayConstants
     const SAMEDAY_6H_CODE = '6H';
     const STANDARD_24H_CODE = '24';
     const LOCKER_NEXT_DAY_CODE = 'LN';
-    const PUDO_CODE = 'PD';
-    // const PUDO_CROSSBORDER_CODE = '';
+    const PUDO_CODE = 'PP';
     const OOH_SERVICE = 'OOH';
     const STANDARD_CROSSBORDER_CODE = 'XB';
     const LOCKER_NEXT_DAY_CROSSBORDER_CODE = 'XL';
@@ -56,11 +55,6 @@ final class SamedayConstants
         self::LOCKER_NEXT_DAY_CODE,
         self::PUDO_CODE,
     ];
-
-//    const OOH_SERVICES_CROSSBORDER = [
-//        self::PUDO_CROSSBORDER_CODE,
-//        self::LOCKER_NEXT_DAY_CROSSBORDER_CODE,
-//    ];
 
     const IN_USE_SERVICES = [
         self::SAMEDAY_6H_CODE,
