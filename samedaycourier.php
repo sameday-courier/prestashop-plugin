@@ -1838,6 +1838,7 @@ class SamedayCourier extends CarrierModule
             $this->smarty->assign('lockerId', $params['cookie']->samedaycourier_locker_id);
             $this->smarty->assign('lockerName', $params['cookie']->samedaycourier_locker_name);
             $this->smarty->assign('lockerAddress', $params['cookie']->samedaycourier_locker_address);
+            $this->smarty->assign('lockerOohType', $params['cookie']->samedaycourier_locker_ooh_type);
             $this->smarty->assign('idCart', $params['cart']->id);
             $this->smarty->assign('city', $address->city);
             $this->smarty->assign('county', $stateName);
@@ -1925,7 +1926,10 @@ class SamedayCourier extends CarrierModule
                 $orderLocker->id_locker = $locker->locker_id;
                 $orderLocker->address_locker = $locker->locker_address;
                 $orderLocker->name_locker = $locker->locker_name;
-                $orderLocker->service_code = SamedayConstants::OOH_SERVICES[$locker->ooh_type ?? 0];
+                if ('' === $locker->ooh_type || null === $locker->ooh_type) {
+                    $locker->ooh_type = 0; // Default as LockerNextDay
+                }
+                $orderLocker->service_code = SamedayConstants::OOH_SERVICES[$locker->ooh_type];
 
                 $orderLocker->save();
             }
@@ -1953,7 +1957,7 @@ class SamedayCourier extends CarrierModule
             null === $lockerId
             && $this->isServiceEligibleToLocker($service['code'])
         ) {
-            $this->context->controller->errors[] = $this->l('Please select your easyBox from lockers map');
+            $this->context->controller->errors[] = $this->l('Please select your easyBox from lockers map !');
             $params['completed']  = false;
         }
     }
@@ -2015,6 +2019,7 @@ class SamedayCourier extends CarrierModule
             && ('' !== Tools::getValue('locker_id'))
             && ('' !== Tools::getValue('locker_name'))
             && ('' !== Tools::getValue('locker_address'))
+            && ('' !== Tools::getValue('locker_ooh_type'))
         ) {
             $lockerLastMileId = (int) Tools::getValue('locker_id');
             $lockerName = Tools::getValue('locker_name');
