@@ -43,6 +43,7 @@
                     {l s='Show locations' mod='samedaycourier'}
                 </button>
                 <input type="hidden" id="locker_name" name="locker_name">
+                <input type="hidden" id="locker_ooh_type" name="locker_ooh_type">
                 <input type="text" id="locker_address" name="locker_address" style="width:0px;height:0px;opacity:0;">
             </td>
             <td>
