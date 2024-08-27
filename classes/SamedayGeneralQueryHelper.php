@@ -4,7 +4,13 @@ use \DbCore as Db;
 
 class SamedayGeneralQueryHelper
 {
-    public function alterColumn(string $tableName, string $newColumn): void
+    /**
+     * @param string $tableName
+     * @param string $newColumn
+     *
+     * @return void
+     */
+    public function alterColumn(string $tableName, string $newColumn)
     {
         try {
             $columns = Db::getInstance()->executeS(sprintf("SHOW COLUMNS FROM %s", $tableName));

@@ -107,7 +107,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.7.0';
+        $this->version = '1.7.1';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -395,7 +395,7 @@ class SamedayCourier extends CarrierModule
      *
      * @throws PrestaShopException
      */
-    private function processSaveSamedayService(): void
+    private function processSaveSamedayService()
     {
         $id = Tools::getValue('id');
         $service = new SamedayService($id);
@@ -661,7 +661,7 @@ class SamedayCourier extends CarrierModule
     /**
      * @return void
      */
-    private function renderServicesList(): void
+    private function renderServicesList()
     {
         $services = SamedayService::getServicesToDisplay();
 
@@ -1354,7 +1354,7 @@ class SamedayCourier extends CarrierModule
      *
      * @return void
      */
-    private function updateCarriers($services): void
+    private function updateCarriers($services)
     {
         foreach ($services as $service) {
             if (false === $carrier = SamedayCarrierCore::findByCarrierId($service['id_carrier'])) {
@@ -1379,7 +1379,7 @@ class SamedayCourier extends CarrierModule
      *
      * @return void
      */
-    protected function addRanges($carrier, $service): void
+    protected function addRanges($carrier, $service)
     {
         // If already exist Ranges, remove it
         foreach (['carrier_zone', 'delivery', 'range_price'] as $table) {
@@ -1418,7 +1418,8 @@ class SamedayCourier extends CarrierModule
             );
         }
 
-        foreach ($ranges as [$from, $to, $price]) {
+        foreach ($ranges as $range) {
+            list($from, $to, $price) = $range;
             $rangePrice = new RangePriceCore();
             $rangePrice->id_carrier = $carrier->id;
             $rangePrice->delimiter1 = $from;
@@ -1512,7 +1513,7 @@ class SamedayCourier extends CarrierModule
      *
      * @return void
      */
-    protected function addGroups(CarrierCore $carrier): void
+    protected function addGroups(CarrierCore $carrier)
     {
         $carrier->setGroups([]);
         $groups_ids = [];

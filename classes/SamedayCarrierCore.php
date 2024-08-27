@@ -46,7 +46,7 @@ class SamedayCarrierCore extends Carrier
      *
      * @return void
      */
-    public static function deactivateCarriers(array $unusedCarriers): void
+    public static function deactivateCarriers(array $unusedCarriers)
     {
         foreach ($unusedCarriers as $carrier) {
             $unusedCarrier = self::findByCarrierId($carrier['id_carrier']);
