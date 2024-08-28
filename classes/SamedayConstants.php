@@ -66,9 +66,15 @@ final class SamedayConstants
     ];
 
     const OOH_SERVICES_LABELS = [
-        self::API_HOST_LOCALE_RO => 'Ridicare personala',
-        self::API_HOST_LOCALE_BG => 'Персонален асансьор',
-        self::API_HOST_LOCALE_HU => 'Személyi lift',
+        self::API_HOST_LOCALE_RO => 'Ridicare Sameday Point/Easybox',
+        self::API_HOST_LOCALE_BG => 'вземете от Sameday Point/Easybox',
+        self::API_HOST_LOCALE_HU => 'felvenni től Sameday Point/Easybox',
+    ];
+
+    const OOH_POPUP_TITLE = [
+        self::API_HOST_LOCALE_RO => 'Optiunea Ridicare Personala include ambele servicii LockerNextDay, respectiv Pudo!',
+        self::API_HOST_LOCALE_BG => 'Тази опция включва LockerNextDay и PUDO!',
+        self::API_HOST_LOCALE_HU => 'Ez az opció magában foglalja a LockerNextDay és a PUDO szolgáltatást is!',
     ];
 
     const SAMEDAY_ENVS = [

@@ -669,7 +669,7 @@ class SamedayCourier extends CarrierModule
             'name' => array(
                 'title'   => $this->l('Name'),
                 'orderby' => false,
-                'hint' => $this->l('Optiunea Ridicare Personala include ambele servicii LockerNextDay, respectiv Pudo !'),
+                'hint' => $this->l(SamedayConstants::OOH_POPUP_TITLE[$this->generalHelper->getHostCountry()]),
                 'tooltip' => 'Tooltip',
             ),
             'code'                    => array(
@@ -1005,6 +1005,7 @@ class SamedayCourier extends CarrierModule
     /**
      * Save form data.
      * @throws Sameday\Exceptions\SamedaySDKException
+     *
      * @throws PrestaShopException
      */
     protected function postProcess()
@@ -1046,10 +1047,10 @@ class SamedayCourier extends CarrierModule
         }
 
         if (Tools::isSubmit('update_carriers')) {
-            $services = SamedayService::getServicesToDisplay();
+            $services = SamedayService::getEnabledServices();
 
-            // Deactivate unused Carriers
-            SamedayCarrierCore::deactivateCarriers(
+            // Remove unused Sameday Carriers
+            SamedayCarrierCore::removeCarriers(
                 array_filter(
                     SamedayCarrierCore::getSamedayCarrier(),
                     static function (array $carrier) use ($services) {
@@ -1062,7 +1063,7 @@ class SamedayCourier extends CarrierModule
                 )
             );
 
-            // Update
+            // Update Carriers
             $this->updateCarriers($services);
 
             $this->html .= $this->displayConfirmation($this->l('Carriers list successfully updated'));
@@ -1364,9 +1365,10 @@ class SamedayCourier extends CarrierModule
             $carrier = $this->updateCarrier($service, $carrier);
             if (false !== $carrier) {
                 $this->addGroups($carrier);
-                if (!$carrier->is_free) {
-                    $this->addRanges($carrier, $service);
-                }
+                $this->addRanges($carrier, $service);
+//                if (!$carrier->is_free) {
+//                    $this->addRanges($carrier, $service);
+//                }
 
                 SamedayService::updateCarrierId($service['id'], $carrier->id);
             }
@@ -1397,7 +1399,7 @@ class SamedayCourier extends CarrierModule
 
         // Refresh Ranges
         $ranges = [
-            0, 99999, $service['price']
+            [0, 99999, $service['price']]
         ];
         if (((float) $service['free_shipping_threshold']) > 0) {
             $ranges = array_merge(
