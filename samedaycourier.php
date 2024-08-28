@@ -1605,6 +1605,7 @@ class SamedayCourier extends CarrierModule
         $lockerId = null;
         $lockerName = null;
         $lockerAddress = null;
+        $oohType = null;
         $samedayOrderLockerId = null;
         if (false !== $service = SamedayService::findByCarrierId($order->id_carrier)) {
             $serviceId = $service['id_service'];
@@ -1669,7 +1670,9 @@ class SamedayCourier extends CarrierModule
                 'lockerAddress' => $lockerAddress,
                 'samedayOrderLockerId' => $samedayOrderLockerId,
                 'packageWeight' => $order->getTotalWeight() ?? 1,
-                'isPDOtoShow'   => $this->toggleHtmlElement($this->isServiceEligibleToPdo($service['service_optional_taxes'])),
+                'isPDOtoShow'   => $this->toggleHtmlElement(
+                    $this->isServiceEligibleToPdo($service['service_optional_taxes'])
+                ),
                 'isLastMileToShow' => $isLastMileToShow,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
                 'ajaxRoute'     => $this->ajaxRoute,
@@ -1990,7 +1993,6 @@ class SamedayCourier extends CarrierModule
         $customer = new CustomerCore($order->id_customer);
         $address = new AddressCore($order->id_address_delivery);
         $stateName = StateCore::getNameById($address->id_state);
-        $currency = $this->getDestCurrencyByDestCountryCode(strtolower(CountryCore::getIsoById($address->id_country)));
 
         $company = null;
         if (!empty($address->company)) {
@@ -2015,6 +2017,7 @@ class SamedayCourier extends CarrierModule
         ); 
 
         $lockerLastMileId = null;
+        $oohLastMileId = null;
         $lockerName = null;
         $lockerAddress = null;
         if (
@@ -2022,9 +2025,12 @@ class SamedayCourier extends CarrierModule
             && ('' !== Tools::getValue('locker_id'))
             && ('' !== Tools::getValue('locker_name'))
             && ('' !== Tools::getValue('locker_address'))
-            && ('' !== Tools::getValue('locker_ooh_type'))
         ) {
             $lockerLastMileId = (int) Tools::getValue('locker_id');
+            if ($service['code'] === SamedayConstants::PUDO_CODE) {
+                $oohLastMileId = (int) Tools::getValue('locker_id');
+            }
+
             $lockerName = Tools::getValue('locker_name');
             $lockerAddress = Tools::getValue('locker_address');
         }
@@ -2079,7 +2085,9 @@ class SamedayCourier extends CarrierModule
             '',
             null,
             $lockerLastMileId,
-            $currency
+            null,
+            $oohLastMileId,
+            $this->getDestCurrencyByDestCountryCode(strtolower(CountryCore::getIsoById($address->id_country)))
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
@@ -2128,6 +2136,7 @@ class SamedayCourier extends CarrierModule
                 $orderLocker->id_locker = $lockerLastMileId;
                 $orderLocker->name_locker = $lockerName;
                 $orderLocker->address_locker = $lockerAddress;
+                $orderLocker->service_code = $service['code'];
 
                 $orderLocker->save();
             }
