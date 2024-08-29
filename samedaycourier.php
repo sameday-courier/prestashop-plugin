@@ -1366,9 +1366,6 @@ class SamedayCourier extends CarrierModule
             if (false !== $carrier) {
                 $this->addGroups($carrier);
                 $this->addRanges($carrier, $service);
-//                if (!$carrier->is_free) {
-//                    $this->addRanges($carrier, $service);
-//                }
 
                 SamedayService::updateCarrierId($service['id'], $carrier->id);
             }
