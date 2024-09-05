@@ -2,7 +2,7 @@
 
 use \DbCore as Db;
 
-class SamedayCarrierCore extends Carrier
+class SamedayCarrierCore extends CarrierCore
 {
     public static function getSamedayCarrier(int $deleted = 0): array
     {
@@ -20,7 +20,7 @@ class SamedayCarrierCore extends Carrier
     /**
      * @param int $carrierId
      *
-     * @return false|SamedayCarrierCore
+     * @return false|CarrierCore
      */
     public static function findByCarrierId(int $carrierId)
     {
@@ -35,7 +35,7 @@ class SamedayCarrierCore extends Carrier
         } catch (Exception $exception) { return false; }
 
         if (null !== $instance) {
-            return new SamedayCarrierCore((int) $instance['id_carrier']);
+            return new CarrierCore((int) $instance['id_carrier']);
         }
 
         return false;
@@ -46,15 +46,13 @@ class SamedayCarrierCore extends Carrier
      *
      * @return void
      */
-    public static function deactivateCarriers(array $unusedCarriers): void
+    public static function removeCarriers(array $unusedCarriers)
     {
         foreach ($unusedCarriers as $carrier) {
+            /** @var false|CarrierCore $unusedCarrier */
             $unusedCarrier = self::findByCarrierId($carrier['id_carrier']);
             if (false !== $unusedCarrier) {
-                $unusedCarrier->active = false;
-                try {
-                    $unusedCarrier->save();
-                } catch (Exception $exception) { return; }
+                $unusedCarrier->delete();
             }
         }
     }

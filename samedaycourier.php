@@ -107,7 +107,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.7.0';
+        $this->version = '1.7.1';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -395,7 +395,7 @@ class SamedayCourier extends CarrierModule
      *
      * @throws PrestaShopException
      */
-    private function processSaveSamedayService(): void
+    private function processSaveSamedayService()
     {
         $id = Tools::getValue('id');
         $service = new SamedayService($id);
@@ -661,7 +661,7 @@ class SamedayCourier extends CarrierModule
     /**
      * @return void
      */
-    private function renderServicesList(): void
+    private function renderServicesList()
     {
         $services = SamedayService::getServicesToDisplay();
 
@@ -669,7 +669,7 @@ class SamedayCourier extends CarrierModule
             'name' => array(
                 'title'   => $this->l('Name'),
                 'orderby' => false,
-                'hint' => $this->l('Optiunea Ridicare Personala include ambele servicii LockerNextDay, respectiv Pudo !'),
+                'hint' => $this->l(SamedayConstants::OOH_POPUP_TITLE[$this->generalHelper->getHostCountry()]),
                 'tooltip' => 'Tooltip',
             ),
             'code'                    => array(
@@ -1005,6 +1005,7 @@ class SamedayCourier extends CarrierModule
     /**
      * Save form data.
      * @throws Sameday\Exceptions\SamedaySDKException
+     *
      * @throws PrestaShopException
      */
     protected function postProcess()
@@ -1046,10 +1047,10 @@ class SamedayCourier extends CarrierModule
         }
 
         if (Tools::isSubmit('update_carriers')) {
-            $services = SamedayService::getServicesToDisplay();
+            $services = SamedayService::getEnabledServices();
 
-            // Deactivate unused Carriers
-            SamedayCarrierCore::deactivateCarriers(
+            // Remove unused Sameday Carriers
+            SamedayCarrierCore::removeCarriers(
                 array_filter(
                     SamedayCarrierCore::getSamedayCarrier(),
                     static function (array $carrier) use ($services) {
@@ -1062,7 +1063,7 @@ class SamedayCourier extends CarrierModule
                 )
             );
 
-            // Update
+            // Update Carriers
             $this->updateCarriers($services);
 
             $this->html .= $this->displayConfirmation($this->l('Carriers list successfully updated'));
@@ -1354,7 +1355,7 @@ class SamedayCourier extends CarrierModule
      *
      * @return void
      */
-    private function updateCarriers($services): void
+    private function updateCarriers($services)
     {
         foreach ($services as $service) {
             if (false === $carrier = SamedayCarrierCore::findByCarrierId($service['id_carrier'])) {
@@ -1364,9 +1365,7 @@ class SamedayCourier extends CarrierModule
             $carrier = $this->updateCarrier($service, $carrier);
             if (false !== $carrier) {
                 $this->addGroups($carrier);
-                if (!$carrier->is_free) {
-                    $this->addRanges($carrier, $service);
-                }
+                $this->addRanges($carrier, $service);
 
                 SamedayService::updateCarrierId($service['id'], $carrier->id);
             }
@@ -1379,7 +1378,7 @@ class SamedayCourier extends CarrierModule
      *
      * @return void
      */
-    protected function addRanges($carrier, $service): void
+    protected function addRanges($carrier, $service)
     {
         // If already exist Ranges, remove it
         foreach (['carrier_zone', 'delivery', 'range_price'] as $table) {
@@ -1397,7 +1396,7 @@ class SamedayCourier extends CarrierModule
 
         // Refresh Ranges
         $ranges = [
-            0, 99999, $service['price']
+            [0, 99999, $service['price']]
         ];
         if (((float) $service['free_shipping_threshold']) > 0) {
             $ranges = array_merge(
@@ -1418,7 +1417,8 @@ class SamedayCourier extends CarrierModule
             );
         }
 
-        foreach ($ranges as [$from, $to, $price]) {
+        foreach ($ranges as $range) {
+            list($from, $to, $price) = $range;
             $rangePrice = new RangePriceCore();
             $rangePrice->id_carrier = $carrier->id;
             $rangePrice->delimiter1 = $from;
@@ -1512,7 +1512,7 @@ class SamedayCourier extends CarrierModule
      *
      * @return void
      */
-    protected function addGroups(CarrierCore $carrier): void
+    protected function addGroups(CarrierCore $carrier)
     {
         $carrier->setGroups([]);
         $groups_ids = [];
@@ -1602,6 +1602,7 @@ class SamedayCourier extends CarrierModule
         $lockerId = null;
         $lockerName = null;
         $lockerAddress = null;
+        $oohType = null;
         $samedayOrderLockerId = null;
         if (false !== $service = SamedayService::findByCarrierId($order->id_carrier)) {
             $serviceId = $service['id_service'];
@@ -1666,7 +1667,9 @@ class SamedayCourier extends CarrierModule
                 'lockerAddress' => $lockerAddress,
                 'samedayOrderLockerId' => $samedayOrderLockerId,
                 'packageWeight' => $order->getTotalWeight() ?? 1,
-                'isPDOtoShow'   => $this->toggleHtmlElement($this->isServiceEligibleToPdo($service['service_optional_taxes'])),
+                'isPDOtoShow'   => $this->toggleHtmlElement(
+                    $this->isServiceEligibleToPdo($service['service_optional_taxes'])
+                ),
                 'isLastMileToShow' => $isLastMileToShow,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
                 'ajaxRoute'     => $this->ajaxRoute,
@@ -1987,7 +1990,6 @@ class SamedayCourier extends CarrierModule
         $customer = new CustomerCore($order->id_customer);
         $address = new AddressCore($order->id_address_delivery);
         $stateName = StateCore::getNameById($address->id_state);
-        $currency = $this->getDestCurrencyByDestCountryCode(strtolower(CountryCore::getIsoById($address->id_country)));
 
         $company = null;
         if (!empty($address->company)) {
@@ -2012,6 +2014,7 @@ class SamedayCourier extends CarrierModule
         ); 
 
         $lockerLastMileId = null;
+        $oohLastMileId = null;
         $lockerName = null;
         $lockerAddress = null;
         if (
@@ -2019,9 +2022,12 @@ class SamedayCourier extends CarrierModule
             && ('' !== Tools::getValue('locker_id'))
             && ('' !== Tools::getValue('locker_name'))
             && ('' !== Tools::getValue('locker_address'))
-            && ('' !== Tools::getValue('locker_ooh_type'))
         ) {
             $lockerLastMileId = (int) Tools::getValue('locker_id');
+            if ($service['code'] === SamedayConstants::PUDO_CODE) {
+                $oohLastMileId = (int) Tools::getValue('locker_id');
+            }
+
             $lockerName = Tools::getValue('locker_name');
             $lockerAddress = Tools::getValue('locker_address');
         }
@@ -2076,7 +2082,9 @@ class SamedayCourier extends CarrierModule
             '',
             null,
             $lockerLastMileId,
-            $currency
+            null,
+            $oohLastMileId,
+            $this->getDestCurrencyByDestCountryCode(strtolower(CountryCore::getIsoById($address->id_country)))
         );
 
         if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
@@ -2125,6 +2133,7 @@ class SamedayCourier extends CarrierModule
                 $orderLocker->id_locker = $lockerLastMileId;
                 $orderLocker->name_locker = $lockerName;
                 $orderLocker->address_locker = $lockerAddress;
+                $orderLocker->service_code = $service['code'];
 
                 $orderLocker->save();
             }

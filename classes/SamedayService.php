@@ -135,7 +135,13 @@ class SamedayService extends ObjectModel
 
     public static function getAllServices()
     {
-        return Db::getInstance()->executeS('SELECT * FROM ' . _DB_PREFIX_ . self::TABLE_NAME);
+        return Db::getInstance()->executeS(
+            sprintf(
+                "SELECT * FROM %s WHERE live_mode='%s'",
+                _DB_PREFIX_ . self::TABLE_NAME,
+                Configuration::get('SAMEDAY_LIVE_MODE', 0)
+            )
+        );
     }
 
     /**
@@ -168,6 +174,19 @@ class SamedayService extends ObjectModel
                 && !$generalHelper->isNotInUseService($service['code'])
             ;
         });
+    }
+
+    /**
+     * @return array
+     */
+    public static function getEnabledServices(): array
+    {
+        return array_filter(
+            self::getServicesToDisplay(),
+            static function ($service) {
+                return true === (bool) $service['status'];
+            }
+        );
     }
 
     /**
