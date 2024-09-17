@@ -26,7 +26,7 @@
 
 {include file='./_partials/checkout_lockers.tpl'}
 <div class="col-sm-2">
-    {l s='Select locker' mod='samedaycourier'}
+    {l s='Select location' mod='samedaycourier'}
 </div>
 <div class="col-sm-8">
     <button type="button" style="display:inline-block"

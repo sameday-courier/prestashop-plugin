@@ -27,10 +27,10 @@
     <table class="resume table table-bordered">
         <tbody>
             <tr>
-                <td>{l s='Select locker' mod='samedaycourier'}</td>
+                <td>{l s='Select location' mod='samedaycourier'}</td>
                 <td>
                     <select name="samedaycourier_locker_id" id="lockerIdSelector">
-                        <option value=""> {l s='Select locker' mod='samedaycourier'} </option>
+                        <option value=""> {l s='Select location' mod='samedaycourier'} </option>
                         {foreach from=$lockers key=city item = cityLockers}
                             <optgroup label="{$city|escape:'htmlall':'UTF-8'}">
                             {foreach from=$cityLockers item=locker}
