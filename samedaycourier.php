@@ -2002,15 +2002,15 @@ class SamedayCourier extends CarrierModule
             );
         }
 
-        if ('' || null === $phone = !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone) {
+        if ('' === $phone = !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone) {
             $this->addMessage('danger', [$this->l('Must complete phone number!')]);
-
-            return null;
         }
 
-        if ('' || null === $email = $customer->email) {
+        if ('' === $email = $customer->email ?? '') {
             $this->addMessage('danger', [$this->l('Must complete email!')]);
+        }
 
+        if (!empty($this->messages)) {
             return null;
         }
 
