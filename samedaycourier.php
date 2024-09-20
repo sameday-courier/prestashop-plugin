@@ -107,7 +107,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.7.1';
+        $this->version = '1.7.2';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -2002,13 +2002,25 @@ class SamedayCourier extends CarrierModule
             );
         }
 
+        if ('' === $phone = !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone) {
+            $this->addMessage('danger', [$this->l('Must complete phone number!')]);
+        }
+
+        if ('' === $email = $customer->email ?? '') {
+            $this->addMessage('danger', [$this->l('Must complete email!')]);
+        }
+
+        if (!empty($this->messages)) {
+            return null;
+        }
+
         $recipient = new \Sameday\Objects\PostAwb\Request\AwbRecipientEntityObject(
             $address->city,
             $stateName,
             trim($address->address1 . ' ' . $address->address2),
             $address->firstname . ' ' . $address->lastname,
-            !empty($address->phone_mobile) ? $address->phone_mobile : $address->phone,
-            $customer->email,
+            $phone,
+            $email,
             $company,
             (!empty($address->postcode)) ? $address->postcode : null
         ); 

@@ -447,7 +447,7 @@
                                         id="select_locker"
                                         style="margin-left: 0px !important; margin-top: 10px;"
                                 >
-                                    {l s='Change locker' mod='samedaycourier'}
+                                    {l s='Change location' mod='samedaycourier'}
                                 </button>
                             </div>
                         </div>
