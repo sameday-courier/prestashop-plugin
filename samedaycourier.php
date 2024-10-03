@@ -223,6 +223,7 @@ class SamedayCourier extends CarrierModule
     /**
      * Load the configuration form
      */
+
     public function getContent()
     {
         $this->html = '';
@@ -1673,7 +1674,7 @@ class SamedayCourier extends CarrierModule
                 'isLastMileToShow' => $isLastMileToShow,
                 'isOpenPackage' => ((int) SamedayOpenPackage::checkOrderIfIsOpenPackage($order->id)) > 0,
                 'ajaxRoute'     => $this->ajaxRoute,
-                'messages' => $this->messages,
+                'messages' => $this->messages
             )
         );
 

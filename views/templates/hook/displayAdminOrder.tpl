@@ -22,6 +22,13 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  * International Registered Trademark & Property of PrestaShop SA
  *}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<style>
+    .select2{
+        width: 100% !important;
+    }
+</style>
 <script src="https://cdn.sameday.ro/locker-plugin/lockerpluginsdk.js"></script>
 {if $messages|count}
     {foreach from=$messages item=message}
@@ -509,6 +516,11 @@
 
         </div>
     </div>
+<script>
+    $(document).ready(function() {
+        $('#input-status-sameday-pickup_point').select2();
+    });
+</script>
 <script type="text/javascript">
     $(document).ready(function () {
         $('#plus-btn').click(function (e) {
