@@ -516,11 +516,6 @@
 
         </div>
     </div>
-<script>
-    $(document).ready(function() {
-        $('#input-status-sameday-pickup_point').select2();
-    });
-</script>
 <script type="text/javascript">
     $(document).ready(function () {
         $('#plus-btn').click(function (e) {
@@ -544,6 +539,7 @@
 
             $(this).attr('submitted', true);
         });
+        $('#input-status-sameday-pickup_point').select2();
     });
     </script>
 {/if}
