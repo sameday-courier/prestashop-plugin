@@ -19,6 +19,21 @@ include(dirname(__FILE__).'/../../config/config.inc.php');
 include(dirname(__FILE__).'/../../init.php');
 include __DIR__ . '/classes/autoload.php';
 
+if (Tools::getValue('action') === 'change_county') {
+    if (Tools::getValue('token') !== Tools::getAdminToken('Samedaycourier')) {
+        die('Bad request!');
+    }
+
+    header('Content-Type: application/json');
+    die(
+        json_encode(
+            [
+                'cities' => (new SamedayApiHelper())->getSamedayCities(Tools::getValue('county_id'))
+            ]
+        )
+    );
+}
+
 if (Tools::getValue('action') === 'store_locker') {
     if (Tools::getValue('token') !== Tools::getAdminToken('Samedaycourier')) {
         die('Bad request!');

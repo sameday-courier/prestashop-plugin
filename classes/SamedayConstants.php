@@ -77,6 +77,12 @@ final class SamedayConstants
         self::API_HOST_LOCALE_HU => 'Ez az opció magában foglalja a LockerNextDay és a PUDO szolgáltatást is!',
     ];
 
+    const DEFAULTS_COUNTRIES = [
+        self::API_HOST_LOCALE_RO => ["value" => "187", "label" => "Romania"],
+        self::API_HOST_LOCALE_BG => ["value" => "34", "label" => "Bulgaria"],
+        self::API_HOST_LOCALE_HU => ["value" => "237", "label" => "Hungary"],
+    ];
+
     const SAMEDAY_ENVS = [
         self::API_HOST_LOCALE_RO => [
             self::LIVE_MODE => 'https://api.sameday.ro',
@@ -93,7 +99,6 @@ final class SamedayConstants
     ];
 
     const DEFAULT_HOST_COUNTRY = 'ro';
-
     const TOGGLE_HTML_ELEMENT = [
         'show' => 'block',
         'hide' => 'none',
