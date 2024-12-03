@@ -29,7 +29,12 @@ class SamedayCourier extends CarrierModule
     /**
      * @var SamedayGeneralHelper $generalHelper
      */
-    private $generalHelper;
+    protected $generalHelper;
+
+    /**
+     * @var SamedayApiHelper $samedayApiHelper
+     */
+    protected $samedayApiHelper;
 
     /**
      * @var array
@@ -107,7 +112,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.7.3';
+        $this->version = '1.7.4';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -125,6 +130,7 @@ class SamedayCourier extends CarrierModule
         $this->messages = array();
         $this->ajaxRoute = $this->baseUrl()._MODULE_DIR_.'samedaycourier/ajax.php?token=' . Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10);
         $this->generalHelper = new SamedayGeneralHelper();
+        $this->samedayApiHelper = new SamedayApiHelper();
     }
 
     private function getMajorVersion(): int
@@ -234,6 +240,10 @@ class SamedayCourier extends CarrierModule
             return $this->renderServiceForm();
         }
 
+        if (Tools::isSubmit('deletesameday_pickup_points')) {
+            $this->deletePickupPoint();
+        }
+
         $this->context->smarty->assign('module_dir', $this->_path);
         $this->context->smarty->assign('action_url', $this->context->link->getAdminLink('AdminModules', false)
             . '&configure=' . $this->name . '&tab_module=' . $this->tab . '&module_name=' . $this->name);
@@ -251,50 +261,11 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @param $user
-     * @param $password
-     * @param $urlEnv
-     * @param $testingMode
-     * @return Sameday\SamedayClient
-     * @throws Sameday\Exceptions\SamedaySDKException
-     */
-    private function getSamedayClient($user = null, $password = null, $urlEnv = null, $testingMode = null): Sameday\SamedayClient
-    {
-        if ($user === null) {
-            $user = Configuration::get('SAMEDAY_ACCOUNT_USER');
-        }
-
-        if ($password === null) {
-            $password = Configuration::get('SAMEDAY_ACCOUNT_PASSWORD');
-        }
-
-        if ($testingMode === null) {
-            $testingMode = (Configuration::get('SAMEDAY_LIVE_MODE')) ?: SamedayConstants::DEMO_MODE;
-        }
-
-        $country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ?: SamedayConstants::API_HOST_LOCALE_RO;
-
-        if ($urlEnv === null) {
-            $urlEnv = SamedayConstants::SAMEDAY_ENVS[$country][$testingMode];
-        }
-
-        return new Sameday\SamedayClient(
-            $user,
-            $password,
-            $urlEnv,
-            'Prestashop',
-            _PS_VERSION_,
-            'curl',
-            new SamedayPersistenceDataHandler()
-        );
-    }
-
-    /**
      * @throws Sameday\Exceptions\SamedaySDKException
      */
     private function importServices()
     {
-        $client = $this->getSamedayClient();
+        $client = $this->samedayApiHelper->getSamedayClient();
 
         $remoteServices = [];
         $page = 1;
@@ -784,7 +755,7 @@ class SamedayCourier extends CarrierModule
         $helper->listTotal = count($pickupPoints);
         $helper->identifier = 'id_pickup_point';
         $helper->table = SamedayPickupPoint::TABLE_NAME;
-        $helper->actions = array();
+        $helper->actions = array('delete');
         $helper->show_toolbar = true;
         $helper->module = $this;
         $helper->title = $this->l('Pickup Points');
@@ -792,7 +763,25 @@ class SamedayCourier extends CarrierModule
         $helper->token = Tools::getAdminTokenLite('AdminModules');
         $helper->currentIndex = $this->currentIndex;
 
+        $this->html .= $this->generateAddPickupPointForm();
+
         $this->html .= $helper->generateList($pickupPoints, $fields);
+    }
+
+    /**
+     * @return string
+     */
+    private function generateAddPickupPointForm(): string
+    {
+        $this->context->smarty->assign([
+            'countries' => [SamedayConstants::DEFAULTS_COUNTRIES[$this->generalHelper->getHostCountry()]],
+            'counties' => $this->samedayApiHelper->getSamedayCounties(),
+            'cities' => $this->samedayApiHelper->getSamedayCities(),
+            'token' => Tools::getAdminToken('Samedaycourier'),
+            'changeCountyAction' => $this->ajaxRoute,
+        ]);
+
+        return $this->display(__FILE__, 'views/templates/admin/addNewPickupPoint.tpl');
     }
 
     /**
@@ -1047,6 +1036,10 @@ class SamedayCourier extends CarrierModule
             $this->processSaveSamedayService();
         }
 
+        if (Tools::isSubmit('add_new_pickup_point')) {
+            $this->addNewPickupPoint();
+        }
+
         if (Tools::isSubmit('update_carriers')) {
             $services = SamedayService::getEnabledServices();
 
@@ -1078,7 +1071,7 @@ class SamedayCourier extends CarrierModule
      */
     private function importPickupPoints()
     {
-        $client = $this->getSamedayClient();
+        $client = $this->samedayApiHelper->getSamedayClient();
         $sameday = new \Sameday\Sameday($client);
 
         $remotePickupPoints = [];
@@ -1111,7 +1104,7 @@ class SamedayCourier extends CarrierModule
                 }
 
                 $pickupPoint->id_pickup_point = $pickupPointObject->getId();
-                $pickupPoint->sameday_alias = $pickupPointObject->getAlias();
+                $pickupPoint->sameday_alias = $this->generalHelper->sanitizeInput($pickupPointObject->getAlias());
                 $pickupPoint->county = $pickupPointObject->getCounty()->getName();
                 $pickupPoint->city = $pickupPointObject->getCity()->getName();
                 $pickupPoint->address = $pickupPointObject->getAddress();
@@ -1151,7 +1144,7 @@ class SamedayCourier extends CarrierModule
      */
     public function importLockers()
     {
-        $client = $this->getSamedayClient();
+        $client = $this->samedayApiHelper->getSamedayClient();
         $sameday = new \Sameday\Sameday($client);
 
         $remoteLockers = [];
@@ -1297,7 +1290,7 @@ class SamedayCourier extends CarrierModule
         $pickupPoint = SamedayPickupPoint::getDefaultPickupPoint();
         $weight = $params->getTotalWeight() < 1 ? 1 : $params->getTotalWeight();
 
-        $sameday = new \Sameday\Sameday($this->getSamedayClient());
+        $sameday = new \Sameday\Sameday($this->samedayApiHelper->getSamedayClient());
         $request = new \Sameday\Requests\SamedayPostAwbEstimationRequest(
             $pickupPoint['id_pickup_point'],
             null,
@@ -1603,7 +1596,6 @@ class SamedayCourier extends CarrierModule
         $lockerId = null;
         $lockerName = null;
         $lockerAddress = null;
-        $oohType = null;
         $samedayOrderLockerId = null;
         if (false !== $service = SamedayService::findByCarrierId($order->id_carrier)) {
             $serviceId = $service['id_service'];
@@ -1967,6 +1959,90 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
+     * @return void
+     *
+     * @throws Exception
+     */
+    public function addNewPickupPoint()
+    {
+        $form = Tools::getAllValues();
+
+        try {
+            $samedayClient = new \Sameday\Sameday($this->samedayApiHelper->getSamedayClient());
+        } catch (Exception $exception) {
+            $this->addMessage('danger', $this->l($exception->getMessage()));
+            return;
+        }
+
+        $pickupPointRequest = new \Sameday\Requests\SamedayPostPickupPointRequest(
+            $form['country'],
+            $form['county'],
+            $form['city'],
+            $form['address'],
+            $form['postalCode'],
+            $form['alias'],
+            [
+                new \Sameday\Objects\PickupPoint\PickupPointContactPersonObject(
+                    $form['contactPerson'],
+                    $form['contactPersonPhone'],
+                    true
+                )
+            ],
+            filter_var($form['isDefault'], FILTER_VALIDATE_BOOLEAN)
+        );
+
+        try {
+            $newPickupPoint = $samedayClient->postPickupPoint($pickupPointRequest);
+        } catch (\Sameday\Exceptions\SamedayBadRequestException $exception) {
+            $this->addMessage('danger', implode(',', $exception->getErrors()));
+            return;
+        } catch (Exception $exception) {
+            $this->addMessage('danger', $this->l($exception->getMessage()));
+            return;
+        }
+
+        $this->addMessage(
+            'success',
+            $this->l("Pickup point {$newPickupPoint->getPickupPointId()} created successfully!")
+        );
+    }
+
+    public function deletePickupPoint()
+    {
+        if (0 === $pickupPointId = (int) Tools::getValue('id_pickup_point')) {
+            $this->addMessage('danger', $this->l('Pickup point not found!'));
+            return;
+        }
+
+        try {
+            $samedayClient = new Sameday\Sameday($this->samedayApiHelper->getSamedayClient());
+        } catch (Exception $exception) {
+            $this->addMessage('danger', $this->l($exception->getMessage()));
+            return;
+        }
+
+        try {
+            $samedayClient->deletePickupPoint(new \Sameday\Requests\SamedayDeletePickupPointRequest($pickupPointId));
+        } catch (\Sameday\Exceptions\SamedayBadRequestException $exception) {
+            $this->addMessage('danger', implode(',', $exception->getErrors()));
+            return;
+        } catch (Exception $exception) {
+            $this->addMessage('danger', $this->l($exception->getMessage()));
+            return;
+        }
+
+        try {
+            $samedayPickupPoint = new SamedayPickupPoint($pickupPointId);
+            $samedayPickupPoint->delete();
+        } catch (Exception $exception) {
+            $this->addMessage('danger', $this->l($exception->getMessage()));
+            return;
+        }
+
+        $this->addMessage('success', $this->l('Pickup point deleted!'));
+    }
+
+    /**
      * @param $order
      *
      * @return SamedayAwb|null
@@ -2106,7 +2182,7 @@ class SamedayCourier extends CarrierModule
         }
 
         try {
-            $sameday = new \Sameday\Sameday($this->getSamedayClient());
+            $sameday = new \Sameday\Sameday($this->samedayApiHelper->getSamedayClient());
             $response = $sameday->postAwb($request);
             $samedayAwb = new SamedayAwb();
             $samedayAwb->id_order = $order->id;
@@ -2189,7 +2265,7 @@ class SamedayCourier extends CarrierModule
         $width = Tools::getValue('sameday_package_width');
         $observation = Tools::getValue('sameday_observation');
 
-        $sameday = new \Sameday\Sameday($this->getSamedayClient());
+        $sameday = new \Sameday\Sameday($this->samedayApiHelper->getSamedayClient());
 
         $request = new \Sameday\Requests\SamedayPostParcelRequest(
             $awb['awb_number'],
@@ -2226,7 +2302,7 @@ class SamedayCourier extends CarrierModule
     {
         try {
             $awb = SamedayAwb::getOrderAwb($order);
-            $sameday = new Sameday\Sameday($this->getSamedayClient());
+            $sameday = new Sameday\Sameday($this->samedayApiHelper->getSamedayClient());
 
             if (SamedayAwb::cancelAwbByOrderId($order)) {
                 SamedayAwbParcel::deleteAwbParcels($awb['id']);
@@ -2265,7 +2341,7 @@ class SamedayCourier extends CarrierModule
     private function downloadAwb($order)
     {
         $awb = SamedayAwb::getOrderAwb($order);
-        $sameday = new Sameday\Sameday($this->getSamedayClient());
+        $sameday = new Sameday\Sameday($this->samedayApiHelper->getSamedayClient());
         $request = new Sameday\Requests\SamedayGetAwbPdfRequest(
             $awb['awb_number'],
             new Sameday\Objects\Types\AwbPdfType(Configuration::get('SAMEDAY_AWB_PDF_FORMAT'))
@@ -2323,7 +2399,7 @@ class SamedayCourier extends CarrierModule
         string $url
     ): bool
     {
-        $client = $this->getSamedayClient(
+        $client = $this->samedayApiHelper->getSamedayClient(
             $username,
             $password,
             $url,
