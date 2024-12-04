@@ -2193,7 +2193,12 @@ class SamedayCourier extends CarrierModule
 
         $request = new \Sameday\Requests\SamedayPostParcelRequest(
             $awb['awb_number'],
-            new \Sameday\Objects\ParcelDimensionsObject($weight, $width, $length, $height),
+            new \Sameday\Objects\ParcelDimensionsObject(
+                (float) $weight,
+                (float) $width,
+                (float) $length,
+                (float) $height
+            ),
             $position,
             $observation
         );
@@ -2216,6 +2221,11 @@ class SamedayCourier extends CarrierModule
             $response = json_decode($e->getRawResponse()->getBody());
             $this->addMessage('danger', $response->error->message);
             $this->log($e->getRawResponse()->getBody(), SamedayConstants::ERROR);
+        } catch (\Sameday\Exceptions\SamedayBadRequestException $exception) {
+            $this->addMessage('danger', $this->generalHelper->buildErrorMessage($exception->getErrors()));
+            $this->log($exception->getRawResponse()->getBody(), SamedayConstants::ERROR);
+        } catch (Exception $exception) {
+            $this->log($exception->getMessage(), SamedayConstants::ERROR);
         }
     }
 

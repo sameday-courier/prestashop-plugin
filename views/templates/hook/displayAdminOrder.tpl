@@ -101,41 +101,46 @@
                                             <tr>
                                                 <td>
                                                     <input type="number" name="sameday_package_weight[]"
-                                                           value="{$packageWeight|escape:'html':'UTF-8'}"
-                                                           min="0.1"
-                                                           placeholder="Weight"
-                                                           id="input-weight"
-                                                           class="form-control input-number weight"
-                                                           step="any"
-                                                           required
+                                                       value="{$packageWeight|escape:'html':'UTF-8'}"
+                                                       min="0.1"
+                                                       placeholder="Weight"
+                                                       id="input-weight"
+                                                       class="form-control input-number weight"
+                                                       step="any"
+                                                       required
                                                     >
                                                 </td>
                                                 <td>
                                                     <input type="number" name="sameday_package_width[]"
-                                                           value=""
-                                                           min="0"
-                                                           placeholder="Width"
-                                                           id="input-width"
-                                                           class="form-control input-number"
+                                                       value=""
+                                                       min="0"
+                                                       placeholder="Width"
+                                                       id="input-width"
+                                                       step="any"
+                                                       class="form-control input-number"
                                                     >
                                                 </td>
                                             </tr>
                                             <tr>
                                                 <td>
                                                     <input type="number" name="sameday_package_length[]"
-                                                           value=""
-                                                           min="0"
-                                                           placeholder="Length"
-                                                           id="input-length"
-                                                           class="form-control input-number">
+                                                       value=""
+                                                       min="0"
+                                                       placeholder="Length"
+                                                       id="input-length"
+                                                       step="any"
+                                                       class="form-control input-number"
+                                                    >
                                                 </td>
                                                 <td>
                                                     <input type="number" name="sameday_package_height[]"
-                                                           value=""
-                                                           min="0"
-                                                           placeholder="Height"
-                                                           id="input-height"
-                                                           class="form-control input-number">
+                                                       value=""
+                                                       min="0"
+                                                       placeholder="Height"
+                                                       id="input-height"
+                                                       step="any"
+                                                       class="form-control input-number"
+                                                    >
                                                 </td>
                                             </tr>
                                         </table>
