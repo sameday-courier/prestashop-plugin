@@ -112,7 +112,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.7.4';
+        $this->version = '1.7.5';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -184,7 +184,8 @@ class SamedayCourier extends CarrierModule
             $this->registerHook($hookDisplayAdminOrder) &&
             $this->registerHook('actionValidateOrder') &&
             $this->registerHook('actionCarrierProcess') &&
-            $this->registerHook('actionValidateStepComplete')
+            $this->registerHook('actionValidateStepComplete') &&
+            $this->registerHook('displayHeader')
         ;
     }
 
@@ -212,6 +213,7 @@ class SamedayCourier extends CarrierModule
         Configuration::deleteByName('SAMEDAY_LAST_LOCKERS');
         Configuration::deleteByName('SAMEDAY_TOKEN');
         Configuration::deleteByName('SAMEDAY_TOKEN_EXPIRES_AT');
+        Configuration::deleteByName('SAMEDAY_USE_NOMENCLATOR');
 
         $services = SamedayService::getAllServices();
         foreach ($services as $service) {
@@ -360,6 +362,45 @@ class SamedayCourier extends CarrierModule
         }
 
         $this->addMessage('success', $this->l('The services were successfully imported'));
+    }
+
+
+    private function importCities(){
+
+        $client = $this->samedayApiHelper->getSamedayClient();
+        $countryId = Context::getContext()->country->id;
+
+        $remoteCities = [];
+        $page = 1;
+
+        do {
+            $citiesRequest = new \Sameday\Requests\SamedayGetCitiesRequest();
+            $citiesRequest->setPage($page++);
+
+            $sameday = new \Sameday\Sameday($client);
+
+            try {
+                $response = $sameday->getCities($citiesRequest);
+                $cities = $response->getCities();
+                foreach($cities as $city){
+                    $cityName = $city->getName();
+                    $countyCode = $city->getCounty()->getCode();
+                    $stateId = SamedayCities::getStateByIso($countyCode, $countryId);
+                    $data = array(
+                        'city_name' => $cityName,
+                        'county_id' => $stateId['id_state']
+                    );
+                    SamedayCities::addCity($data);
+                }
+
+            } catch (Exception $e) {
+                $this->addMessage('danger', $e->getMessage());
+                $this->log($e->getMessage(), SamedayConstants::ERROR);
+
+                return;
+            }
+        } while ($page <= $response->getPages());
+
     }
 
     /**
@@ -567,6 +608,25 @@ class SamedayCourier extends CarrierModule
                             ),
                         ),
                     ),
+                    array(
+                        'type'    => 'switch',
+                        'label'   => $this->l('Use nomenclator'),
+                        'name'    => 'SAMEDAY_USE_NOMENCLATOR',
+                        'desc'    => $this->l('Use internally imported locations for better performance during the checkout process'),
+                        'is_bool' => true,
+                        'values'  => array(
+                            array(
+                                'id'    => 'active_on',
+                                'value' => true,
+                                'label' => $this->l('Enabled'),
+                            ),
+                            array(
+                                'id'    => 'active_off',
+                                'value' => false,
+                                'label' => $this->l('Disabled'),
+                            )
+                        )
+                    ),
                 ),
                 'submit'  => array(
                     'title' => $this->l('Save'),
@@ -626,6 +686,10 @@ class SamedayCourier extends CarrierModule
             'SAMEDAY_AWB_PDF_FORMAT'   => Tools::getValue(
                 'SAMEDAY_AWB_PDF_FORMAT',
                 Configuration::get('SAMEDAY_AWB_PDF_FORMAT', null)
+            ),
+            'SAMEDAY_USE_NOMENCLATOR' => Tools::getValue(
+                'SAMEDAY_USE_NOMENCLATOR',
+                Configuration::get('SAMEDAY_USE_NOMENCLATOR', null)
             ),
         );
     }
@@ -762,6 +826,7 @@ class SamedayCourier extends CarrierModule
         $helper->shopLinkType = '';
         $helper->token = Tools::getAdminTokenLite('AdminModules');
         $helper->currentIndex = $this->currentIndex;
+
 
         $this->html .= $this->generateAddPickupPointForm();
 
@@ -1015,6 +1080,7 @@ class SamedayCourier extends CarrierModule
                 // Import local data Services and PickupPoints
                 $this->importServices();
                 $this->importPickupPoints();
+                $this->importCities();
             } else {
                 $this->addMessage('danger', $this->l('Connection failed! Verify your credentials and try again later!'));
             }
@@ -1213,6 +1279,7 @@ class SamedayCourier extends CarrierModule
             }
         }
     }
+
 
     /**
      * @param $params
@@ -1956,6 +2023,20 @@ class SamedayCourier extends CarrierModule
             $this->context->controller->errors[] = $this->l('Please select your easyBox from lockers map !');
             $params['completed']  = false;
         }
+    }
+
+    public function hookDisplayHeader(){
+
+        $this->context->smarty->assign([
+            'ajaxroute' => $this->ajaxRoute,
+            'token' => Tools::getAdminToken('Samedaycourier'),
+            'nomenclator' => Configuration::get('SAMEDAY_USE_NOMENCLATOR')
+        ]);
+
+        $this->context->controller->addJS($this->_path.'views/js/checkoutHandle.js');
+
+        return $this->display(__FILE__, 'views/templates/front/header.tpl');
+
     }
 
     /**

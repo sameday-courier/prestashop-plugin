@@ -34,6 +34,18 @@ if (Tools::getValue('action') === 'change_county') {
     );
 }
 
+if (Tools::getValue('action') === 'CitiesAjax') {
+    if (Tools::getValue('token') !== Tools::getAdminToken('Samedaycourier')) {
+        die('Bad request!');
+    }
+//    header('Content-Type: application/json');
+    $cities = SamedayCities::getCitiesByCountyId(Tools::getValue('county_id'));
+    die(
+        json_encode($cities)
+    );
+
+}
+
 if (Tools::getValue('action') === 'store_locker') {
     if (Tools::getValue('token') !== Tools::getAdminToken('Samedaycourier')) {
         die('Bad request!');
