@@ -27,6 +27,9 @@ class SamedayCities extends ObjectModel
     /** @var integer */
     public $county_id;
 
+    /** @var integer */
+    public $sdk_id;
+
     /** @var array */
     public static $definition = array(
         'table'          => self::TABLE_NAME,
@@ -36,6 +39,7 @@ class SamedayCities extends ObjectModel
         'fields'         => array(
             'city_name'   => array('type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'),
             'county_id'   => array('type' => self::TYPE_INT, 'required' => true, 'validate' => 'isUnsignedInt'),
+            'sdk_id'      => array('type' => self::TYPE_INT, 'required' => true, 'validate' => 'isUnsignedInt'),
         ),
     );
 
@@ -43,26 +47,28 @@ class SamedayCities extends ObjectModel
         return DB::getInstance()->executeS("SELECT * FROM ps_state WHERE id_country = 36");
     }
 
-    public static function addCity($data){
+    public static function updateCity($data){
+        // Check if a city with the same sdk_id already exists
+        $exists = DB::getInstance()->getRow('SELECT id FROM ' . _DB_PREFIX_ . self::TABLE_NAME . ' WHERE sdk_id = ' . (int)$data['sdk_id']);
+
+        // If the entry already exists, return false
+        if ($exists > 0) {
+            return false;
+        }
+
+        // Proceed with adding the entry if it doesn't exist
         return DB::getInstance()->insert(
             self::TABLE_NAME,
             array(
                 'city_name' => $data['city_name'],
                 'county_id' => (int)$data['county_id'],
+                'sdk_id' => (int)$data['sdk_id'],
             )
         );
     }
 
-    public static function updateCity($city_name, $county_id, $id)
-    {
-        return Db::getInstance()->update(
-            self::TABLE_NAME,
-            array(
-                'city_name' => $city_name,
-                'county_id' => $county_id
-            ),
-            'id =' . (int) $id
-        );
+    public static function dropCities(){
+        return DB::getInstance()->execute('TRUNCATE TABLE ' . _DB_PREFIX_ . self::TABLE_NAME);
     }
 
     public static function getStateByIso($countyCode, $countryId){
@@ -71,6 +77,10 @@ class SamedayCities extends ObjectModel
 
     public static function getCitiesByCountyId($countyId){
         return DB::getInstance()->executeS("SELECT * FROM ps_sameday_cities WHERE county_id = '$countyId'");
+    }
+
+    public static function getCountryIdByIso($countryIsoCode){
+        return DB::getInstance()->getRow("SELECT * FROM ps_country WHERE iso_code = '$countryIsoCode'");
     }
 
 

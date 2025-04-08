@@ -5,28 +5,31 @@ document.addEventListener('DOMContentLoaded', function() {
         let token = document.getElementById('token').value;
 
         let countyElement = document.getElementById('id_state');
-        countyElement.addEventListener("change", function () {
-            let county = countyElement.value;
-            $.ajax({
-                type: "POST",
-                url: ajaxRoute,
-                data: {
-                    action: 'CitiesAjax',
-                    county_id: county,
-                    token: token
-                },
-                success: function (response) {
-                    let arr = JSON.parse(response);
-                    let html = '';
-                    arr.forEach((item) => html += '<option value="' + item['city_name'] + '">' + item['city_name'] + '</option>');
-                    $('[name="city"]').html(html);
-                },
-                error: function (xhr, status, error) {
-                    console.error('AJAX Error:', error);
-                }
-            });
+        if(countyElement){
+            countyElement.addEventListener("change", function () {
+                let county = countyElement.value;
+                $.ajax({
+                    type: "POST",
+                    url: ajaxRoute,
+                    data: {
+                        action: 'CitiesAjax',
+                        county_id: county,
+                        token: token
+                    },
+                    success: function (response) {
+                        let arr = JSON.parse(response);
+                        let html = '';
+                        arr.forEach((item) => html += '<option value="' + item['city_name'] + '">' + item['city_name'] + '</option>');
+                        $('[name="city"]').html(html);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('AJAX Error:', error);
+                    }
+                });
 
-        });
+            });
+        }
+
         var cityInput = document.querySelector("input[name=\'city\']");
         if (cityInput) {
             var select = document.createElement('select');

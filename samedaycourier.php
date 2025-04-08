@@ -251,6 +251,7 @@ class SamedayCourier extends CarrierModule
             . '&configure=' . $this->name . '&tab_module=' . $this->tab . '&module_name=' . $this->name);
 
         $this->renderForm();
+        $this->renderNomenclatorOptions();
         $this->renderServicesList();
         $this->renderPickupPointsList();
         $this->renderLockersList();
@@ -362,45 +363,6 @@ class SamedayCourier extends CarrierModule
         }
 
         $this->addMessage('success', $this->l('The services were successfully imported'));
-    }
-
-
-    private function importCities(){
-
-        $client = $this->samedayApiHelper->getSamedayClient();
-        $countryId = Context::getContext()->country->id;
-
-        $remoteCities = [];
-        $page = 1;
-
-        do {
-            $citiesRequest = new \Sameday\Requests\SamedayGetCitiesRequest();
-            $citiesRequest->setPage($page++);
-
-            $sameday = new \Sameday\Sameday($client);
-
-            try {
-                $response = $sameday->getCities($citiesRequest);
-                $cities = $response->getCities();
-                foreach($cities as $city){
-                    $cityName = $city->getName();
-                    $countyCode = $city->getCounty()->getCode();
-                    $stateId = SamedayCities::getStateByIso($countyCode, $countryId);
-                    $data = array(
-                        'city_name' => $cityName,
-                        'county_id' => $stateId['id_state']
-                    );
-                    SamedayCities::addCity($data);
-                }
-
-            } catch (Exception $e) {
-                $this->addMessage('danger', $e->getMessage());
-                $this->log($e->getMessage(), SamedayConstants::ERROR);
-
-                return;
-            }
-        } while ($page <= $response->getPages());
-
     }
 
     /**
@@ -849,6 +811,14 @@ class SamedayCourier extends CarrierModule
         return $this->display(__FILE__, 'views/templates/admin/addNewPickupPoint.tpl');
     }
 
+    private function renderNomenclatorOptions(){
+        $this->smarty->assign([
+            'ajaxurl' => sprintf('%s%ssamedaycourier/ajax.php?token=%s', $this->baseUrl(), _MODULE_DIR_, Tools::getAdminToken('Samedaycourier'))
+        ]);
+        $this->context->controller->addJS($this->_path.'views/js/adminNomenclator.js');
+        $this->html .= $this->display(__FILE__, 'views/templates/admin/nomenclatorOptions.tpl');
+    }
+
     /**
      * @throws PrestaShopDatabaseException
      */
@@ -1080,7 +1050,6 @@ class SamedayCourier extends CarrierModule
                 // Import local data Services and PickupPoints
                 $this->importServices();
                 $this->importPickupPoints();
-                $this->importCities();
             } else {
                 $this->addMessage('danger', $this->l('Connection failed! Verify your credentials and try again later!'));
             }
@@ -2027,15 +1996,24 @@ class SamedayCourier extends CarrierModule
 
     public function hookDisplayHeader(){
 
+        $countryId = Context::getContext()->country;
+
         $this->context->smarty->assign([
             'ajaxroute' => $this->ajaxRoute,
             'token' => Tools::getAdminToken('Samedaycourier'),
-            'nomenclator' => Configuration::get('SAMEDAY_USE_NOMENCLATOR')
+            'nomenclator' => Configuration::get('SAMEDAY_USE_NOMENCLATOR'),
+            'country' => $countryId
         ]);
 
-        $this->context->controller->addJS($this->_path.'views/js/checkoutHandle.js');
 
+
+        if(version_compare(_PS_VERSION_, '8.0.0', '>=')) {
+            $this->context->controller->addJS($this->_path.'views/js/checkoutHandle.8.0.js');
+        }else{
+            $this->context->controller->addJS($this->_path.'views/js/checkoutHandle.js');
+        }
         return $this->display(__FILE__, 'views/templates/front/header.tpl');
+
 
     }
 

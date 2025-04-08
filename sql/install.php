@@ -111,6 +111,7 @@ $sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayCities::$definition['table'] . "
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT, 
           `city_name` TEXT, 
           `county_id` int(11), 
+          `sdk_id` int(11),
           PRIMARY KEY (`id`) 
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
