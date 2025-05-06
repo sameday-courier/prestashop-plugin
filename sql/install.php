@@ -97,14 +97,22 @@ $sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayOrderLocker::$definition['table'
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
-$sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . CartCore::$definition['table'] . '
-            ADD `sameday_locker` TEXT';
+//$sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . CartCore::$definition['table'] . '
+//            ADD `sameday_locker` TEXT';
 
 $sql[] = 'CREATE TABLE `' . _DB_PREFIX_ . SamedayOpenPackage::TABLE_NAME ."` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
           `id_order` int(11) unsigned NOT NULL,
           `is_open_package` tinyint(1) NOT NULL DEFAULT '0',
           PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+
+$sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayCities::$definition['table'] . "` (
+          `id` int(11) unsigned NOT NULL AUTO_INCREMENT, 
+          `city_name` TEXT, 
+          `county_id` int(11), 
+          `sdk_id` int(11),
+          PRIMARY KEY (`id`) 
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
 foreach ($sql as $query) {
