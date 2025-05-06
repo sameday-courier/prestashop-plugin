@@ -97,8 +97,8 @@ $sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayOrderLocker::$definition['table'
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
-//$sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . CartCore::$definition['table'] . '
-//            ADD `sameday_locker` TEXT';
+$sql[] = 'ALTER TABLE ' . _DB_PREFIX_ . CartCore::$definition['table'] . '
+            ADD `sameday_locker` TEXT';
 
 $sql[] = 'CREATE TABLE `' . _DB_PREFIX_ . SamedayOpenPackage::TABLE_NAME ."` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
