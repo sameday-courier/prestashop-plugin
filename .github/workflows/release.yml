@@ -1,0 +1,70 @@
+name: Generate new Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Git
+        run: |
+          git config user.name "Soptareanu Alex"
+          git config user.email "alexandru.soptareanu@sameday.ro"
+
+      - name: Extract version from plugin file
+        id: extract_version
+        run: |
+          version=$(grep -oP "$this->version = \K[0-9]+\.[0-9]+\.[0-9]+" samedaycourier.php)
+          echo "plugin_version_raw=$version" >> $GITHUB_OUTPUT
+          echo "plugin_version=v$version" >> $GITHUB_OUTPUT
+
+      - name: Set tag from plugin version
+        id: set_plugin_tag
+        run: |
+          echo "new_tag=${{ steps.extract_version.outputs.plugin_version }}" >> $GITHUB_OUTPUT
+
+      - name: Set final tag value
+        id: set_tag
+        run: |
+          echo "tag=${{ steps.set_plugin_tag.outputs.new_tag }}" >> $GITHUB_OUTPUT
+
+      - name: Check if tag already exists
+        id: check_tag
+        run: |
+          if git rev-parse "${{ steps.set_tag.outputs.tag }}" >/dev/null 2>&1; then
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+            echo "Tag ${{ steps.set_tag.outputs.tag }} already exists, skipping tag creation"
+          else
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create new Git tag
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        run: |
+          git tag ${{ steps.set_tag.outputs.tag }}
+          git push origin ${{ steps.set_tag.outputs.tag }} || {
+            echo "Failed to push tag to remote repository"
+            exit 1
+          }
+
+      - name: Create GitHub Release
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.set_tag.outputs.tag }}
+          name: ${{ steps.extract_version.outputs.plugin_version_raw }}
+          generate_release_notes: true
+          body: |
+            💬 **Commit message**:
+            ${{ steps.get_commit_message.outputs.message }}
+
+            ---
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
