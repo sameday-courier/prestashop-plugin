@@ -112,7 +112,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.7.4';
+        $this->version = '1.7.5';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1571,7 +1571,7 @@ class SamedayCourier extends CarrierModule
             );
 
             $service['isLastMileToShow'] = $this->toggleHtmlElement(
-                $this->isServiceEligibleToLocker($service['code'])
+                $this->isServiceEligibleToLocker((string) $service['code'])
             );
 
             $services[] = $service;
@@ -1599,7 +1599,7 @@ class SamedayCourier extends CarrierModule
         $samedayOrderLockerId = null;
         if (false !== $service = SamedayService::findByCarrierId($order->id_carrier)) {
             $serviceId = $service['id_service'];
-            if ($this->isServiceEligibleToLocker($service['code'])) {
+            if ($this->isServiceEligibleToLocker((string) $service['code'])) {
                 $isLastMileToShow = $this->toggleHtmlElement(true);
 
                 if (null !== $locker = SamedayOrderLocker::getLockerForOrder($order->id)) {
@@ -1800,7 +1800,7 @@ class SamedayCourier extends CarrierModule
         $fileVersion
     )
     {
-        if ($this->isServiceEligibleToLocker($service['code'])) {
+        if ($this->isServiceEligibleToLocker((string) $service['code'])) {
             $cart = new CartCore($params['cart']->id);
             $address = new AddressCore($cart->id_address_delivery);
             $stateName = StateCore::getNameById($address->id_state);
@@ -1951,7 +1951,7 @@ class SamedayCourier extends CarrierModule
 
         if (
             null === $lockerId
-            && $this->isServiceEligibleToLocker($service['code'])
+            && $this->isServiceEligibleToLocker((string) $service['code'])
         ) {
             $this->context->controller->errors[] = $this->l('Please select your easyBox from lockers map !');
             $params['completed']  = false;
