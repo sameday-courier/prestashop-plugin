@@ -22,6 +22,9 @@ $sql = array('DROP TABLE '._DB_PREFIX_. SamedayService::TABLE_NAME,
     'DROP TABLE '._DB_PREFIX_. SamedayLocker::TABLE_NAME,
     'DROP TABLE '._DB_PREFIX_. SamedayOrderLocker::TABLE_NAME,
     'DROP TABLE '._DB_PREFIX_. SamedayOpenPackage::TABLE_NAME,
+    'DROP TABLE '._DB_PREFIX_. SamedayCities::TABLE_NAME,
+    'ALTER TABLE '._DB_PREFIX_. CartCore::$definition['table'] .' DROP COLUMN sameday_locker'
+
 );
 
 foreach ($sql as $query) {

@@ -107,6 +107,13 @@ $sql[] = 'CREATE TABLE `' . _DB_PREFIX_ . SamedayOpenPackage::TABLE_NAME ."` (
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
+$sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayCities::$definition['table'] . "` (
+          `id` int(11) unsigned NOT NULL AUTO_INCREMENT, 
+          `city_name` TEXT, 
+          `county_id` int(11), 
+          PRIMARY KEY (`id`) 
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+
 foreach ($sql as $query) {
     if (!Db::getInstance()->execute($query)) {
         return false;
