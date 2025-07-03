@@ -14,18 +14,29 @@
  * International Registered Trademark & Property of PrestaShop SA
  */
 
-$sql = array('DROP TABLE '._DB_PREFIX_. SamedayService::TABLE_NAME,
-    'DROP TABLE '._DB_PREFIX_. SamedayPickupPoint::TABLE_NAME,
-    'DROP TABLE '._DB_PREFIX_. SamedayAwb::TABLE_NAME,
-    'DROP TABLE '._DB_PREFIX_. SamedayAwbParcel::TABLE_NAME,
-    'DROP TABLE '._DB_PREFIX_. SamedayAwbParcelHistory::TABLE_NAME,
-    'DROP TABLE '._DB_PREFIX_. SamedayLocker::TABLE_NAME,
-    'DROP TABLE '._DB_PREFIX_. SamedayOrderLocker::TABLE_NAME,
-    'DROP TABLE '._DB_PREFIX_. SamedayOpenPackage::TABLE_NAME,
-);
+$tablesToDrop = [
+    SamedayService::TABLE_NAME,
+    SamedayPickupPoint::TABLE_NAME,
+    SamedayAwb::TABLE_NAME,
+    SamedayAwbParcel::TABLE_NAME,
+    SamedayAwbParcelHistory::TABLE_NAME,
+    SamedayLocker::TABLE_NAME,
+    SamedayOrderLocker::TABLE_NAME,
+    SamedayOpenPackage::TABLE_NAME,
+    SamedayCity::TABLE_NAME,
+];
 
-foreach ($sql as $query) {
-    if (Db::getInstance()->execute($query) === false) {
-        return false;
-    }
+$columnsToDrop = [
+    [
+        'columnName' => 'sameday_locker',
+        'fromTable' => CartCore::$definition['table'],
+    ],
+];
+
+foreach ($tablesToDrop as $table) {
+    (new SamedayGeneralQueryHelper())->dropTable(_DB_PREFIX_ . $table);
+}
+
+foreach ($columnsToDrop as $column) {
+    (new SamedayGeneralQueryHelper())->dropColumn(_DB_PREFIX_ . $column['fromTable'], $column['columnName']);
 }
