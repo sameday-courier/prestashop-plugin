@@ -87,6 +87,16 @@ $sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayLocker::TABLE_NAME . "` (
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
+$sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayCity::TABLE_NAME . "` (
+          `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+          `city_id` int(11) unsigned NOT NULL,
+          `city_name` varchar(100) NOT NULL DEFAULT '',
+          `county_code` varchar(100) NOT NULL DEFAULT '',
+          `country_code` varchar(100) NOT NULL DEFAULT '',
+          `postal_code` varchar(16) NOT NULL DEFAULT '',
+          PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+
 $sql[] = 'CREATE TABLE `'. _DB_PREFIX_ . SamedayOrderLocker::$definition['table'] . "` (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
           `id_order` int(11) unsigned NOT NULL,
