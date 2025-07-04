@@ -37,7 +37,6 @@ function upgrade_module_1_8_0($object)
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
-
         Db::getInstance()->execute($query);
     }
 }

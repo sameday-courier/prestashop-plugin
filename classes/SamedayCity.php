@@ -53,4 +53,61 @@ class SamedayCity extends ObjectModel
             'postal_code' => array('type' => self::TYPE_STRING, 'required' => false, 'validate' => 'isCleanHtml'),
         ),
     );
+
+    /**
+     * @param int $cityId
+     *
+     * @return array|bool|object|null
+     */
+    public static function findByCityId(int $cityId)
+    {
+        return Db::getInstance()->getRow(
+            sprintf(
+                "SELECT * FROM %s WHERE `city_id` = %d",
+                _DB_PREFIX_ . self::TABLE_NAME,
+                $cityId
+            )
+        );
+    }
+
+    /**
+     * @return array
+     */
+    public static function getCitiesCachedResult(): array
+    {
+        $cities = Cache::getInstance()->get('sameday_cities');
+
+        if (false === $cities) {
+            $cities = self::getCities();
+            Cache::getInstance()->set('sameday_cities', $cities);
+        }
+
+        return $cities;
+    }
+
+    /**
+     * @return array
+     */
+    public static function getCities(): array
+    {
+        $countries = [];
+        foreach (SamedayConstants::DEFAULTS_COUNTRIES as $key => $country) {
+            $countries[$key] = Db::getInstance()->getRow(
+                sprintf(
+                    "SELECT id FROM %s WHERE iso_code = '%s'",
+                    _DB_PREFIX_ . "country",
+                    strtoupper($key)
+                )
+            )['id'];
+        }
+
+        $cities = [];
+        foreach ($countries as $key => $id) {
+            $cities[$id] =  Db::getInstance()->executeS(
+                sprintf("SELECT * FROM %s WHERE `country_code` = '%s'", self::TABLE_NAME, $key)
+            );
+        }
+
+        return $cities;
+    }
 }
