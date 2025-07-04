@@ -94,17 +94,20 @@ class SamedayCity extends ObjectModel
         foreach (SamedayConstants::DEFAULTS_COUNTRIES as $key => $country) {
             $countries[$key] = Db::getInstance()->getRow(
                 sprintf(
-                    "SELECT id FROM %s WHERE iso_code = '%s'",
+                    "SELECT id_country FROM %s WHERE iso_code = '%s'",
                     _DB_PREFIX_ . "country",
                     strtoupper($key)
                 )
-            )['id'];
+            )['id_country'];
         }
 
         $cities = [];
         foreach ($countries as $key => $id) {
             $cities[$id] =  Db::getInstance()->executeS(
-                sprintf("SELECT * FROM %s WHERE `country_code` = '%s'", self::TABLE_NAME, $key)
+                sprintf("SELECT * FROM %s WHERE `country_code` = '%s'",
+                    _DB_PREFIX_ . self::TABLE_NAME,
+                    $key
+                )
             );
         }
 
