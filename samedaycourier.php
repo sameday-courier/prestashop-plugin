@@ -199,10 +199,10 @@ class SamedayCourier extends CarrierModule
         Configuration::deleteByName('SAMEDAY_ACCOUNT_PASSWORD');
         Configuration::deleteByName('SAMEDAY_ACCOUNT_USER');
         Configuration::deleteByName('SAMEDAY_CRON_TOKEN');
-        // Configuration::deleteByName('SAMEDAY_ORDER_STATUS_AWB');
         Configuration::deleteByName('SAMEDAY_DEBUG_MODE');
         Configuration::deleteByName('SAMEDAY_ESTIMATED_COST');
         Configuration::deleteByName('SAMEDAY_OPEN_PACKAGE');
+        Configuration::deleteByName('SAMEDAY_USE_CITIES_NOMENCLATURE');
         Configuration::deleteByName('SAMEDAY_LOCKERS_MAP');
         Configuration::deleteByName('SAMEDAY_OPEN_PACKAGE_LABEL');
         Configuration::deleteByName('SAMEDAY_LOCKER_MAX_ITEMS');
@@ -249,6 +249,11 @@ class SamedayCourier extends CarrierModule
             . '&configure=' . $this->name . '&tab_module=' . $this->tab . '&module_name=' . $this->name);
 
         $this->renderForm();
+
+        if (Configuration::get('SAMEDAY_USE_CITIES_NOMENCLATURE')) {
+            $this->renderSamedayCitiesImportButton();
+        }
+
         $this->renderServicesList();
         $this->renderPickupPointsList();
         $this->renderLockersList();
@@ -258,6 +263,41 @@ class SamedayCourier extends CarrierModule
         }
 
         return $this->html;
+    }
+
+    private function importCities()
+    {
+        if (!file_exists($file = __DIR__ . '/utils/cities.json')) {
+            return;
+        }
+
+        if (false === ($json = file_get_contents($file))) {
+            return;
+        }
+
+        $samedayCities = json_decode($json, true);
+        foreach ($samedayCities as $samedayCity) {
+            if (false === $city = SamedayCity::findByCityId($samedayCity['city_id'])) {
+                $city = new SamedayCity();
+            } else {
+                $city = new SamedayCity($city['id']);
+            }
+
+            $city->city_id = $samedayCity['city_id'];
+            $city->city_name = $samedayCity['city_name'];
+            $city->county_code = $samedayCity['county_code'];
+            $city->country_code = $samedayCity['country_code'];
+            $city->postal_code = $samedayCity['postal_code'];
+
+            $city->save();
+        }
+
+        /**
+         * After import, store cities in Cache in order to use them
+         */
+        Cache::getInstance()->set('sameday_cities', SamedayCity::getCities());
+
+        $this->addMessage('success', $this->l('All cities have been imported!'));
     }
 
     /**
@@ -520,6 +560,28 @@ class SamedayCourier extends CarrierModule
                         ),
                     ),
                     array(
+                        'type'    => 'switch',
+                        'label'   => $this->l('Use Sameday Cities Nomenclature'),
+                        'name'    => 'SAMEDAY_USE_CITIES_NOMENCLATURE',
+                        'is_bool' => true,
+                        'desc'    => $this->l('Enable this option if you want to use sameday 
+                            cities nomenclature in your Checkout form. 
+                            Note! If you enable this, please Proceed to import cities nomenclature!'
+                        ),
+                        'values'  => array(
+                            array(
+                                'id'    => 'active_on',
+                                'value' => true,
+                                'label' => $this->l('Enabled'),
+                            ),
+                            array(
+                                'id'    => 'active_off',
+                                'value' => false,
+                                'label' => $this->l('Disabled'),
+                            ),
+                        ),
+                    ),
+                    array(
                         'type'    => 'select',
                         'label'   => $this->l('Show locker map method'),
                         'name'    => 'SAMEDAY_LOCKERS_MAP',
@@ -546,7 +608,9 @@ class SamedayCourier extends CarrierModule
                         'col'    => 2,
                         'type'   => 'text',
                         'name'   => 'SAMEDAY_LOCKER_MAX_ITEMS',
-                        'desc'   => $this->l('Set the maximum amount of items to fit in locker! In order to work Locker NextDay service do not leave this field blank !!'),
+                        'desc'   => $this->l('Set the maximum amount of items to fit in locker! 
+                            In order to work Locker NextDay service do not leave this field blank !!'
+                        ),
                         'label'  => $this->l('Locker max. items'),
                     ),
                     array(
@@ -610,6 +674,10 @@ class SamedayCourier extends CarrierModule
                 'SAMEDAY_OPEN_PACKAGE',
                 Configuration::get('SAMEDAY_OPEN_PACKAGE', null)
             ),
+            'SAMEDAY_USE_CITIES_NOMENCLATURE' => Tools::getValue(
+                'SAMEDAY_USE_CITIES_NOMENCLATURE',
+                Configuration::get('SAMEDAY_USE_CITIES_NOMENCLATURE', null)
+            ),
             'SAMEDAY_LOCKERS_MAP' => Tools::getValue(
                 'SAMEDAY_LOCKERS_MAP',
                 Configuration::get('SAMEDAY_LOCKERS_MAP', null)
@@ -628,6 +696,19 @@ class SamedayCourier extends CarrierModule
                 Configuration::get('SAMEDAY_AWB_PDF_FORMAT', null)
             ),
         );
+    }
+
+    /**
+     * @return mixed
+     */
+    private function renderSamedayCitiesImportButton()
+    {
+        $this->context->smarty->assign([
+            'importCitiesLabel' => $this->l('Import cities'),
+            'href' => $this->currentIndex . '&import_cities&token=' . Tools::getAdminTokenLite('AdminModules'),
+        ]);
+
+        $this->html .= $this->display(__FILE__, 'views/templates/admin/importCities.tpl');
     }
 
     /**
@@ -1016,12 +1097,18 @@ class SamedayCourier extends CarrierModule
                 $this->importServices();
                 $this->importPickupPoints();
             } else {
-                $this->addMessage('danger', $this->l('Connection failed! Verify your credentials and try again later!'));
+                $this->addMessage('danger',
+                    $this->l('Connection failed! Verify your credentials and try again later!')
+                );
             }
         }
 
         if (Tools::isSubmit('import_services')) {
             $this->importServices();
+        }
+
+        if (Tools::isSubmit('import_cities')) {
+            $this->importCities();
         }
 
         if (Tools::isSubmit('import_pickup_points')) {
