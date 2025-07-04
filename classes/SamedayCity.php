@@ -102,13 +102,26 @@ class SamedayCity extends ObjectModel
         }
 
         $cities = [];
-        foreach ($countries as $key => $id) {
-            $cities[$id] =  Db::getInstance()->executeS(
+        foreach ($countries as $countryCode => $countryId) {
+            $queriedCities = Db::getInstance()->executeS(
                 sprintf("SELECT * FROM %s WHERE `country_code` = '%s'",
                     _DB_PREFIX_ . self::TABLE_NAME,
-                    $key
+                    $countryCode
                 )
             );
+            foreach ($queriedCities as $city) {
+                $stateId = Db::getInstance()->getRow(
+                    sprintf(
+                        "SELECT id_state FROM %s WHERE id_country = '%s' AND iso_code = '%s'",
+                        _DB_PREFIX_ . "state",
+                        $countryId,
+                        $city['county_code']
+                    )
+                )['id_state'] ?? null;
+                if (null !== $stateId) {
+                    $cities[$countryId][$stateId][] =  $city;
+                }
+            }
         }
 
         return $cities;
