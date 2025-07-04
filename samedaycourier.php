@@ -267,7 +267,6 @@ class SamedayCourier extends CarrierModule
 
     private function importCities()
     {
-        $cities = SamedayCity::getCities();
         if (!file_exists($file = __DIR__ . '/utils/cities.json')) {
             return;
         }
