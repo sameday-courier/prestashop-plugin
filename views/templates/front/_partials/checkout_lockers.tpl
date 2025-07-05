@@ -43,13 +43,15 @@
         }
 
         docReady(function () {
-            if (_isSet( () => document.getElementById("locker_name"))) {
+            if (_isSet(() => document.getElementById("locker_name"))) {
                 if (_getCookie("samedaycourier_locker_name").length > 1) {
                     let lockerIdCookie = _getCookie("samedaycourier_locker_id");
                     let lockerNameCookie = _getCookie("samedaycourier_locker_name");
                     let lockerAddressCookie = _getCookie("samedaycourier_locker_address");
+                    let lockerOohType = _getCookie("samedaycourier_locker_ooh_type");
                     document.getElementById("locker_name").value = lockerNameCookie;
                     document.getElementById("locker_address").value = lockerAddressCookie;
+                    document.getElementById("locker_ooh_type").value = lockerOohType;
 
                     document.getElementById("showLockerDetails").style.display = "block";
                     document.getElementById("showLockerDetails").innerHTML = lockerNameCookie + '<br/>' + lockerAddressCookie;
@@ -58,6 +60,7 @@
                         'locker_id' : lockerIdCookie,
                         'locker_name': lockerNameCookie,
                         'locker_address': lockerAddressCookie,
+                        'ooh_type': lockerOohType,
                     }));
                 } else {
                     document.getElementById("showLockerDetails").style.display = "none";
@@ -67,6 +70,7 @@
             const cookie_locker_id = 'samedaycourier_locker_id';
             const cookie_locker_name = 'samedaycourier_locker_name';
             const cookie_locker_address = 'samedaycourier_locker_address';
+            const cookie_locker_ooh_type = 'samedaycourier_locker_ooh_type';
 
             let showLockerMap = document.getElementById('showLockerMap');
             let showLockerSelector = document.getElementById('lockerIdSelector');
@@ -100,6 +104,7 @@
                     let lockerId = locker.lockerId;
                     let lockerName = locker.name;
                     let lockerAddress = locker.address;
+                    let oohType = locker.oohType;
 
                     _setCookie(cookie_locker_id, lockerId, 30);
 
@@ -109,6 +114,9 @@
                     document.getElementById("locker_address").value = lockerAddress;
                     _setCookie(cookie_locker_address, lockerAddress, 30);
 
+                    document.getElementById("locker_ooh_type").value = oohType;
+                    _setCookie(cookie_locker_ooh_type, oohType, 30);
+
                     document.getElementById("showLockerDetails").style.display = "block";
                     document.getElementById("showLockerDetails").innerHTML = lockerName + '<br/>' + lockerAddress;
 
@@ -116,6 +124,7 @@
                         'locker_id' : lockerId,
                         'locker_name': lockerName,
                         'locker_address': lockerAddress,
+                        'ooh_type': oohType,
                     }));
 
                     lockerPlugin.close();

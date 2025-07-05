@@ -18,17 +18,30 @@ class SamedayOrderLocker extends ObjectModel
 {
     const TABLE_NAME = 'sameday_order_locker';
 
-    /** @var integer */
+    /**
+     * @var integer $id_order
+     */
     public $id_order;
 
-    /** @var integer */
+    /**
+     * @var integer $id_locker
+     */
     public $id_locker;
 
-    /** @var string */
+    /**
+     * @var string $name_locker
+     */
     public $name_locker;
 
-     /** @var string */
-     public $address_locker;
+    /**
+     * @var string $address_locker
+     */
+    public $address_locker;
+
+    /**
+     * @var string $service_code
+     */
+    public $service_code;
 
     /** @var array */
     public static $definition = array(
@@ -41,6 +54,7 @@ class SamedayOrderLocker extends ObjectModel
             'id_locker' => array('type' => self::TYPE_INT, 'required' => true, 'validate' => 'isUnsignedInt'),
             'name_locker' => array('type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'),
             'address_locker' => array('type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'),
+            'service_code' => array('type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'),
         ),
     );
 

@@ -22,6 +22,13 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  * International Registered Trademark & Property of PrestaShop SA
  *}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<style>
+    .select2{
+        width: 100% !important;
+    }
+</style>
 <script src="https://cdn.sameday.ro/locker-plugin/lockerpluginsdk.js"></script>
 {if $messages|count}
     {foreach from=$messages item=message}
@@ -42,8 +49,9 @@
         {if $awb}
             {if $allowParcel}
                 <div class="col-md-3">
-                    <button class="btn btn-success" data-toggle="modal" data-target="#addParcel"><i
-                                class="icon-plus"></i> {l s='Add Parcel' mod='samedaycourier'}</button>
+                    <button class="btn btn-success" data-toggle="modal" data-target="#addParcel"><i class="icon-plus"></i>
+                        {l s='Add Parcel' mod='samedaycourier'}
+                    </button>
                 </div>
                 <div class="col-md-3">
                     <form action="" method="post" id="form-cancel-awb" class="form-horizontal">
@@ -77,38 +85,60 @@
             <!-- Modal content-->
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">×</button>
-                    <h4 class="modal-title">{l s='Add Parcel' mod='samedaycourier'}</h4>
+                    <button type="button" class="close" data-dismiss="modal">X</button>
                 </div>
                 <form action="" method="post" id="form-add-parcels" class="form-horizontal">
                     <div class="modal-body">
                         <!-- Package Number //-->
                         <div class="form-group package_dimension_field">
                             <div class="parcel row">
-                                <label class="col-sm-3 control-label"
-                                       for="input-length">{l s='Package dimension' mod='samedaycourier'}</label>
-                                <div class="col-sm-8" style="padding-bottom: 5px;">
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <input type="number" name="sameday_package_weight" value="" min="0.1" step="any"
-                                                   placeholder="Weight" id="input-weight"
-                                                   class="form-control input-number" required>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <input type="number" name="sameday_package_width" value="" min="0"
-                                                   placeholder="Width" id="input-width"
-                                                   class="form-control input-number">
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <input type="number" name="sameday_package_length" value="" min="0"
-                                                   placeholder="Length" id="input-length"
-                                                   class="form-control input-number">
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <input type="number" name="sameday_package_height" value="" min="0"
-                                                   placeholder="Height" id="input-height"
-                                                   class="form-control input-number">
-                                        </div>
+                                <label class="col-sm-3 control-label" for="input-weight">
+                                    {l s='Package dimension' mod='samedaycourier'}
+                                </label>
+                                <div class="col-sm-9">
+                                    <div class="form-group">
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <input type="number" name="sameday_package_weight[]"
+                                                           value="{$packageWeight|escape:'html':'UTF-8'}"
+                                                           min="0.1"
+                                                           placeholder="Weight"
+                                                           id="input-weight"
+                                                           class="form-control input-number weight"
+                                                           step="any"
+                                                           required
+                                                    >
+                                                </td>
+                                                <td>
+                                                    <input type="number" name="sameday_package_width[]"
+                                                           value=""
+                                                           min="0"
+                                                           placeholder="Width"
+                                                           id="input-width"
+                                                           class="form-control input-number"
+                                                    >
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <input type="number" name="sameday_package_length[]"
+                                                           value=""
+                                                           min="0"
+                                                           placeholder="Length"
+                                                           id="input-length"
+                                                           class="form-control input-number">
+                                                </td>
+                                                <td>
+                                                    <input type="number" name="sameday_package_height[]"
+                                                           value=""
+                                                           min="0"
+                                                           placeholder="Height"
+                                                           id="input-height"
+                                                           class="form-control input-number">
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
@@ -116,10 +146,11 @@
 
                         <!-- Observation //-->
                         <div class="form-group">
-                            <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Observation' mod='samedaycourier'}</label>
-                            <div class="col-sm-8">
-                                <input type="text" name="sameday_observation" value="" class="form-control">
+                            <label class="col-sm-3 control-label" for="sameday_observation">
+                                {l s='Observation' mod='samedaycourier'}
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" name="sameday_observation" id="sameday_observation" value="" class="form-control">
                             </div>
                         </div>
                     </div>
@@ -210,7 +241,7 @@
     </div>
 {else}
     <div id="addAwb" class="modal fade" role="dialog">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <!-- Modal content-->
             <div class="modal-content">
                 <div class="modal-header">
@@ -236,79 +267,107 @@
 
                         <!-- Package Number //-->
                         <div class="form-group package_dimension_field">
-                            <div class="parcel row">
-                                <label class="col-sm-3 control-label"
-                                       for="input-length">{l s='Package dimension' mod='samedaycourier'}</label>
-                                <div class="col-sm-8" style="padding-bottom: 5px;">
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <input type="number" name="sameday_package_weight[]"
-                                                   value="{$packageWeight|escape:'html':'UTF-8'}"
-                                                   min="0.1"
-                                                   placeholder="Weight"
-                                                   id="input-weight"
-                                                   class="form-control input-number weight"
-                                                   step="any"
-                                                   required
-                                            >
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <input type="number" name="sameday_package_width[]"
-                                                   value=""
-                                                   min="0"
-                                                   placeholder="Width"
-                                                   id="input-width"
-                                                   class="form-control input-number">
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <input type="number" name="sameday_package_length[]"
-                                                   value=""
-                                                   min="0"
-                                                   placeholder="Length"
-                                                   id="input-length"
-                                                   class="form-control input-number">
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <input type="number" name="sameday_package_height[]"
-                                                   value=""
-                                                   min="0"
-                                                   placeholder="Height"
-                                                   id="input-height"
-                                                   class="form-control input-number">
-                                        </div>
+                            <div class="parcel">
+                                <label class="col-sm-3 control-label" for="input-weight">
+                                    {l s='Package dimension' mod='samedaycourier'}
+                                </label>
+                                <div class="col-sm-8">
+                                    <div class="form-group">
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <input type="number" name="sameday_package_weight[]"
+                                                           value="{$packageWeight|escape:'html':'UTF-8'}"
+                                                           min="0.1"
+                                                           placeholder="Weight"
+                                                           id="input-weight"
+                                                           class="form-control input-number weight"
+                                                           step="any"
+                                                           required
+                                                    >
+                                                </td>
+                                                <td>
+                                                    <input type="number" name="sameday_package_width[]"
+                                                           value=""
+                                                           min="0"
+                                                           placeholder="Width"
+                                                           id="input-width"
+                                                           class="form-control input-number"
+                                                    >
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <input type="number" name="sameday_package_length[]"
+                                                           value=""
+                                                           min="0"
+                                                           placeholder="Length"
+                                                           id="input-length"
+                                                           class="form-control input-number">
+                                                </td>
+                                                <td>
+                                                    <input type="number" name="sameday_package_height[]"
+                                                           value=""
+                                                           min="0"
+                                                           placeholder="Height"
+                                                           id="input-height"
+                                                           class="form-control input-number">
+                                                </td>
+                                                <td>
+                                                    <span id="removePackageDimensionField">
+                                                        <i class="btn btn-danger pull-left" style="vertical-align: bottom; cursor: pointer; padding-top: 9px;"> X </i>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </table>
                                     </div>
-                                </div>
-                                <div class="col-sm-1">
-                                    <span id="removePackageDimensionField">
-                                        <i class="btn btn-danger pull-left" style="vertical-align: bottom; cursor: pointer; padding-top: 9px;"> X </i>
-                                    </span>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Repayment //-->
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label" for="sameday_repayment">
+                                {l s='Repayment' mod='samedaycourier'}
+                                <span style="font-weight: bold">({$orderCurrency|escape:'html':'UTF-8'})</span>
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" name="sameday_repayment" id="sameday_repayment" value="{$repayment|escape:'html':'UTF-8'}" class="form-control">
+                            </div>
+                        </div>
+
+                        <!-- Currency Warning if not math values -->
+                        {if !empty($xBorderWarning)}
+                            <div class="form-group">
+                                <div class="col-sm-12">
+                                    <span style="color: #b22222; font-weight: bolder" class="form-group">{$xBorderWarning|escape:'html':'UTF-8'}</span>
+                                </div>
+                            </div>
+                        {/if}
+
                         <!-- Insured Value //-->
                         <div class="form-group">
-                            <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Insured value' mod='samedaycourier'}</label>
+                            <label class="col-sm-3 control-label" for="sameday_insured_value">
+                                {l s='Insured value' mod='samedaycourier'}
+                            </label>
                             <div class="col-sm-9">
-                                <input type="number" name="sameday_insured_value" value="0" min="0"
-                                       class="form-control">
+                                <input type="number" name="sameday_insured_value" id="sameday_insured_value" value="0" min="0" class="form-control">
                             </div>
                         </div>
 
                         <!-- Observation //-->
                         <div class="form-group">
-                            <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Observation' mod='samedaycourier'}</label>
+                            <label class="col-sm-3 control-label" for="sameday_observation">
+                                {l s='Observation' mod='samedaycourier'}
+                            </label>
                             <div class="col-sm-9">
-                                <input type="text" name="sameday_observation" class="form-control">
+                                <input type="text" name="sameday_observation" id="sameday_observation" class="form-control">
                             </div>
                         </div>
 
                         <!-- Client Reference //-->
                         <div class="form-group">
-                            <label class="col-sm-3 control-label"
-                                   for="input-key-clientReference">
+                            <label class="col-sm-3 control-label" for="input-key-clientReference">
                                 {l s='Client Reference' mod='samedaycourier'}
                             </label>
                             <div class="col-sm-9">
@@ -317,19 +376,11 @@
                             </div>
                         </div>
 
-                        <!-- Repayment //-->
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label"
-                                   for="input-key">{l s='Repayment' mod='samedaycourier'}</label>
-                            <div class="col-sm-9">
-                                <input type="text" name="sameday_repayment" value="{$repayment|escape:'html':'UTF-8'}" class="form-control">
-                            </div>
-                        </div>
-
                         <!-- Package Type //-->
                         <div class="form-group">
-                            <label class="col-sm-3 control-label"
-                                   for="input-status-sameday_package_type">{l s='Package type' mod='samedaycourier'}</label>
+                            <label class="col-sm-3 control-label" for="input-status-sameday_package_type">
+                                {l s='Package type' mod='samedaycourier'}
+                            </label>
                             <div class="col-sm-9">
                                 <select name="sameday_package_type" id="input-status-sameday-package-type"
                                         class="form-control">
@@ -342,8 +393,9 @@
 
                         <!-- Pickup Point //-->
                         <div class="form-group">
-                            <label class="col-sm-3 control-label"
-                                   for="input-status-sameday-pickup_point">{l s='Pickup point' mod='samedaycourier'}</label>
+                            <label class="col-sm-3 control-label" for="input-status-sameday-pickup_point">
+                                {l s='Pickup point' mod='samedaycourier'}
+                            </label>
                             <div class="col-sm-9">
                                 <select name="sameday_pickup_point" id="input-status-sameday-pickup_point"
                                         class="form-control">
@@ -379,8 +431,8 @@
                         </div>
 
                         <div class="form-group" style="display: {$isLastMileToShow}" id="showLockerDetails">
-                            <label class="col-sm-3 control-label"
-                                   for="input-status-sameday-locker-details">{l s='Locker Details' mod='samedaycourier'}
+                            <label class="col-sm-3 control-label" for="input-status-sameday-locker-details">
+                                {l s='Locker Details' mod='samedaycourier'}
                             </label>
                             <div class="col-sm-9">
                                 <input type="text" name="locker-details" id="sameday_locker_name" value="{$lockerDetails|escape:'html':'UTF-8'}" class="form-control" readonly>
@@ -396,13 +448,13 @@
                             </label>
 
                             <div class="col-sm-9">
-                                <button data-username="{$samedayUser}" data-country="{$hostCountry}"
+                                <button data-username="{$samedayUser}" data-country="{$countryCode}"
                                         class="btn btn-warning update-status ml-3 sameday_select_locker"
                                         type="button"
                                         id="select_locker"
                                         style="margin-left: 0px !important; margin-top: 10px;"
                                 >
-                                    {l s='Change locker' mod='samedaycourier'}
+                                    {l s='Change location' mod='samedaycourier'}
                                 </button>
                             </div>
                         </div>
@@ -429,7 +481,7 @@
                             </div>
                         </div>
 
-                        <!-- Open Package //-->
+                        <!-- Open Package -->
                         <div class="form-group">
                             <label class="col-sm-3 control-label"
                                    for="input-status-sameday-open-package">{l s='Open Package' mod='samedaycourier'}
@@ -441,8 +493,9 @@
 
                         <!-- Awb Payment //-->
                         <div class="form-group hidden">
-                            <label class="col-sm-3 control-label" for="input-status-sameday_awb_payment">Awb
-                                payment</label>
+                            <label class="col-sm-3 control-label" for="input-status-sameday_awb_payment">
+                                {l s='Awb Payment' mod='samedaycourier'}
+                            </label>
                             <div class="col-sm-9">
                                 <select name="sameday_awb_payment" id="input-status-sameday_awb_payment"
                                         class="form-control">
@@ -450,7 +503,6 @@
                                 </select>
                             </div>
                         </div>
-
                         <input type="hidden" name="sameday_third_party_pickup" value="0"/>
                     </div>
                     <div class="modal-footer">
@@ -487,6 +539,7 @@
 
             $(this).attr('submitted', true);
         });
+        $('#input-status-sameday-pickup_point').select2();
     });
     </script>
 {/if}

@@ -20,9 +20,6 @@
 class SamedayService extends ObjectModel
 {
     const TABLE_NAME = "sameday_services";
-    const STATUS_DISABLED = 0;
-    const STATUS_ALWAYS_ACTIVE = 1;
-    const STATUS_INTERVAL_ACTIVE = 2;
 
     /** @var integer */
     public $id;
@@ -118,13 +115,19 @@ class SamedayService extends ObjectModel
     public static function getServices($activeOnly = false, $limit = 0)
     {
         $liveMode = Configuration::get('SAMEDAY_LIVE_MODE', 0);
-        $query = 'SELECT * FROM ' . _DB_PREFIX_ . self::TABLE_NAME . ' WHERE live_mode = ' .(int) $liveMode;
+
+        $query = sprintf(
+            "SELECT * FROM %s WHERE `live_mode` = '%s' AND `status` = 1",
+            _DB_PREFIX_ . self::TABLE_NAME,
+            (int) $liveMode
+        );
+
         if ($activeOnly) {
             $query .= ' AND `disabled` = 0';
         }
 
         if ($limit) {
-            $query .= ' LIMIT ' . (int)$limit;
+            $query .= ' LIMIT ' . (int) $limit;
         }
 
         return Db::getInstance()->executeS($query);
@@ -132,7 +135,58 @@ class SamedayService extends ObjectModel
 
     public static function getAllServices()
     {
-        return Db::getInstance()->executeS('SELECT * FROM ' . _DB_PREFIX_ . self::TABLE_NAME);
+        return Db::getInstance()->executeS(
+            sprintf(
+                "SELECT * FROM %s WHERE live_mode='%s'",
+                _DB_PREFIX_ . self::TABLE_NAME,
+                Configuration::get('SAMEDAY_LIVE_MODE', 0)
+            )
+        );
+    }
+
+    /**
+     * @return array
+     */
+    public static function getServicesToDisplay(): array
+    {
+        $services = self::getAllServices();
+
+        $oohService = array_values(array_filter(
+            $services,
+            static function (array $service) {
+                return $service['code'] === SamedayConstants::LOCKER_NEXT_DAY_CODE;
+            },
+            true
+        ))[0] ?? null;
+
+        $generalHelper = new SamedayGeneralHelper();
+
+        if (null !== $oohService) {
+            $oohService['name'] = SamedayConstants::OOH_SERVICES_LABELS[$generalHelper->getHostCountry()];
+            $oohService['code'] = SamedayConstants::OOH_SERVICE;
+
+            $services = array_merge([$oohService], $services);
+        }
+
+        return array_filter($services, static function($service) use ($generalHelper) {
+            return
+                !$generalHelper->isOohDeliveryOption($service['code'])
+                && !$generalHelper->isNotInUseService($service['code'])
+            ;
+        });
+    }
+
+    /**
+     * @return array
+     */
+    public static function getEnabledServices(): array
+    {
+        return array_filter(
+            self::getServicesToDisplay(),
+            static function ($service) {
+                return true === (bool) $service['status'];
+            }
+        );
     }
 
     /**
@@ -152,6 +206,22 @@ class SamedayService extends ObjectModel
                 'service_optional_taxes' => $optionalTaxes
             ),
             'id =' . (int) $id
+        );
+    }
+
+    /**
+     * @param array $service
+     *
+     * @return bool
+     */
+    public static function updateServiceStatus(array $service): bool
+    {
+        return Db::getInstance()->update(
+            self::TABLE_NAME,
+            array(
+                'status' => $service['status'],
+            ),
+            'id =' . $service['id']
         );
     }
 
@@ -184,11 +254,22 @@ class SamedayService extends ObjectModel
         );
     }
 
-    public static function updateCarrierId($id_service, $id_carrier)
+    /**
+     * @param $id_service
+     * @param $id_carrier
+     *
+     * @return bool
+     */
+    public static function updateCarrierId($id_service, $id_carrier): bool
     {
-        return Db::getInstance()->update('sameday_services', array(
-            'id_carrier' => (int)$id_carrier,
-        ), 'id = ' . (int)$id_service);
+        return Db::getInstance()->update(
+            self::TABLE_NAME,
+            [
+                'id_carrier' => (int) $id_carrier,
+            ]
+            ,
+            'id = ' . (int) $id_service
+        );
     }
 
     public static function findByCarrierId($id_carrier)

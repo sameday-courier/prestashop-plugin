@@ -19,6 +19,21 @@ include(dirname(__FILE__).'/../../config/config.inc.php');
 include(dirname(__FILE__).'/../../init.php');
 include __DIR__ . '/classes/autoload.php';
 
+if (Tools::getValue('action') === 'change_county') {
+    if (Tools::getValue('token') !== Tools::getAdminToken('Samedaycourier')) {
+        die('Bad request!');
+    }
+
+    header('Content-Type: application/json');
+    die(
+        json_encode(
+            [
+                'cities' => (new SamedayApiHelper())->getSamedayCities(Tools::getValue('county_id'))
+            ]
+        )
+    );
+}
+
 if (Tools::getValue('action') === 'store_locker') {
     if (Tools::getValue('token') !== Tools::getAdminToken('Samedaycourier')) {
         die('Bad request!');
@@ -26,31 +41,39 @@ if (Tools::getValue('action') === 'store_locker') {
 
     $locker = json_decode(Tools::getValue('locker'), false);
 
-    $locker = json_encode([
-        'locker_id' => $locker->locker_id,
-        'locker_name' => $locker->locker_name,
-        'locker_address' => $locker->locker_address,
-    ]);
+    $locker = json_encode(
+        [
+            'locker_id' => $locker->locker_id,
+            'locker_name' => $locker->locker_name,
+            'locker_address' => $locker->locker_address,
+            'ooh_type' => $locker->ooh_type,
+        ],
+        JSON_UNESCAPED_UNICODE
+    );
 
     $samedayCart = new SamedayCart(Tools::getValue('idCart'));
     $samedayCart->sameday_locker = $locker;
 
-    $samedayCart->save();
+    try {
+        $samedayCart->save();
+    } catch (Exception $exception) {
+        die(json_encode(['message' => 'Something went wrong and locker could not be saved!']));
+    }
 
     header('Content-Type: application/json');
     die(json_encode(['message' => 'Locker updated!']));
 }
 
-if (Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10) != Tools::getValue('token') ||
-    !Module::isInstalled('samedaycourier')
+if (!Module::isInstalled(SamedayConstants::MODULE_NAME)
+    || Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10) !== Tools::getValue('token')
 ) {
     die('Bad token');
 }
 
 if (Tools::getValue('awb_id')) {
     $awbId = (int)Tools::getValue('awb_id');
-    $country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ? Configuration::get('SAMEDAY_HOST_COUNTRY') : 'ro';
-    $testingMode = (Configuration::get('SAMEDAY_LIVE_MODE')) ? Configuration::get('SAMEDAY_LIVE_MODE') : '0';
+    $country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ?: SamedayConstants::API_HOST_LOCALE_RO;
+    $testingMode = (Configuration::get('SAMEDAY_LIVE_MODE')) ?: '0';
     $api = $testingMode ? SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_PROD'] : SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_DEMO'];
 
     $sameday = new \Sameday\Sameday(

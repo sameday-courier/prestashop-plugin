@@ -3,6 +3,7 @@
 namespace Sameday\Responses;
 
 use DateTime;
+use Exception;
 use Sameday\Http\SamedayRawResponse;
 use Sameday\Objects\ParcelStatusHistory\ExpeditionObject;
 use Sameday\Objects\ParcelStatusHistory\HistoryObject;
@@ -40,7 +41,7 @@ class SamedayGetParcelStatusHistoryResponse implements SamedayResponseInterface
      * @param SamedayGetParcelStatusHistoryRequest $request
      * @param SamedayRawResponse $rawResponse
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function __construct(SamedayGetParcelStatusHistoryRequest $request, SamedayRawResponse $rawResponse)
     {
@@ -60,9 +61,15 @@ class SamedayGetParcelStatusHistoryResponse implements SamedayResponseInterface
             $json['parcelSummary']['parcelAwbNumber'],
             $json['parcelSummary']['parcelWeight'],
             $json['parcelSummary']['isPickedUp'],
-            $json['parcelSummary']['deliveredAt'] ? new DateTime($json['parcelSummary']['deliveredAt']) : null,
-            $json['parcelSummary']['lastDeliveryAttempt'] ? new DateTime($json['parcelSummary']['lastDeliveryAttempt']) : null,
-            $json['parcelSummary']['isPickedUp'] && $json['parcelSummary']['pickedUpAt'] ? new DateTime($json['parcelSummary']['pickedUpAt']) : null
+            isset($json['parcelSummary']['deliveredAt'])
+                ? new DateTime($json['parcelSummary']['deliveredAt'])
+                : null,
+            isset($json['parcelSummary']['lastDeliveryAttempt'])
+                ? new DateTime($json['parcelSummary']['lastDeliveryAttempt'])
+                : null,
+            isset($json['parcelSummary']['isPickedUp'], $json['parcelSummary']['pickedUpAt'])
+                ? new DateTime($json['parcelSummary']['pickedUpAt'])
+                : null
         );
 
         foreach ($json['parcelHistory'] as $history) {
@@ -101,19 +108,20 @@ class SamedayGetParcelStatusHistoryResponse implements SamedayResponseInterface
      *
      * @return HistoryObject
      *
-     * @throws \Exception
+     * @throws Exception
      */
     private function parseHistory(array $json)
     {
         return new HistoryObject(
             $json['statusId'],
             $json['status'],
-            $json['statusLabel'],
-            $json['statusState'],
+            isset($json['statusLabel']) ? $json['statusLabel'] : null,
+            isset($json['statusState']) ? $json['statusState'] : null,
             new DateTime($json['statusDate']),
-            $json['county'],
+            isset($json['county']) ? $json['county'] : null,
             $json['reason'],
-            $json['transitLocation']
+            $json['transitLocation'],
+            isset($json['inReturn']) ? $json['inReturn'] : null
         );
     }
 
@@ -122,7 +130,7 @@ class SamedayGetParcelStatusHistoryResponse implements SamedayResponseInterface
      *
      * @return ExpeditionObject
      *
-     * @throws \Exception
+     * @throws Exception
      */
     private function parseExpedition(array $json)
     {
@@ -130,9 +138,9 @@ class SamedayGetParcelStatusHistoryResponse implements SamedayResponseInterface
             $json['statusId'],
             $json['status'],
             $json['statusLabel'],
-            $json['statusState'],
+            isset($json['statusState']) ? $json['statusState'] : null,
             new DateTime($json['statusDate']),
-            $json['county'],
+            isset($json['county']) ? $json['county'] : null,
             $json['reason'],
             $json['transitLocation'],
             $json['expeditionDetails']

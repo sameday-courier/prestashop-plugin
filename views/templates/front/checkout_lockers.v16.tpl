@@ -27,22 +27,23 @@
 <table class="resume table table-bordered">
     <tbody>
         <tr>
-            <td>{l s='Select locker' mod='samedaycourier'}</td>
+            <td>{l s='Select location' mod='samedaycourier'}</td>
             <td>
                 <button type="button"
                     name="samedaycourier_locker_id"
                     id="showLockerMap"
                     data-username='{$samedayUser}'
-                    data-country='{$hostCountry}'
+                    data-country='{$countryCode}'
                     data-id_cart='{$idCart}'
                     data-city='{$city}'
                     data-county='{$county}'
                     data-store_locker_route='{$storeLockerRoute}'
                     class="button-exclusive btn btn-default"
                 >
-                    {l s='Show locker map' mod='samedaycourier'}
+                    {l s='Show locations' mod='samedaycourier'}
                 </button>
                 <input type="hidden" id="locker_name" name="locker_name">
+                <input type="hidden" id="locker_ooh_type" name="locker_ooh_type">
                 <input type="text" id="locker_address" name="locker_address" style="width:0px;height:0px;opacity:0;">
             </td>
             <td>
