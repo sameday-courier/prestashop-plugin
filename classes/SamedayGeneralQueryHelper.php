@@ -49,7 +49,7 @@ class SamedayGeneralQueryHelper
      */
     public function isTableExists(string $tableName): bool
     {
-        return Db::getInstance()->execute(sprintf("SHOW TABLES LIKE '%s'", $tableName)) === false;
+        return Db::getInstance()->execute(sprintf("SHOW TABLES LIKE '%s'", $tableName));
     }
 
     /**
