@@ -104,31 +104,25 @@ class SamedayCity extends ObjectModel
                 continue;
             }
 
-            $queriedCities = Db::getInstance()->executeS(
-                sprintf("SELECT * FROM %s WHERE `country_code` = '%s'",
-                    _DB_PREFIX_ . self::TABLE_NAME,
-                    $countryCode
+            $states = Db::getInstance()->executeS(
+                sprintf("SELECT * FROM %s WHERE `id_country` = '%s'",
+                    _DB_PREFIX_ . 'state',
+                    $countryId
                 )
             );
 
-            if (empty($queriedCities)) {
+            if (empty($states)) {
                 continue;
             }
 
-            foreach ($queriedCities as $city) {
-                $stateId = Db::getInstance()->getRow(
-                    sprintf(
-                        "SELECT id_state FROM %s WHERE id_country = '%s' AND iso_code = '%s'",
-                        _DB_PREFIX_ . "state",
-                        $countryId,
-                        $city['county_code']
+            foreach ($states as $state) {
+                $cities[$countryId][$state['id_state']] =  Db::getInstance()->executeS(
+                    sprintf("SELECT city_name AS name FROM %s WHERE `country_code` = '%s' AND `county_code` = '%s'",
+                        _DB_PREFIX_ . self::TABLE_NAME,
+                        $countryCode,
+                        $state['iso_code']
                     )
-                )['id_state'] ?? null;
-                if (null === $stateId) {
-                    continue;
-                }
-
-                $cities[$countryId][$stateId][] =  $city;
+                );
             }
         }
 

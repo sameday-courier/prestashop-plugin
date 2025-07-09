@@ -39,4 +39,6 @@ function upgrade_module_1_8_0($object)
 
         Db::getInstance()->execute($query);
     }
+
+    return $object->registerHook('displayHeader');
 }

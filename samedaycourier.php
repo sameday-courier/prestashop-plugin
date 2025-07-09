@@ -184,7 +184,8 @@ class SamedayCourier extends CarrierModule
             $this->registerHook($hookDisplayAdminOrder) &&
             $this->registerHook('actionValidateOrder') &&
             $this->registerHook('actionCarrierProcess') &&
-            $this->registerHook('actionValidateStepComplete')
+            $this->registerHook('actionValidateStepComplete') &&
+            $this->registerHook('displayHeader')
         ;
     }
 
@@ -1616,6 +1617,19 @@ class SamedayCourier extends CarrierModule
         $this->smarty->assign('messages', $this->messages);
 
         return $this->display(__FILE__, 'displayAdminAfterHeader.tpl');
+    }
+
+    public function hookDisplayHeader()
+    {
+        if (!in_array($this->context->controller->php_self, ['checkout', 'order'], true)) {
+            return;
+        }
+
+        Media::addJsDef([
+            'SamedayCities' => SamedayCity::getCitiesCachedResult(),
+        ]);
+
+        $this->context->controller->addJS($this->_path .  'views/js/citiesHandler.js');
     }
 
     /**
