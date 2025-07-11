@@ -4,7 +4,11 @@ $(document).ready(() => {
             if (formElements.state.length > 0) {
                 $(document).off('change', `#${formElements.state[0].id}`);
                 $(document).on('change', `#${formElements.state[0].id}`, (event) => {
-                    updateCities(formElements.city[0], event.target.value, formElements.country.val());
+                    updateCities(
+                        document.getElementById(formElements.city[0].id),
+                        event.target.value,
+                        document.getElementById(formElements.country[0].id).value
+                    );
                 });
             }
         }
@@ -44,7 +48,6 @@ let formElements = {
 
 const updateCities = (cityField, stateCode, countryCode) => {
     let cities = SamedayCities[countryCode][stateCode] ?? [];
-    console.log(cityField, stateCode, countryCode);
     if (cities.length > 0) {
         console.log(cities);
         if (undefined !== citySelectElement && citySelectElement.length > 0) {
