@@ -49,7 +49,6 @@ let formElements = {
 const updateCities = (cityField, stateCode, countryCode) => {
     let cities = SamedayCities[countryCode][stateCode] ?? [];
     if (cities.length > 0) {
-        console.log(cities);
         if (undefined !== citySelectElement && citySelectElement.length > 0) {
             populateCityField(cities, citySelectElement, cityField);
         } else {
