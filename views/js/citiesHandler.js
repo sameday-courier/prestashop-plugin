@@ -87,8 +87,3 @@ const populateCityField = (cities, citySelectElement, cityField) => {
 
     cityField.replaceWith(citySelectElement);
 }
-
-if (typeof $.migrateMute !== "undefined") {
-    $.migrateMute = true;
-}
-
