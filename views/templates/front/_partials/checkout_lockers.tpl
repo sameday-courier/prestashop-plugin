@@ -96,9 +96,11 @@
 
                 let lockerPlugin = window['LockerPlugin'].getInstance();
 
-                showLockerMap.addEventListener('click', () => {
-                    lockerPlugin.open();
-                }, false);
+                document.addEventListener('click', (e) => {
+                    if (e.target?.id === showLockerMap.id) {
+                        lockerPlugin.open();
+                    }
+                });
 
                 lockerPlugin.subscribe((locker) => {
                     let lockerId = locker.lockerId;
