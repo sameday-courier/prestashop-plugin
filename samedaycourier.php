@@ -175,18 +175,27 @@ class SamedayCourier extends CarrierModule
             $hookDisplayAdminOrder = 'displayAdminOrderContentShip';
         }
 
-        return parent::install() &&
-            $this->registerHook('actionCarrierUpdate') &&
-            (version_compare(_PS_VERSION_, '1.7.0.0') < 0
-                ? $this->registerHook('extraCarrier')
-                : $this->registerHook('displayCarrierExtraContent')) &&
-            $this->registerHook('displayAdminAfterHeader') &&
-            $this->registerHook($hookDisplayAdminOrder) &&
-            $this->registerHook('actionValidateOrder') &&
-            $this->registerHook('actionCarrierProcess') &&
-            $this->registerHook('actionValidateStepComplete') &&
-            $this->registerHook('displayHeader')
-        ;
+        // Common Hook between version:
+        $this->registerHook('actionCarrierUpdate');
+        $this->registerHook('displayAdminAfterHeader');
+        $this->registerHook('actionValidateOrder');
+        $this->registerHook('actionCarrierProcess');
+        $this->registerHook('actionValidateStepComplete');
+
+        $hookDisplayAdminOrder = 'displayAdminOrderSide';
+        $hookExtraCarrier = 'displayCarrierExtraContent';
+        $hookHeader = 'displayHeader';
+        if (($this->getMajorVersion() === 1) && ($this->getMinorVersion() === 6)) {
+            $hookDisplayAdminOrder = 'displayAdminOrderContentShip';
+            $hookExtraCarrier = 'extraCarrier';
+            $hookHeader = 'Header';
+        }
+
+        $this->registerHook($hookDisplayAdminOrder);
+        $this->registerHook($hookExtraCarrier);
+        $this->registerHook($hookHeader);
+
+        return parent::install();
     }
 
     /**
@@ -1619,9 +1628,25 @@ class SamedayCourier extends CarrierModule
         return $this->display(__FILE__, 'displayAdminAfterHeader.tpl');
     }
 
+    /**
+     * @return void
+     */
+    public function hookHeader()
+    {
+        $this->insertNewHeader();
+    }
+
+    /**
+     * @return void
+     */
     public function hookDisplayHeader()
     {
-        if (!in_array($this->context->controller->php_self, ['checkout', 'order'], true)) {
+        $this->insertNewHeader();
+    }
+
+    private function insertNewHeader()
+    {
+        if (!in_array($this->context->controller->php_self, ['address', 'checkout', 'order'], true)) {
             return;
         }
 

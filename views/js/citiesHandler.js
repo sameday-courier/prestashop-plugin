@@ -22,18 +22,12 @@ $(document).ready(() => {
 });
 
 /**
- * Constants for field types
- */
-const FIELD_TYPE = 'field';
-
-/**
  * @param fieldName
- * @param type
  *
  * @returns HTML|undefined
  */
-const getFieldByType = (fieldName, type) => {
-    return Array.from(document.querySelectorAll(`input[id*=${type}], select[id*=${type}]`))
+const getFieldByName = (fieldName) => {
+    return Array.from(document.querySelectorAll('input, select'))
         .find(element => element.id.includes(fieldName)
     );
 }
@@ -41,13 +35,13 @@ const getFieldByType = (fieldName, type) => {
 let citySelectElement;
 
 let formElements = {
-    country: $(getFieldByType('country', FIELD_TYPE)),
-    state: $(getFieldByType('state', FIELD_TYPE)),
-    city: $(getFieldByType('city', FIELD_TYPE)),
+    country: $(getFieldByName('country')),
+    state: $(getFieldByName('state')),
+    city: $(getFieldByName('city')),
 };
 
 const updateCities = (cityField, stateCode, countryCode) => {
-    let cities = SamedayCities[countryCode][stateCode] ?? [];
+    let cities = SamedayCities?.[countryCode]?.[stateCode] ?? [];
     if (cities.length > 0) {
         if (undefined !== citySelectElement && citySelectElement.length > 0) {
             populateCityField(cities, citySelectElement, cityField);

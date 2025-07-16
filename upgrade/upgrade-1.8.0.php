@@ -40,5 +40,9 @@ function upgrade_module_1_8_0($object)
         Db::getInstance()->execute($query);
     }
 
-    return $object->registerHook('displayHeader');
+    return (version_compare(_PS_VERSION_, '1.7.0.0') < 0
+            ? $object->registerHook('Header')
+            : $object->registerHook('displayHeader')
+        )
+    ;
 }
