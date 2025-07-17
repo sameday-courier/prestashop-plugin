@@ -1,1 +1,0 @@
-Afisare in header !!!!!
