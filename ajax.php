@@ -111,6 +111,7 @@ if(Tools::getValue('action') === 'nomenclatorImportCities'){
             return;
         }
     } while ($page <= $response->getPages());
+    die('Process finished');
 }
 
 if (Tools::getValue('action') === 'store_locker') {
