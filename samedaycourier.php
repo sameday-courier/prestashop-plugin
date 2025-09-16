@@ -838,7 +838,7 @@ class SamedayCourier extends CarrierModule
 
         $helper = new HelperList();
         $helper->toolbar_btn = array();
-        $helper->toolbar_btn['new'] = array(
+        $helper->toolbar_btn['download'] = array(
             'href' => $this->currentIndex . '&import_pickup_points&token=' . Tools::getAdminTokenLite('AdminModules'),
             'desc' => $this->l('Import pickup-points assigned to your Sameday account'),
         );
