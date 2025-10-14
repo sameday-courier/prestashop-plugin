@@ -1659,10 +1659,16 @@ class SamedayCourier extends CarrierModule
                 $samedayCarrierIds[] = $carrier['id_carrier'];
             }
 
+            if (($this->getMajorVersion() === 1) && ($this->getMinorVersion() === 7)) {
+                $errorFile = 'views/js/weightError-17.js';
+            }else{
+                $errorFile = 'views/js/weightError.js';
+            }
+
             Media::addJsDef([
                 'cartTotalWeight' => $totalWeight,
                 'samedayCarrierIds' => $samedayCarrierIds,
-                'weightErrorJsPath' => $this->_path . 'views/js/weightError.js'
+                'weightErrorJsPath' => $this->_path . $errorFile
             ]);
 
             // Add the carrier change handler
