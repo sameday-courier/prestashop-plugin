@@ -1648,7 +1648,6 @@ class SamedayCourier extends CarrierModule
         }
 
         if(in_array($this->context->controller->php_self, ['order'], true)){
-            // Calculate total weight once and pass to JavaScript
             $totalWeight = 0;
             $cartProducts = $this->context->cart->getProducts();
             foreach($cartProducts as $product) {
@@ -1659,7 +1658,6 @@ class SamedayCourier extends CarrierModule
             foreach ($samedayCarriers as $carrier) {
                 $samedayCarrierIds[] = $carrier['id_carrier'];
             }
-//            echo '<pre>'; print_r($samedayCarrierIds);
 
             Media::addJsDef([
                 'cartTotalWeight' => $totalWeight,
@@ -1669,13 +1667,6 @@ class SamedayCourier extends CarrierModule
 
             // Add the carrier change handler
             $this->context->controller->addJS($this->_path . 'views/js/carrierWeightHandler.js');
-
-//            echo '<pre>'; print_r(SamedayService::getEnabledServices());
-
-//            if($totalWeight > 1500 && SamedayService::findByCarrierId($this->context->cart->id_carrier)) {
-//                // Add the carrier change handler
-//                $this->context->controller->addJS($this->_path . 'views/js/weightError.js');
-//            }
 
         }
 
