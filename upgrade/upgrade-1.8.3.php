@@ -23,7 +23,7 @@ if (!defined('_PS_VERSION_')) {
  * useful when you modify your database, or register a new hook ...
  * Don't forget to create one file per version.
  */
-function upgrade_module_1_8_1($object)
+function upgrade_module_1_8_3($object)
 {
     $samedayCityTableName = _DB_PREFIX_ . SamedayCity::TABLE_NAME;
     if (false === (new SamedayGeneralQueryHelper())->isTableExists($samedayCityTableName)) {

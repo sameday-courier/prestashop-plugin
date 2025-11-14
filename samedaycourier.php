@@ -112,7 +112,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.8.1';
+        $this->version = '1.8.3';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1559,9 +1559,6 @@ class SamedayCourier extends CarrierModule
         }
 
         $name = $this->l('Sameday Courier');
-        if (((int) Configuration::get('SAMEDAY_LIVE_MODE', 0)) === 0) {
-            $name .= ' ' . $this->l('SamedayCourier');
-        }
 
         $carrier->name = $name;
         $carrier->is_module = true;
@@ -1648,6 +1645,35 @@ class SamedayCourier extends CarrierModule
     {
         if (!in_array($this->context->controller->php_self, ['address', 'checkout', 'order'], true)) {
             return;
+        }
+
+        if(in_array($this->context->controller->php_self, ['order'], true)){
+            $totalWeight = 0;
+            $cartProducts = $this->context->cart->getProducts();
+            foreach($cartProducts as $product) {
+                $totalWeight += $product['weight'];
+            }
+
+            $samedayCarriers = SamedayService::getEnabledServices();
+            foreach ($samedayCarriers as $carrier) {
+                $samedayCarrierIds[] = $carrier['id_carrier'];
+            }
+
+            if (($this->getMajorVersion() === 1) && ($this->getMinorVersion() === 7)) {
+                $errorFile = 'views/js/weightError-17.js';
+            }else{
+                $errorFile = 'views/js/weightError.js';
+            }
+
+            Media::addJsDef([
+                'cartTotalWeight' => $totalWeight,
+                'samedayCarrierIds' => $samedayCarrierIds,
+                'weightErrorJsPath' => $this->_path . $errorFile
+            ]);
+
+            // Add the carrier change handler
+            $this->context->controller->addJS($this->_path . 'views/js/carrierWeightHandler.js');
+
         }
 
         Media::addJsDef([
