@@ -855,8 +855,14 @@ class SamedayCourier extends CarrierModule
         $helper->currentIndex = $this->currentIndex;
 
         $this->html .= $this->generateAddPickupPointForm();
+        $this->html .= $this->generatePickupPointsTableSearch();
 
         $this->html .= $helper->generateList($pickupPoints, $fields);
+    }
+
+    private function generatePickupPointsTableSearch(): string
+    {
+        return $this->display(__FILE__, 'views/templates/admin/pickupPointsTableSearch.tpl');
     }
 
     /**
