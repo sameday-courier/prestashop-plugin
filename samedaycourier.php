@@ -179,6 +179,7 @@ class SamedayCourier extends CarrierModule
         $this->registerHook('actionCarrierUpdate');
         $this->registerHook('displayAdminAfterHeader');
         $this->registerHook('actionValidateOrder');
+        $this->registerHook('validateOrder');
         $this->registerHook('actionCarrierProcess');
         $this->registerHook('actionValidateStepComplete');
 
@@ -1647,7 +1648,7 @@ class SamedayCourier extends CarrierModule
             return;
         }
 
-        if(in_array($this->context->controller->php_self, ['order'], true)){
+        if(in_array($this->context->controller->page_name, ['checkout'], true) || in_array($this->context->controller->php_self, ['order', 'order-opc'], true)){
             $totalWeight = 0;
             $cartProducts = $this->context->cart->getProducts();
             foreach($cartProducts as $product) {
@@ -1661,6 +1662,8 @@ class SamedayCourier extends CarrierModule
 
             if (($this->getMajorVersion() === 1) && ($this->getMinorVersion() === 7)) {
                 $errorFile = 'views/js/weightError-17.js';
+            }else if(($this->getMajorVersion() === 1) && ($this->getMinorVersion() === 6)){
+                $errorFile = 'views/js/weightError-16.js';
             }else{
                 $errorFile = 'views/js/weightError.js';
             }
@@ -2048,6 +2051,10 @@ class SamedayCourier extends CarrierModule
     public function hookActionCarrierProcess()
     {
         //
+    }
+
+    public function hookValidateOrder($params){
+        var_dump('asdasd');
     }
 
     /**

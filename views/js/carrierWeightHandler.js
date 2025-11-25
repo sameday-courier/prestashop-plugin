@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('1.6?');
     let weightErrorLoaded = false;
 
     function checkWeightAndCarrier(carrierId) {
