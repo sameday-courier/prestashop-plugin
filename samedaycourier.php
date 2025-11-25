@@ -96,7 +96,14 @@ class SamedayCourier extends CarrierModule
     /**
      * Cash on delivery
      */
-    const COD = ['Cod', 'Ramburs'];
+    private static $COD = null;
+
+    public static function getCOD() {
+        if (self::$COD === null) {
+            self::$COD = Configuration::get('SAMEDAY_COD_REFERENCES');
+        }
+        return self::$COD;
+    }
 
     const CURRENCIES = [
         'RON' => SamedayConstants::API_HOST_LOCALE_RO,
@@ -222,6 +229,7 @@ class SamedayCourier extends CarrierModule
         Configuration::deleteByName('SAMEDAY_LAST_LOCKERS');
         Configuration::deleteByName('SAMEDAY_TOKEN');
         Configuration::deleteByName('SAMEDAY_TOKEN_EXPIRES_AT');
+        Configuration::deleteByName('SAMEDAY_COD_REFERENCES');
 
         $services = SamedayService::getAllServices();
         foreach ($services as $service) {
@@ -624,6 +632,13 @@ class SamedayCourier extends CarrierModule
                         'label'  => $this->l('Locker max. items'),
                     ),
                     array(
+                        'col'    => 5,
+                        'type'   => 'text',
+                        'name'   => 'SAMEDAY_COD_REFERENCES',
+                        'desc'   => $this->l('Add third party COD (cash on delivery) references. Default: Cod, Ramburs. Delimited by comma'),
+                        'label'  => $this->l('COD References'),
+                    ),
+                    array(
                         'type'    => 'switch',
                         'label'   => $this->l('Debug'),
                         'name'    => 'SAMEDAY_DEBUG_MODE',
@@ -700,6 +715,10 @@ class SamedayCourier extends CarrierModule
             'SAMEDAY_DEBUG_MODE'       => Tools::getValue(
                 'SAMEDAY_DEBUG_MODE',
                 Configuration::get('SAMEDAY_DEBUG_MODE', null)
+            ),
+            'SAMEDAY_COD_REFERENCES' => Tools::getValue(
+                'SAMEDAY_COD_REFERENCES',
+                implode(',', json_decode(Configuration::get('SAMEDAY_COD_REFERENCES', null)))
             ),
             'SAMEDAY_AWB_PDF_FORMAT'   => Tools::getValue(
                 'SAMEDAY_AWB_PDF_FORMAT',
@@ -1100,7 +1119,12 @@ class SamedayCourier extends CarrierModule
                 $form_values[SamedayPersistenceDataHandler::KEYS[\Sameday\SamedayClient::KEY_TOKEN_EXPIRES]] = '';
 
                 foreach (array_keys($form_values) as $key) {
-                    Configuration::updateValue($key, Tools::getValue($key));
+                    if($key == "SAMEDAY_COD_REFERENCES"){
+                        $value = json_encode(explode(",", Tools::getValue($key)));
+                        Configuration::updateValue($key, $value);
+                    }else{
+                        Configuration::updateValue($key, Tools::getValue($key));
+                    }
                 }
 
                 // Import local data Services and PickupPoints
@@ -1806,7 +1830,7 @@ class SamedayCourier extends CarrierModule
      */
     private function checkForCashPayment($paymentType): bool
     {
-        foreach (self::COD as $value) {
+        foreach (self::$COD as $value) {
             if (stripos($paymentType, $value) !== false) {
                 return true;
             }
