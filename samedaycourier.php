@@ -1192,9 +1192,14 @@ class SamedayCourier extends CarrierModule
 
                     // Convert COD references from comma-separated string to JSON array
                     if ($key === 'SAMEDAY_COD_REFERENCES') {
-                        $codArray = array_map('trim', explode(',', $value));
-                        $codArray = array_filter($codArray); // Remove empty values
-                        $value = json_encode($codArray);
+                        if (Tools::getValue($key)) {
+                            $codArray = array_map('trim', explode(',', $value));
+                            $codArray = array_filter($codArray); // Remove empty values
+                            $value = json_encode($codArray);
+                        } else {
+                            $value = null;
+                        }
+
                     }
 
                     Configuration::updateValue($key, $value);
