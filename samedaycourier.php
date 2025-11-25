@@ -1120,10 +1120,10 @@ class SamedayCourier extends CarrierModule
                 $form_values[SamedayPersistenceDataHandler::KEYS[\Sameday\SamedayClient::KEY_TOKEN_EXPIRES]] = '';
 
                 foreach (array_keys($form_values) as $key) {
-                    if($key == "SAMEDAY_COD_REFERENCES"){
+                    if ($key == "SAMEDAY_COD_REFERENCES") {
                         $value = json_encode(explode(",", Tools::getValue($key)));
                         Configuration::updateValue($key, $value);
-                    }else{
+                    } else {
                         Configuration::updateValue($key, Tools::getValue($key));
                     }
                 }
