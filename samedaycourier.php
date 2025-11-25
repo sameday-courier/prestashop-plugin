@@ -176,12 +176,6 @@ class SamedayCourier extends CarrierModule
         }
 
         // Common Hook between version:
-        $this->registerHook('actionCarrierUpdate');
-        $this->registerHook('displayAdminAfterHeader');
-        $this->registerHook('actionValidateOrder');
-        $this->registerHook('actionCarrierProcess');
-        $this->registerHook('actionValidateStepComplete');
-
         $hookDisplayAdminOrder = 'displayAdminOrderSide';
         $hookExtraCarrier = 'displayCarrierExtraContent';
         $hookHeader = 'displayHeader';
@@ -191,11 +185,15 @@ class SamedayCourier extends CarrierModule
             $hookHeader = 'Header';
         }
 
-        $this->registerHook($hookDisplayAdminOrder);
-        $this->registerHook($hookExtraCarrier);
+        return parent::install() &&
+        $this->registerHook('actionCarrierUpdate') &&
+        $this->registerHook('displayAdminAfterHeader') &&
+        $this->registerHook('actionValidateOrder') &&
+        $this->registerHook('actionCarrierProcess') &&
+        $this->registerHook('actionValidateStepComplete') &&
+        $this->registerHook($hookDisplayAdminOrder) &&
+        $this->registerHook($hookExtraCarrier) &&
         $this->registerHook($hookHeader);
-
-        return parent::install();
     }
 
     /**
