@@ -99,6 +99,13 @@ final class SamedayConstants
     ];
 
     const DEFAULT_HOST_COUNTRY = 'ro';
+    
+    const COD_DEFAULTS = [
+        self::API_HOST_LOCALE_RO => ['Cod', 'Ramburs'],
+        self::API_HOST_LOCALE_HU => ['Utánvét', 'Utánvétel'],
+        self::API_HOST_LOCALE_BG => ['Наложен платеж', 'Плащане при получаване'],
+    ];
+    
     const TOGGLE_HTML_ELEMENT = [
         'show' => 'block',
         'hide' => 'none',
