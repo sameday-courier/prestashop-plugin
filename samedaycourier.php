@@ -98,7 +98,8 @@ class SamedayCourier extends CarrierModule
      */
     private static $COD = null;
 
-    public static function getCOD() {
+    public static function getCOD()
+    {
         if (self::$COD === null) {
             self::$COD = Configuration::get('SAMEDAY_COD_REFERENCES');
         }
