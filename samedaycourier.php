@@ -112,7 +112,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.8.1';
+        $this->version = '1.8.4';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -176,12 +176,6 @@ class SamedayCourier extends CarrierModule
         }
 
         // Common Hook between version:
-        $this->registerHook('actionCarrierUpdate');
-        $this->registerHook('displayAdminAfterHeader');
-        $this->registerHook('actionValidateOrder');
-        $this->registerHook('actionCarrierProcess');
-        $this->registerHook('actionValidateStepComplete');
-
         $hookDisplayAdminOrder = 'displayAdminOrderSide';
         $hookExtraCarrier = 'displayCarrierExtraContent';
         $hookHeader = 'displayHeader';
@@ -191,11 +185,15 @@ class SamedayCourier extends CarrierModule
             $hookHeader = 'Header';
         }
 
-        $this->registerHook($hookDisplayAdminOrder);
-        $this->registerHook($hookExtraCarrier);
+        return parent::install() &&
+        $this->registerHook('actionCarrierUpdate') &&
+        $this->registerHook('displayAdminAfterHeader') &&
+        $this->registerHook('actionValidateOrder') &&
+        $this->registerHook('actionCarrierProcess') &&
+        $this->registerHook('actionValidateStepComplete') &&
+        $this->registerHook($hookDisplayAdminOrder) &&
+        $this->registerHook($hookExtraCarrier) &&
         $this->registerHook($hookHeader);
-
-        return parent::install();
     }
 
     /**
