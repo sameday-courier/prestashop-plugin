@@ -107,24 +107,24 @@ class SamedayCourier extends CarrierModule
         if (empty($hostCountry)) {
             $hostCountry = SamedayConstants::DEFAULT_HOST_COUNTRY;
         }
-        
+
         // Create cache key that includes host country to handle country changes
         $cacheKey = $hostCountry . '_' . Configuration::get('SAMEDAY_COD_REFERENCES');
-        
+
         // Reset cache if host country or COD references changed
         if (self::$COD === null || self::$COD_CACHE_KEY !== $cacheKey) {
             $codReferences = Configuration::get('SAMEDAY_COD_REFERENCES');
-            
+
             // Get country-specific defaults
             $defaultCod = SamedayConstants::COD_DEFAULTS[$hostCountry] ?? SamedayConstants::COD_DEFAULTS[SamedayConstants::DEFAULT_HOST_COUNTRY];
-            
+
             // If empty, use default values based on host country
             if (empty($codReferences)) {
                 self::$COD = $defaultCod;
                 self::$COD_CACHE_KEY = $cacheKey;
                 return self::$COD;
             }
-            
+
             // Try to decode as JSON first (if stored as JSON array)
             $decoded = json_decode($codReferences, true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
@@ -133,13 +133,13 @@ class SamedayCourier extends CarrierModule
                 // If not JSON, treat as comma-separated string
                 $codArray = array_map('trim', explode(',', $codReferences));
                 self::$COD = array_filter($codArray); // Remove empty values
-                
+
                 // If still empty after processing, use defaults based on host country
                 if (empty(self::$COD)) {
                     self::$COD = $defaultCod;
                 }
             }
-            
+
             self::$COD_CACHE_KEY = $cacheKey;
         }
         return self::$COD;
@@ -147,33 +147,33 @@ class SamedayCourier extends CarrierModule
 
     /**
      * Get COD references formatted for form display (comma-separated string)
-     * 
+     *
      * @return string
      */
     private function getCodReferencesForForm(): string
     {
         $codReferences = Configuration::get('SAMEDAY_COD_REFERENCES');
-        
+
         // Get host country for default values
         $hostCountry = $this->generalHelper->getHostCountry();
-        
+
         // Get country-specific defaults
         $defaultCod = SamedayConstants::COD_DEFAULTS[$hostCountry] ?? SamedayConstants::COD_DEFAULTS[SamedayConstants::DEFAULT_HOST_COUNTRY];
-        
+
         if (empty($codReferences)) {
             return implode(', ', $defaultCod);
         }
-        
+
         // Try to decode as JSON first
         $decoded = json_decode($codReferences, true);
         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
             return implode(', ', $decoded);
         }
-        
+
         // If not JSON, return as is (already comma-separated)
         return $codReferences;
     }
-    
+
     const CURRENCIES = [
         'RON' => SamedayConstants::API_HOST_LOCALE_RO,
         'HUF' => SamedayConstants::API_HOST_LOCALE_HU,
@@ -1181,6 +1181,7 @@ class SamedayCourier extends CarrierModule
     {
         if ((Tools::isSubmit('submit_sameday')) === true) {
             $form_values = $this->getConfigFormValues();
+
             if ($this->connectionLogin($form_values)) {
                 //Reset old token
                 $form_values[SamedayPersistenceDataHandler::KEYS[\Sameday\SamedayClient::KEY_TOKEN]] = '';
@@ -1188,14 +1189,14 @@ class SamedayCourier extends CarrierModule
 
                 foreach (array_keys($form_values) as $key) {
                     $value = Tools::getValue($key);
-                    
+
                     // Convert COD references from comma-separated string to JSON array
                     if ($key === 'SAMEDAY_COD_REFERENCES') {
                         $codArray = array_map('trim', explode(',', $value));
                         $codArray = array_filter($codArray); // Remove empty values
                         $value = json_encode($codArray);
                     }
-                    
+
                     Configuration::updateValue($key, $value);
                 }
 
@@ -1655,6 +1656,9 @@ class SamedayCourier extends CarrierModule
         }
 
         $name = $this->l('Sameday Courier');
+        if (((int) Configuration::get('SAMEDAY_LIVE_MODE', 0)) === 0) {
+            $name .= ' ' . $this->l('SamedayCourier');
+        }
 
         $carrier->name = $name;
         $carrier->is_module = true;
@@ -1929,11 +1933,11 @@ class SamedayCourier extends CarrierModule
     private function checkForCashPayment($paymentType): bool
     {
         $codReferences = self::getCOD();
-        
+
         if (empty($codReferences) || !is_array($codReferences)) {
             return false;
         }
-        
+
         foreach ($codReferences as $value) {
             if (stripos($paymentType, $value) !== false) {
                 return true;
