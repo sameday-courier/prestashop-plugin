@@ -10,9 +10,9 @@ variables:
   - group: sonar-project-keys
   - group: defectdojo-config
   - name: projectKey
-    value: $(PROJECT_KEY_SD.Plugins-opencart-plugin)
+    value: $(PROJECT_KEY_SD.Plugins-prestashop-plugin)
   - name: SONAR_PROJECT_KEY
-    value: $(PROJECT_KEY_SD.Plugins-opencart-plugin)
+    value: $(PROJECT_KEY_SD.Plugins-prestashop-plugin)
 
 resources:
   repositories:
