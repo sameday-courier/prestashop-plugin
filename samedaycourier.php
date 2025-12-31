@@ -80,26 +80,21 @@ class SamedayCourier extends CarrierModule
         '1.6' => [
             'locker_options_map' => 'checkout_lockers.v16.tpl',
             'locker_options_selector' => 'checkout_lockers_selector.v16.tpl',
-            'open_package_option' => 'checkout_open_package.v16.tpl'
+            'open_package_option' => 'checkout_open_package.v16.tpl',
+            'bgn_conversion_label' => 'bgn_conversion_label.v16.tpl',
         ],
         '1.7' => [
             'locker_options_map' => 'checkout_lockers.v17.tpl',
             'locker_options_selector' => 'checkout_lockers_selector.v17.tpl',
-            'open_package_option' => 'checkout_open_package.v17.tpl'
+            'open_package_option' => 'checkout_open_package.v17.tpl',
+            'bgn_conversion_label' => 'bgn_conversion_label.v17.tpl',
         ]
     ];
 
     const DEFAULT_VALUE_LOCKER_MAX_ITEMS = 5;
-
     const DEFAULT_HOST_COUNTRY = 'ro';
-
-    /**
-     * Cash on delivery
-     */
-//    const COD = ['Cod', 'Ramburs'];
     private static $COD = null;
     private static $COD_CACHE_KEY = null;
-
     public static function getCOD()
     {
         // Get host country for default values
@@ -188,7 +183,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.8.4';
+        $this->version = '1.8.5';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -247,12 +242,6 @@ class SamedayCourier extends CarrierModule
         include(__DIR__ . '/sql/install.php');
 
         $hookDisplayAdminOrder = 'displayAdminOrderSide';
-        if (($this->getMajorVersion() === 1) && ($this->getMinorVersion() === 6)) {
-            $hookDisplayAdminOrder = 'displayAdminOrderContentShip';
-        }
-
-        // Common Hook between version:
-        $hookDisplayAdminOrder = 'displayAdminOrderSide';
         $hookExtraCarrier = 'displayCarrierExtraContent';
         $hookHeader = 'displayHeader';
         if (($this->getMajorVersion() === 1) && ($this->getMinorVersion() === 6)) {
@@ -261,15 +250,16 @@ class SamedayCourier extends CarrierModule
             $hookHeader = 'Header';
         }
 
-        return parent::install() &&
-        $this->registerHook('actionCarrierUpdate') &&
-        $this->registerHook('displayAdminAfterHeader') &&
-        $this->registerHook('actionValidateOrder') &&
-        $this->registerHook('actionCarrierProcess') &&
-        $this->registerHook('actionValidateStepComplete') &&
-        $this->registerHook($hookDisplayAdminOrder) &&
-        $this->registerHook($hookExtraCarrier) &&
-        $this->registerHook($hookHeader);
+        return parent::install()
+            && $this->registerHook('actionCarrierUpdate')
+            && $this->registerHook('displayAdminAfterHeader')
+            && $this->registerHook('actionValidateOrder')
+            && $this->registerHook('actionCarrierProcess')
+            && $this->registerHook('actionValidateStepComplete')
+            && $this->registerHook($hookDisplayAdminOrder)
+            && $this->registerHook($hookExtraCarrier)
+            && $this->registerHook($hookHeader)
+        ;
     }
 
     /**
@@ -1513,7 +1503,31 @@ class SamedayCourier extends CarrierModule
 
         try {
             $estimation = $sameday->postAwbEstimation($request);
-            $this->servicePriceCache[$service['id']] = $estimation->getCost();
+            $price = $estimation->getCost();
+            $estimatedCurrency = $estimation->getCurrency();
+
+            $this->servicePriceCache[$service['id']] = $price;
+
+            // Business logic for Bulgarian Currency
+            $storeCurrency = Currency::getCurrencyInstance($params->id_currency);
+            $storeCurrencyCode = $storeCurrency->iso_code;
+            if ($storeCurrencyCode !== $estimatedCurrency) {
+                try {
+                    $bgnCurrencyConvertor = new SamedayBgnCurrencyConvertor($storeCurrencyCode, $price);
+                    $this->servicePriceCache[$service['id']] = $bgnCurrencyConvertor->convert();
+
+                    $this->context->smarty->assign(
+                        [
+                            "currency_label_" . $service['id'] => $bgnCurrencyConvertor->buildCurrencyConversionLabel(
+                                $this->servicePriceCache[$service['id']],
+                                $storeCurrency->symbol,
+                                $price,
+                                $estimatedCurrency
+                            )
+                        ]
+                    );
+                } catch (Exception $exception) {}
+            }
         } catch (Exception $exception) {
             $this->servicePriceCache[$service['id']] = $shipping_cost;
         }
@@ -1741,13 +1755,22 @@ class SamedayCourier extends CarrierModule
         $this->insertNewHeader();
     }
 
+    /**
+     * @return void
+     */
     private function insertNewHeader()
     {
         if (!in_array($this->context->controller->php_self, ['address', 'checkout', 'order'], true)) {
             return;
         }
 
-        if(in_array($this->context->controller->php_self, ['order'], true)){
+        Media::addJsDef([
+            'SamedayCities' => SamedayCity::getCitiesCachedResult(),
+        ]);
+
+        $this->context->controller->addJS($this->_path .  'views/js/citiesHandler.js');
+
+        if ($this->context->controller->php_self === 'order') {
             $totalWeight = 0;
             $cartProducts = $this->context->cart->getProducts();
             foreach($cartProducts as $product) {
@@ -1755,13 +1778,14 @@ class SamedayCourier extends CarrierModule
             }
 
             $samedayCarriers = SamedayService::getEnabledServices();
+            $samedayCarrierIds = [];
             foreach ($samedayCarriers as $carrier) {
                 $samedayCarrierIds[] = $carrier['id_carrier'];
             }
 
             if (($this->getMajorVersion() === 1) && ($this->getMinorVersion() === 7)) {
                 $errorFile = 'views/js/weightError-17.js';
-            }else{
+            } else {
                 $errorFile = 'views/js/weightError.js';
             }
 
@@ -1775,12 +1799,6 @@ class SamedayCourier extends CarrierModule
             $this->context->controller->addJS($this->_path . 'views/js/carrierWeightHandler.js');
 
         }
-
-        Media::addJsDef([
-            'SamedayCities' => SamedayCity::getCitiesCachedResult(),
-        ]);
-
-        $this->context->controller->addJS($this->_path .  'views/js/citiesHandler.js');
     }
 
     /**
@@ -2058,8 +2076,9 @@ class SamedayCourier extends CarrierModule
         $fileVersion
     )
     {
+        $html = "";
+        $cart = new CartCore($params['cart']->id);
         if ($this->isServiceEligibleToLocker((string) $service['code'])) {
-            $cart = new CartCore($params['cart']->id);
             $address = new AddressCore($cart->id_address_delivery);
             $stateName = StateCore::getNameById($address->id_state);
 
@@ -2105,12 +2124,11 @@ class SamedayCourier extends CarrierModule
                 Tools::getAdminToken('Samedaycourier')
             );
             $this->smarty->assign('storeLockerRoute', $storeLockerRoute);
+            $html = $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_selector']);
 
             if(Configuration::get('SAMEDAY_LOCKERS_MAP')) {
-                return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_map']);
+                $html = $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_map']);
             }
-
-            return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_selector']);
         }
 
         if (
@@ -2120,10 +2138,17 @@ class SamedayCourier extends CarrierModule
             $this->smarty->assign('carrier_id', $params['cart']->id_carrier);
             $this->smarty->assign('label', Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL'));
 
-            return $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['open_package_option']);
+            $html = $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['open_package_option']);
         }
 
-        return '';
+        // Business logic for construct Bulgarian Currency label
+        $currencyConversionLabel = $this->context->smarty->getTemplateVars('currency_label_' . $service['id']);
+        if (null !== $currencyConversionLabel) {
+            $this->smarty->assign("currency_conversion_label", $currencyConversionLabel);
+            $html .= $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['bgn_conversion_label']);
+        }
+
+        return $html;
     }
 
     /**
