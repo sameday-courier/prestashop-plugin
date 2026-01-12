@@ -97,43 +97,33 @@ class SamedayCourier extends CarrierModule
     private static $COD_CACHE_KEY = null;
     public static function getCOD()
     {
-        // Get host country for default values
-        $hostCountry = Configuration::get('SAMEDAY_HOST_COUNTRY');
-        if (empty($hostCountry)) {
-            $hostCountry = SamedayConstants::DEFAULT_HOST_COUNTRY;
-        }
+        $codReferences = Configuration::get('SAMEDAY_COD_REFERENCES');
+        $cacheKey = (string) $codReferences;
 
-        // Create cache key that includes host country to handle country changes
-        $cacheKey = $hostCountry . '_' . Configuration::get('SAMEDAY_COD_REFERENCES');
-
-        // Reset cache if host country or COD references changed
+        // Reset cache if COD references changed
         if (self::$COD === null || self::$COD_CACHE_KEY !== $cacheKey) {
-            $codReferences = Configuration::get('SAMEDAY_COD_REFERENCES');
-
-            // Get country-specific defaults
-            $defaultCod = SamedayConstants::COD_DEFAULTS[$hostCountry] ?? SamedayConstants::COD_DEFAULTS[SamedayConstants::DEFAULT_HOST_COUNTRY];
-
-            // If empty, use default values based on host country
-            if (empty($codReferences)) {
-                self::$COD = $defaultCod;
-                self::$COD_CACHE_KEY = $cacheKey;
-                return self::$COD;
+            $defaultCod = [];
+            foreach (SamedayConstants::COD_DEFAULTS as $countryDefaults) {
+                $defaultCod = array_merge($defaultCod, $countryDefaults);
             }
 
-            // Try to decode as JSON first (if stored as JSON array)
-            $decoded = json_decode($codReferences, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                self::$COD = $decoded;
-            } else {
-                // If not JSON, treat as comma-separated string
-                $codArray = array_map('trim', explode(',', $codReferences));
-                self::$COD = array_filter($codArray); // Remove empty values
-
-                // If still empty after processing, use defaults based on host country
-                if (empty(self::$COD)) {
-                    self::$COD = $defaultCod;
+            $codArray = [];
+            if (!empty($codReferences)) {
+                // Try to decode as JSON first (if stored as JSON array)
+                $decoded = json_decode($codReferences, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $codArray = $decoded;
+                } else {
+                    // If not JSON, treat as comma-separated string
+                    $codArray = array_map('trim', explode(',', $codReferences));
+                    $codArray = array_filter($codArray); // Remove empty values
                 }
             }
+
+            $combined = array_merge($defaultCod, $codArray);
+            $combined = array_values(array_filter($combined));
+            $combined = array_values(array_unique($combined));
+            self::$COD = $combined;
 
             self::$COD_CACHE_KEY = $cacheKey;
         }
@@ -149,24 +139,28 @@ class SamedayCourier extends CarrierModule
     {
         $codReferences = Configuration::get('SAMEDAY_COD_REFERENCES');
 
-        // Get host country for default values
-        $hostCountry = $this->generalHelper->getHostCountry();
-
-        // Get country-specific defaults
-        $defaultCod = SamedayConstants::COD_DEFAULTS[$hostCountry] ?? SamedayConstants::COD_DEFAULTS[SamedayConstants::DEFAULT_HOST_COUNTRY];
-
-        if (empty($codReferences)) {
-            return implode(', ', $defaultCod);
+        $defaultCod = [];
+        foreach (SamedayConstants::COD_DEFAULTS as $countryDefaults) {
+            $defaultCod = array_merge($defaultCod, $countryDefaults);
         }
 
-        // Try to decode as JSON first
-        $decoded = json_decode($codReferences, true);
-        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-            return implode(', ', $decoded);
+        $codArray = [];
+        if (!empty($codReferences)) {
+            // Try to decode as JSON first
+            $decoded = json_decode($codReferences, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $codArray = $decoded;
+            } else {
+                $codArray = array_map('trim', explode(',', $codReferences));
+                $codArray = array_filter($codArray); // Remove empty values
+            }
         }
 
-        // If not JSON, return as is (already comma-separated)
-        return $codReferences;
+        $combined = array_merge($defaultCod, $codArray);
+        $combined = array_values(array_filter($combined));
+        $combined = array_values(array_unique($combined));
+
+        return implode(', ', $combined);
     }
 
     const CURRENCIES = [
