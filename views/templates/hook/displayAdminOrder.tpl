@@ -586,8 +586,8 @@
                     alert('Error occured while retrieving awb history');
                 }
             },
-            error: function (error) {
-                alert(error);
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert(errorThrown || textStatus || jqXHR.statusText);
             }
         });
     });

@@ -74,7 +74,7 @@ if (Tools::getValue('awb_id')) {
     $awbId = (int)Tools::getValue('awb_id');
     $country = (Configuration::get('SAMEDAY_HOST_COUNTRY')) ?: SamedayConstants::API_HOST_LOCALE_RO;
     $testingMode = (Configuration::get('SAMEDAY_LIVE_MODE')) ?: '0';
-    $api = $testingMode ? SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_PROD'] : SamedayConstants::SAMEDAY_ENVS[$country]['API_URL_DEMO'];
+    $api = SamedayConstants::SAMEDAY_ENVS[$country][$testingMode];
 
     $sameday = new \Sameday\Sameday(
         new \Sameday\SamedayClient(
@@ -105,7 +105,12 @@ if (Tools::getValue('awb_id')) {
         $history->summary = serialize($response->getSummary());
         $history->history = serialize($response->getHistory());
         $history->expedition = serialize($response->getExpeditionStatus());
-        $history->save();
+        try {
+            $history->save();
+        }catch(Exception $exception){
+            $exception->getMessage();
+        }
+
         $summaries[$parcel['awb_number']] = array(
             'weight' => $response->getSummary()->getParcelWeight(),
             'delivered' => $response->getSummary()->isDelivered() ? 'Da' : 'Nu',
