@@ -49,32 +49,83 @@
         }
     }
 
-    function mountToolbar() {
-        var gridPanel = document.getElementById('order_grid_panel');
-        var toolbar = document.getElementById('sameday-bulk-awb-toolbar');
+    function getOrderGridPanel() {
+        return document.getElementById('order_grid_panel')
+            || document.querySelector('#order_grid .js-grid-panel')
+            || document.querySelector('.js-grid-panel[id="order_grid_panel"]');
+    }
 
-        if (!gridPanel || !toolbar || toolbar.dataset.mounted === '1') {
-            return;
+    function isToolbarMounted() {
+        var toolbar = document.getElementById('sameday-bulk-awb-toolbar');
+        if (!toolbar || toolbar.dataset.mounted !== '1') {
+            return false;
+        }
+
+        var gridPanel = getOrderGridPanel();
+        if (!gridPanel) {
+            return false;
         }
 
         var header = gridPanel.querySelector('.card-header.js-grid-header')
             || gridPanel.querySelector('.card-header');
 
+        return !!(header && header.contains(toolbar));
+    }
+
+    function mountToolbar() {
+        var gridPanel = getOrderGridPanel();
+        var toolbar = document.getElementById('sameday-bulk-awb-toolbar');
+
+        if (!gridPanel || !toolbar) {
+            return false;
+        }
+
+        if (isToolbarMounted()) {
+            return true;
+        }
+
+        toolbar.dataset.mounted = '0';
+
+        var header = gridPanel.querySelector('.card-header.js-grid-header')
+            || gridPanel.querySelector('.card-header');
+
         if (!header) {
-            return;
+            return false;
         }
 
         var headerActions = header.querySelector('.float-right')
-            || header.querySelector('.float-end');
+            || header.querySelector('.float-end')
+            || header.querySelector('.d-inline-block.float-right');
 
         if (headerActions) {
-            headerActions.insertBefore(toolbar, headerActions.firstChild);
+            header.insertBefore(toolbar, headerActions);
         } else {
             header.appendChild(toolbar);
         }
 
         toolbar.dataset.mounted = '1';
         toolbar.classList.add('sameday-bulk-toolbar');
+
+        return true;
+    }
+
+    function scheduleToolbarMount() {
+        if (isToolbarMounted()) {
+            return;
+        }
+
+        mountToolbar();
+
+        var attempts = 0;
+        var maxAttempts = 40;
+        var retryTimer = window.setInterval(function () {
+            attempts += 1;
+            mountToolbar();
+
+            if (isToolbarMounted() || attempts >= maxAttempts) {
+                window.clearInterval(retryTimer);
+            }
+        }, 250);
     }
 
     function fillOrderList(listEl, orderIds) {
@@ -522,7 +573,7 @@
             return;
         }
 
-        mountToolbar();
+        scheduleToolbarMount();
         document.querySelectorAll('.sameday-bulk-awb-modal').forEach(function (modal) {
             detachModalToBody(modal);
         });
@@ -534,7 +585,7 @@
             }
         });
 
-        var gridPanel = document.getElementById('order_grid_panel');
+        var gridPanel = getOrderGridPanel();
         if (gridPanel) {
             gridPanel.addEventListener('change', function (event) {
                 if (event.target && event.target.matches(BULK_CHECKBOX_SELECTOR)) {
@@ -733,16 +784,9 @@
             });
         });
 
-        if (!document.getElementById('order_grid_panel')) {
-            var retries = 0;
-            var retryTimer = window.setInterval(function () {
-                mountToolbar();
-                retries += 1;
-                if (document.getElementById('order_grid_panel') || retries >= 20) {
-                    window.clearInterval(retryTimer);
-                }
-            }, 250);
-        }
+        window.addEventListener('load', function () {
+            scheduleToolbarMount();
+        });
     }
 
     if (document.readyState === 'loading') {

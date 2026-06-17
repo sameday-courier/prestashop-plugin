@@ -13,7 +13,7 @@
     vertical-align: middle;
 }
 
-#order_grid_panel .sameday-bulk-toolbar-row {
+#order_grid_panel > .card-header .sameday-bulk-toolbar-row {
     margin: 0 12px 0 0;
 }
 
