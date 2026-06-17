@@ -3464,6 +3464,36 @@ class SamedayCourier extends CarrierModule
         ]);
     }
 
+    /**
+     * HtmlColumn exists from PS 8; PS 1.7 uses DataColumn (same raw HTML rendering in grid twig).
+     *
+     * @return \PrestaShop\PrestaShop\Core\Grid\Column\ColumnInterface
+     */
+    private function createSamedayFeedbackGridColumn()
+    {
+        $options = [
+            'field' => 'sameday_feedback',
+            'clickable' => false,
+        ];
+        $name = $this->l('Sameday feedback');
+
+        if (class_exists('PrestaShop\\PrestaShop\\Core\\Grid\\Column\\Type\\Common\\HtmlColumn')) {
+            return (new PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\HtmlColumn('sameday_feedback'))
+                ->setName($name)
+                ->setOptions($options);
+        }
+
+        if (class_exists('PrestaShop\\PrestaShop\\Core\\Grid\\Column\\Type\\Common\\DataColumn')) {
+            return (new PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\DataColumn('sameday_feedback'))
+                ->setName($name)
+                ->setOptions($options);
+        }
+
+        return (new PrestaShop\PrestaShop\Core\Grid\Column\Type\DataColumn('sameday_feedback'))
+            ->setName($name)
+            ->setOptions($options);
+    }
+
     public function hookActionOrderGridDefinitionModifier(array $params)
     {
         /** @var \PrestaShop\PrestaShop\Core\Grid\Definition\GridDefinitionInterface $definition */
@@ -3475,12 +3505,7 @@ class SamedayCourier extends CarrierModule
 
         $definition->getColumns()->addBefore(
             'actions',
-            (new PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\HtmlColumn('sameday_feedback'))
-                ->setName($this->l('Sameday feedback'))
-                ->setOptions([
-                    'field' => 'sameday_feedback',
-                    'clickable' => false,
-                ])
+            $this->createSamedayFeedbackGridColumn()
         );
     }
 
