@@ -226,11 +226,21 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * Bulk AWB orders grid requires the Symfony order grid (PS 1.7.7+).
+     * Bulk AWB toolbar and AJAX (PS 1.6+ legacy list, 1.7.7+ Symfony grid).
      *
      * @return bool
      */
     public function isBulkAwbSupported()
+    {
+        return version_compare(_PS_VERSION_, '1.6', '>=');
+    }
+
+    /**
+     * Bulk AWB feedback column requires the Symfony order grid (PS 1.7.7+).
+     *
+     * @return bool
+     */
+    public function isBulkAwbGridSupported()
     {
         return version_compare(_PS_VERSION_, '1.7.7', '>=');
     }
@@ -273,7 +283,11 @@ class SamedayCourier extends CarrierModule
         if ($this->isBulkAwbSupported()) {
             $result = $result
                 && $this->registerHook('displayBackOfficeTop')
-                && $this->registerHook('actionAdminControllerSetMedia')
+                && $this->registerHook('actionAdminControllerSetMedia');
+        }
+
+        if ($this->isBulkAwbGridSupported()) {
+            $result = $result
                 && $this->registerHook('actionOrderGridDefinitionModifier')
                 && $this->registerHook('actionOrderGridDataModifier');
         }
@@ -3511,7 +3525,7 @@ class SamedayCourier extends CarrierModule
 
     public function hookActionOrderGridDefinitionModifier(array $params)
     {
-        if (!$this->isBulkAwbSupported()) {
+        if (!$this->isBulkAwbGridSupported()) {
             return;
         }
 
@@ -3530,7 +3544,7 @@ class SamedayCourier extends CarrierModule
 
     public function hookActionOrderGridDataModifier(array $params)
     {
-        if (!$this->isBulkAwbSupported()) {
+        if (!$this->isBulkAwbGridSupported()) {
             return;
         }
 

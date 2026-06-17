@@ -17,6 +17,20 @@
     margin: 0 12px 0 0;
 }
 
+.panel-heading-action .sameday-bulk-toolbar-legacy {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    margin: 0 8px 0 0;
+    vertical-align: middle;
+}
+
+.panel-heading-action .sameday-bulk-toolbar-legacy .btn {
+    padding: 4px 8px;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
 .sameday-bulk-awb-modal {
     z-index: 1060;
 }
