@@ -17,7 +17,7 @@ class SamedayOrderBulkAwb
     const STATUS_SUCCESS = 1;
     const STATUS_ERROR = 2;
 
-    public static function bulkEntry(int $orderId): void
+    public static function bulkEntry(int $orderId)
     {
         $orderId = (int) $orderId;
         $now = date('Y-m-d H:i:s');
@@ -49,7 +49,7 @@ class SamedayOrderBulkAwb
         ]);
     }
 
-    public static function updateFeedback(int $orderId, int $status, array $payload): void
+    public static function updateFeedback(int $orderId, int $status, array $payload)
     {
         self::bulkEntry($orderId);
 
@@ -122,7 +122,7 @@ class SamedayOrderBulkAwb
         return $orderIds;
     }
 
-    public static function deleteByOrderId(int $orderId): void
+    public static function deleteByOrderId(int $orderId)
     {
         Db::getInstance()->delete(self::TABLE_NAME, 'id_order = ' . (int) $orderId);
     }
@@ -195,7 +195,7 @@ class SamedayOrderBulkAwb
      *
      * @return array|null
      */
-    private static function resolveAwbRowData($bulkRow, $awbRow): ?array
+    private static function resolveAwbRowData($bulkRow, $awbRow)
     {
         if (is_array($awbRow) && !empty($awbRow['awb_number']) && !empty($awbRow['id'])) {
             return $awbRow;

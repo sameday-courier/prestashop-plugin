@@ -31,17 +31,19 @@ function upgrade_module_1_8_6($object)
         }
     }
 
-    $hooks = [
-        'displayBackOfficeTop',
-        'actionAdminControllerSetMedia',
-        'actionOrderGridDefinitionModifier',
-        'actionOrderGridDataModifier',
-    ];
+    if (version_compare(_PS_VERSION_, '1.7.7', '>=')) {
+        $hooks = [
+            'displayBackOfficeTop',
+            'actionAdminControllerSetMedia',
+            'actionOrderGridDefinitionModifier',
+            'actionOrderGridDataModifier',
+        ];
 
-    foreach ($hooks as $hook) {
-        if (!$object->isRegisteredInHook($hook)) {
-            if (!$object->registerHook($hook)) {
-                return false;
+        foreach ($hooks as $hook) {
+            if (!$object->isRegisteredInHook($hook)) {
+                if (!$object->registerHook($hook)) {
+                    return false;
+                }
             }
         }
     }

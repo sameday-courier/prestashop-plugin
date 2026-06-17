@@ -55,6 +55,11 @@ if (in_array($action, $bulkActions, true)) {
         die(json_encode(['success' => false, 'error' => 'Module not active']));
     }
 
+    if (!$module->isBulkAwbSupported()) {
+        header('Content-Type: application/json');
+        die(json_encode(['success' => false, 'error' => 'Not supported']));
+    }
+
     $bulkGridFeedback = static function (SamedayCourier $samedayModule, int $bulkOrderId): string {
         return $samedayModule->getBulkAwbGridFeedback($bulkOrderId);
     };

@@ -226,6 +226,16 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
+     * Bulk AWB orders grid requires the Symfony order grid (PS 1.7.7+).
+     *
+     * @return bool
+     */
+    public function isBulkAwbSupported()
+    {
+        return version_compare(_PS_VERSION_, '1.7.7', '>=');
+    }
+
+    /**
      * Don't forget to create update methods if needed:
      * http://doc.prestashop.com/display/PS16/Enabling+the+Auto-Update
      */
@@ -250,7 +260,7 @@ class SamedayCourier extends CarrierModule
             $hookHeader = 'Header';
         }
 
-        return parent::install()
+        $result = parent::install()
             && $this->registerHook('actionCarrierUpdate')
             && $this->registerHook('displayAdminAfterHeader')
             && $this->registerHook('actionValidateOrder')
@@ -258,12 +268,17 @@ class SamedayCourier extends CarrierModule
             && $this->registerHook('actionValidateStepComplete')
             && $this->registerHook($hookDisplayAdminOrder)
             && $this->registerHook($hookExtraCarrier)
-            && $this->registerHook($hookHeader)
-            && $this->registerHook('displayBackOfficeTop')
-            && $this->registerHook('actionAdminControllerSetMedia')
-            && $this->registerHook('actionOrderGridDefinitionModifier')
-            && $this->registerHook('actionOrderGridDataModifier')
-        ;
+            && $this->registerHook($hookHeader);
+
+        if ($this->isBulkAwbSupported()) {
+            $result = $result
+                && $this->registerHook('displayBackOfficeTop')
+                && $this->registerHook('actionAdminControllerSetMedia')
+                && $this->registerHook('actionOrderGridDefinitionModifier')
+                && $this->registerHook('actionOrderGridDataModifier');
+        }
+
+        return $result;
     }
 
     /**
@@ -1750,7 +1765,7 @@ class SamedayCourier extends CarrierModule
 
         $output = $this->display(__FILE__, 'displayAdminAfterHeader.tpl');
 
-        if ($this->isAdminOrdersListPage()) {
+        if ($this->isBulkAwbSupported() && $this->isAdminOrdersListPage()) {
             $this->context->smarty->assign([
                 'sameday_bulk_awb_enabled' => true,
             ]);
@@ -2671,7 +2686,7 @@ class SamedayCourier extends CarrierModule
      * @throws Sameday\Exceptions\SamedayNotFoundException
      * @throws Sameday\Exceptions\SamedayServerException
      */
-    public function downloadAwbPdfForOrder(int $orderId): void
+    public function downloadAwbPdfForOrder(int $orderId)
     {
         $awb = SamedayAwb::getOrderAwb($orderId);
         if (empty($awb['awb_number'])) {
@@ -2938,7 +2953,7 @@ class SamedayCourier extends CarrierModule
         }
 
         $messages = [];
-        $collect = static function ($node, string $path) use (&$collect, &$messages): void {
+        $collect = static function ($node, string $path) use (&$collect, &$messages) {
             if (!is_array($node)) {
                 return;
             }
@@ -2992,7 +3007,7 @@ class SamedayCourier extends CarrierModule
      *
      * @return string|null
      */
-    private function validateBulkAwbServiceForAddress(array $service, AddressCore $address, int $orderId): ?string
+    private function validateBulkAwbServiceForAddress(array $service, AddressCore $address, int $orderId)
     {
         $destCountryIso = strtolower((string) CountryCore::getIsoById((int) $address->id_country));
         $hostCountry = strtolower($this->generalHelper->getHostCountry());
@@ -3436,7 +3451,7 @@ class SamedayCourier extends CarrierModule
 
     public function hookActionAdminControllerSetMedia($params)
     {
-        if (!$this->isAdminOrdersListPage()) {
+        if (!$this->isBulkAwbSupported() || !$this->isAdminOrdersListPage()) {
             return;
         }
 
@@ -3496,6 +3511,10 @@ class SamedayCourier extends CarrierModule
 
     public function hookActionOrderGridDefinitionModifier(array $params)
     {
+        if (!$this->isBulkAwbSupported()) {
+            return;
+        }
+
         /** @var \PrestaShop\PrestaShop\Core\Grid\Definition\GridDefinitionInterface $definition */
         $definition = $params['definition'];
 
@@ -3511,6 +3530,10 @@ class SamedayCourier extends CarrierModule
 
     public function hookActionOrderGridDataModifier(array $params)
     {
+        if (!$this->isBulkAwbSupported()) {
+            return;
+        }
+
         /** @var \PrestaShop\PrestaShop\Core\Grid\Data\GridData $data */
         $data = $params['data'];
         $records = $data->getRecords()->all();
