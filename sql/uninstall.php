@@ -24,6 +24,7 @@ $tablesToDrop = [
     SamedayOrderLocker::TABLE_NAME,
     SamedayOpenPackage::TABLE_NAME,
     SamedayCity::TABLE_NAME,
+    SamedayOrderBulkAwb::TABLE_NAME,
 ];
 
 $columnsToDrop = [
@@ -33,10 +34,15 @@ $columnsToDrop = [
     ],
 ];
 
+$queryHelper = new SamedayGeneralQueryHelper();
+
 foreach ($tablesToDrop as $table) {
-    (new SamedayGeneralQueryHelper())->dropTable(_DB_PREFIX_ . $table);
+    $queryHelper->dropTable(_DB_PREFIX_ . $table);
 }
 
 foreach ($columnsToDrop as $column) {
-    (new SamedayGeneralQueryHelper())->dropColumn(_DB_PREFIX_ . $column['fromTable'], $column['columnName']);
+    $tableName = _DB_PREFIX_ . $column['fromTable'];
+    if ($queryHelper->isTableExists($tableName)) {
+        $queryHelper->dropColumn($tableName, $column['columnName']);
+    }
 }

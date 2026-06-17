@@ -57,4 +57,31 @@ class SamedayAwb extends ObjectModel
             "SELECT a.* FROM " . _DB_PREFIX_ . self::TABLE_NAME ." a WHERE a.id_order = " . (int)$order
         );
     }
+
+    /**
+     * @param int[] $orderIds
+     *
+     * @return array<int, array>
+     */
+    public static function getByOrderIds(array $orderIds)
+    {
+        $orderIds = array_values(array_unique(array_filter(array_map('intval', $orderIds))));
+        if ($orderIds === []) {
+            return [];
+        }
+
+        $rows = Db::getInstance()->executeS(
+            'SELECT * FROM ' . _DB_PREFIX_ . self::TABLE_NAME .
+            ' WHERE id_order IN (' . implode(',', $orderIds) . ')'
+        );
+
+        $result = [];
+        if (is_array($rows)) {
+            foreach ($rows as $row) {
+                $result[(int) $row['id_order']] = $row;
+            }
+        }
+
+        return $result;
+    }
 }

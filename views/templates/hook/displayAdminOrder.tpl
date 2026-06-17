@@ -371,8 +371,8 @@
                                 {l s='Client Reference' mod='samedaycourier'}
                             </label>
                             <div class="col-sm-9">
-                                <input type="text" name="sameday_client_reference" value="{$orderId|escape:'html':'UTF-8'}" class="form-control" id="input-key-clientReference">
-                                <span> {l s='Default value for this field is Order ID' mod='samedaycourier'} </span>
+                                <input type="text" value="{$orderId|escape:'html':'UTF-8'}-{$smarty.now}" class="form-control" id="input-key-clientReference" readonly>
+                                <span class="help-block">{l s='Auto-generated on submit as OrderID-UnixTimestamp.' mod='samedaycourier'}</span>
                             </div>
                         </div>
 

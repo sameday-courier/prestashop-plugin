@@ -68,6 +68,32 @@ class SamedayPickupPoint extends ObjectModel
         );
     }
 
+    /**
+     * Default pickup point for AWB generation, with fallback to the first imported point.
+     *
+     * @return array|false
+     */
+    public static function resolveForAwb()
+    {
+        $default = self::getDefaultPickupPoint();
+        if (is_array($default) && !empty($default['id_pickup_point'])) {
+            return $default;
+        }
+
+        $pickupPoints = self::getPickupPoints();
+        if (!is_array($pickupPoints) || $pickupPoints === []) {
+            return false;
+        }
+
+        foreach ($pickupPoints as $pickupPoint) {
+            if (!empty($pickupPoint['id_pickup_point'])) {
+                return $pickupPoint;
+            }
+        }
+
+        return false;
+    }
+
     public static function getPickupPoints()
     {
         $liveMode = (int)Configuration::get('SAMEDAY_LIVE_MODE', 0);
