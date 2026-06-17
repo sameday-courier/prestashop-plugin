@@ -17,6 +17,10 @@
             statusSuccess: 'Success',
             statusFailed: 'Failed',
             statusSkipped: 'Skipped',
+            removeConfirm: 'Remove AWB for order #%d?',
+            removeFailed: 'Could not remove AWB.',
+            historyFailed: 'Error occurred while retrieving AWB history.',
+            noRecords: 'No records',
         };
     }
 
@@ -94,6 +98,14 @@
             BULK_CHECKBOX_SELECTOR + '[value="' + orderId + '"]'
         );
         if (!checkbox) {
+            var rowById = document.querySelector('#order_grid tbody tr[data-order-id="' + orderId + '"]');
+            if (rowById) {
+                var cellById = rowById.querySelector('td.column-sameday_feedback');
+                if (cellById) {
+                    cellById.innerHTML = feedback || '—';
+                }
+            }
+
             return;
         }
 
@@ -104,8 +116,142 @@
 
         var cell = row.querySelector('td.column-sameday_feedback');
         if (cell) {
-            cell.textContent = feedback || '—';
+            cell.innerHTML = feedback || '—';
         }
+    }
+
+    function formatHistoryDate(dateValue) {
+        if (!dateValue) {
+            return '';
+        }
+
+        if (typeof dateValue === 'string') {
+            return dateValue.slice(0, 19);
+        }
+
+        if (dateValue.date) {
+            return String(dateValue.date).slice(0, 19);
+        }
+
+        return '';
+    }
+
+    function detachModalToBody(modal) {
+        if (!modal) {
+            return modal;
+        }
+
+        var parentModal = modal.parentElement ? modal.parentElement.closest('.modal') : null;
+        if (parentModal && parentModal !== modal) {
+            document.body.appendChild(modal);
+        } else if (modal.parentElement && modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+        }
+
+        return modal;
+    }
+
+    function showBulkModal(modalId) {
+        var modal = document.getElementById(modalId);
+        if (!modal) {
+            return;
+        }
+
+        detachModalToBody(modal);
+        modal.style.removeProperty('display');
+        modal.setAttribute('aria-hidden', 'false');
+
+        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.modal === 'function') {
+            jQuery('.modal-backdrop').remove();
+            jQuery('body').removeClass('modal-open').css('padding-right', '');
+            jQuery(modal).modal('show');
+            return;
+        }
+
+        modal.classList.add('show');
+        modal.style.display = 'block';
+        document.body.classList.add('modal-open');
+
+        var backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop fade show';
+        backdrop.setAttribute('data-sameday-bulk-backdrop', '1');
+        document.body.appendChild(backdrop);
+    }
+
+    function hideBulkModal(modalId) {
+        var modal = document.getElementById(modalId);
+        if (!modal) {
+            return;
+        }
+
+        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.modal === 'function') {
+            jQuery(modal).modal('hide');
+            return;
+        }
+
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+        document.querySelectorAll('[data-sameday-bulk-backdrop]').forEach(function (backdrop) {
+            backdrop.remove();
+        });
+        document.body.classList.remove('modal-open');
+    }
+
+    function renderAwbHistoryModal(data) {
+        var labels = getLabels();
+        var summaryBody = document.getElementById('samedayBulkAwbSummary');
+        var historiesBody = document.getElementById('samedayBulkAwbHistories');
+        if (!summaryBody || !historiesBody) {
+            return;
+        }
+
+        var summaryHtml = '';
+        if (data.summary) {
+            Object.keys(data.summary).forEach(function (awb) {
+                var summary = data.summary[awb];
+                summaryHtml += '<tr><td>' + awb + '</td><td>' + summary.weight + '</td><td>' +
+                    summary.delivered + '</td><td>' + summary.deliveredAttempts + '</td><td>' +
+                    summary.isPickedUp + '</td><td>' + summary.isPickedUpAt + '</td></tr>';
+            });
+        }
+        summaryBody.innerHTML = summaryHtml || '<tr><td colspan="6">' + labels.noRecords + '</td></tr>';
+
+        var historiesHtml = '';
+        if (data.histories) {
+            Object.keys(data.histories).forEach(function (awb) {
+                (data.histories[awb] || []).forEach(function (history) {
+                    historiesHtml += '<tr><td>' + awb + '</td><td>' + history.name + '</td><td>' +
+                        history.label + '</td><td>' + history.state + '</td><td>' +
+                        formatHistoryDate(history.date) + '</td><td>' + history.county + '</td><td>' +
+                        history.transit + '</td><td>' + history.reason + '</td></tr>';
+                });
+            });
+        }
+        historiesBody.innerHTML = historiesHtml || '<tr><td colspan="8">' + labels.noRecords + '</td></tr>';
+
+        showBulkModal('samedayBulkAwbHistoryModal');
+    }
+
+    function fetchAwbHistory(awbId) {
+        if (!config) {
+            return Promise.reject(new Error('Missing bulk configuration'));
+        }
+
+        var url = config.ajaxUrl +
+            '?action=awb_history' +
+            '&awb_id=' + encodeURIComponent(awbId) +
+            '&token=' + encodeURIComponent(config.token);
+
+        return fetch(url, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+            },
+        }).then(function (response) {
+            return response.json();
+        });
     }
 
     function postAction(action, orderId) {
@@ -377,6 +523,9 @@
         }
 
         mountToolbar();
+        document.querySelectorAll('.sameday-bulk-awb-modal').forEach(function (modal) {
+            detachModalToBody(modal);
+        });
         updateToolbarState();
 
         document.addEventListener('change', function (event) {
@@ -419,9 +568,7 @@
                 }
                 fillOrderList(document.getElementById('samedayBulkGenerateOrderList'), orderIds);
                 resetGenerateModal();
-                if (typeof jQuery !== 'undefined') {
-                    jQuery('#samedayBulkGenerateModal').modal('show');
-                }
+                showBulkModal('samedayBulkGenerateModal');
             });
         }
 
@@ -464,9 +611,7 @@
                 }
                 fillOrderList(document.getElementById('samedayBulkRemoveOrderList'), orderIds);
                 resetRemoveModal();
-                if (typeof jQuery !== 'undefined') {
-                    jQuery('#samedayBulkRemoveModal').modal('show');
-                }
+                showBulkModal('samedayBulkRemoveModal');
             });
         }
 
@@ -523,6 +668,70 @@
 
         bindModal('samedayBulkGenerateModal', resetGenerateModal);
         bindModal('samedayBulkRemoveModal', resetRemoveModal);
+
+        document.addEventListener('click', function (event) {
+            var historyLink = event.target.closest('.sameday-feedback-history');
+            if (historyLink && config) {
+                event.preventDefault();
+
+                var awbId = parseInt(historyLink.getAttribute('data-awb-id'), 10);
+                if (!awbId) {
+                    return;
+                }
+
+                fetchAwbHistory(awbId).then(function (data) {
+                    if (data.error || (!data.summary && !data.histories)) {
+                        window.alert(data.error || getLabels().historyFailed);
+                        return;
+                    }
+
+                    renderAwbHistoryModal(data);
+                }).catch(function () {
+                    window.alert(getLabels().historyFailed);
+                });
+
+                return;
+            }
+
+            var removeBtn = event.target.closest('.sameday-feedback-remove');
+            if (!removeBtn || !config) {
+                return;
+            }
+
+            event.preventDefault();
+
+            var orderId = parseInt(removeBtn.getAttribute('data-order-id'), 10);
+            if (!orderId) {
+                return;
+            }
+
+            var labels = getLabels();
+            var confirmMessage = labels.removeConfirm
+                ? labels.removeConfirm.replace('%d', String(orderId))
+                : 'Remove AWB for order #' + orderId + '?';
+
+            if (!window.confirm(confirmMessage)) {
+                return;
+            }
+
+            removeBtn.disabled = true;
+
+            postAction('bulk_remove_awb', orderId).then(function (data) {
+                if (typeof data.feedback !== 'undefined') {
+                    updateOrderFeedback(orderId, data.feedback);
+                } else if (data.error) {
+                    updateOrderFeedback(orderId, data.error);
+                }
+
+                if (!data.success) {
+                    window.alert(data.error || labels.removeFailed || 'Could not remove AWB.');
+                }
+            }).catch(function () {
+                window.alert(labels.removeFailed || 'Could not remove AWB.');
+            }).finally(function () {
+                removeBtn.disabled = false;
+            });
+        });
 
         if (!document.getElementById('order_grid_panel')) {
             var retries = 0;

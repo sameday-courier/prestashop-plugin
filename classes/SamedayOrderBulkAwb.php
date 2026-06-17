@@ -131,7 +131,30 @@ class SamedayOrderBulkAwb
      * @param array|null $bulkRow
      * @param array|null $awbRow
      */
-    public static function formatForGrid($bulkRow, $awbRow, Module $module): string
+    public static function formatForGrid($bulkRow, $awbRow, SamedayCourier $module, int $orderId): string
+    {
+        $awbRowData = self::resolveAwbRowData($bulkRow, $awbRow);
+        if ($awbRowData !== null) {
+            return self::buildAwbActionsHtml($orderId, $awbRowData, $module);
+        }
+
+        $plain = self::formatPlainFeedback($bulkRow, $awbRow, $module);
+        $escaped = htmlspecialchars($plain, ENT_QUOTES, 'UTF-8');
+        if (
+            is_array($bulkRow)
+            && (int) ($bulkRow['status'] ?? self::STATUS_PENDING) === self::STATUS_ERROR
+        ) {
+            return '<span class="sameday-feedback-error">' . $escaped . '</span>';
+        }
+
+        return $escaped;
+    }
+
+    /**
+     * @param array|null $bulkRow
+     * @param array|null $awbRow
+     */
+    public static function formatPlainFeedback($bulkRow, $awbRow, Module $module): string
     {
         $pending = $module->l('Pending');
         $empty = '—';
@@ -160,6 +183,53 @@ class SamedayOrderBulkAwb
         }
 
         return $empty;
+    }
+
+    /**
+     * @param array|null $bulkRow
+     * @param array|null $awbRow
+     */
+    /**
+     * @param array|null $bulkRow
+     * @param array|null $awbRow
+     *
+     * @return array|null
+     */
+    private static function resolveAwbRowData($bulkRow, $awbRow): ?array
+    {
+        if (is_array($awbRow) && !empty($awbRow['awb_number']) && !empty($awbRow['id'])) {
+            return $awbRow;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array $awbRow
+     */
+    private static function buildAwbActionsHtml(int $orderId, array $awbRow, SamedayCourier $module): string
+    {
+        $awbNumber = (string) $awbRow['awb_number'];
+        $awbId = (int) $awbRow['id'];
+
+        $pdfUrl = $module->getBulkAwbAjaxUrl() .
+            '?action=download_awb_pdf' .
+            '&order_id=' . (int) $orderId .
+            '&token=' . urlencode($module->getBulkAwbAdminToken());
+
+        $pdfTitle = htmlspecialchars($module->l('Download AWB'), ENT_QUOTES, 'UTF-8');
+        $removeTitle = htmlspecialchars($module->l('Remove AWB'), ENT_QUOTES, 'UTF-8');
+        $historyTitle = htmlspecialchars($module->l('AWB History'), ENT_QUOTES, 'UTF-8');
+        $awbLabel = htmlspecialchars($awbNumber, ENT_QUOTES, 'UTF-8');
+
+        return '<div class="sameday-feedback-cell">' .
+            '<a href="#" class="sameday-feedback-history" data-awb-id="' . $awbId . '" title="' . $historyTitle . '">' . $awbLabel . '</a>' .
+            '<span class="sameday-feedback-actions">' .
+            '<a href="' . htmlspecialchars($pdfUrl, ENT_QUOTES, 'UTF-8') . '" class="btn btn-primary btn-sm sameday-feedback-btn sameday-feedback-pdf" target="_blank" rel="noopener noreferrer" title="' . $pdfTitle . '">' .
+            '<i class="material-icons">description</i></a>' .
+            '<button type="button" class="btn btn-danger btn-sm sameday-feedback-btn sameday-feedback-remove" data-order-id="' . (int) $orderId . '" title="' . $removeTitle . '">' .
+            '<i class="material-icons">delete</i></button>' .
+            '</span></div>';
     }
 
     /**

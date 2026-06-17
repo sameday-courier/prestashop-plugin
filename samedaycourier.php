@@ -2668,6 +2668,102 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
+     * @throws Sameday\Exceptions\SamedayNotFoundException
+     * @throws Sameday\Exceptions\SamedayServerException
+     */
+    public function downloadAwbPdfForOrder(int $orderId): void
+    {
+        $awb = SamedayAwb::getOrderAwb($orderId);
+        if (empty($awb['awb_number'])) {
+            header('Content-Type: application/json');
+            http_response_code(404);
+            die(json_encode([
+                'success' => false,
+                'error' => $this->l('AWB not found for this order.'),
+            ]));
+        }
+
+        $this->downloadAwb($orderId);
+    }
+
+    public function getBulkAwbAjaxUrl(): string
+    {
+        return $this->baseUrl() . _MODULE_DIR_ . 'samedaycourier/ajax.php';
+    }
+
+    public function getBulkAwbAdminToken(): string
+    {
+        return Tools::getAdminTokenLite('AdminOrders');
+    }
+
+    public function getBulkAwbGridFeedback(int $orderId): string
+    {
+        $bulkRows = SamedayOrderBulkAwb::getByOrderIds([$orderId]);
+        $awbRows = SamedayAwb::getByOrderIds([$orderId]);
+
+        return SamedayOrderBulkAwb::formatForGrid(
+            $bulkRows[$orderId] ?? null,
+            $awbRows[$orderId] ?? null,
+            $this,
+            $orderId
+        );
+    }
+
+    /**
+     * @return array{summary: array, histories: array}
+     */
+    public function getAwbHistoryData(int $awbId): array
+    {
+        $awbId = (int) $awbId;
+        $summaries = [];
+        $histories = [];
+
+        $sameday = new \Sameday\Sameday($this->samedayApiHelper->getSamedayClient());
+        $parcels = SamedayAwbParcel::findParcelsByAwbId($awbId);
+
+        foreach ($parcels as $parcel) {
+            $request = new \Sameday\Requests\SamedayGetParcelStatusHistoryRequest($parcel['awb_number']);
+            $response = $sameday->getParcelStatusHistory($request);
+            $existingHistory = SamedayAwbParcelHistory::findByAwbNumber($parcel['awb_number']);
+            if (is_array($existingHistory) && !empty($existingHistory['id'])) {
+                $history = new SamedayAwbParcelHistory((int) $existingHistory['id']);
+            } else {
+                $history = new SamedayAwbParcelHistory();
+            }
+            $history->awb_number = $parcel['awb_number'];
+            $history->summary = serialize($response->getSummary());
+            $history->history = serialize($response->getHistory());
+            $history->expedition = serialize($response->getExpeditionStatus());
+            $history->save();
+
+            $summaries[$parcel['awb_number']] = [
+                'weight' => $response->getSummary()->getParcelWeight(),
+                'delivered' => $response->getSummary()->isDelivered() ? 'Da' : 'Nu',
+                'deliveredAttempts' => $response->getSummary()->getDeliveryAttempts(),
+                'isPickedUp' => $response->getSummary()->isPickedUp() ? 'Da' : 'Nu',
+                'isPickedUpAt' => $response->getSummary()->getPickedUpAt() ?: '',
+            ];
+
+            foreach ($response->getHistory() as $historyObject) {
+                $histories[$parcel['awb_number']][] = [
+                    'name' => $historyObject->getName(),
+                    'label' => $historyObject->getLabel(),
+                    'state' => $historyObject->getState(),
+                    'date' => $historyObject->getDate(),
+                    'county' => $historyObject->getCounty(),
+                    'transit' => $historyObject->getTransitLocation(),
+                    'reason' => $historyObject->getReason(),
+                ];
+            }
+        }
+
+        return [
+            'summary' => $summaries,
+            'histories' => $histories,
+        ];
+    }
+
+    /**
      * @param $type
      * @param $content
      */
@@ -3349,8 +3445,8 @@ class SamedayCourier extends CarrierModule
 
         Media::addJsDef([
             'samedayBulkAwb' => [
-                'ajaxUrl' => $this->baseUrl() . _MODULE_DIR_ . 'samedaycourier/ajax.php',
-                'token' => Tools::getAdminTokenLite('AdminOrders'),
+                'ajaxUrl' => $this->getBulkAwbAjaxUrl(),
+                'token' => $this->getBulkAwbAdminToken(),
                 'labels' => [
                     'csvOrderId' => $this->l('Order ID'),
                     'csvStatus' => $this->l('Status'),
@@ -3359,6 +3455,10 @@ class SamedayCourier extends CarrierModule
                     'statusSuccess' => $this->l('Success'),
                     'statusFailed' => $this->l('Failed'),
                     'statusSkipped' => $this->l('Skipped'),
+                    'removeConfirm' => $this->l('Remove AWB for order #%d?'),
+                    'removeFailed' => $this->l('Could not remove AWB.'),
+                    'historyFailed' => $this->l('Error occurred while retrieving AWB history.'),
+                    'noRecords' => $this->l('No records'),
                 ],
             ],
         ]);
@@ -3375,10 +3475,11 @@ class SamedayCourier extends CarrierModule
 
         $definition->getColumns()->addBefore(
             'actions',
-            (new PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\DataColumn('sameday_feedback'))
+            (new PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\HtmlColumn('sameday_feedback'))
                 ->setName($this->l('Sameday feedback'))
                 ->setOptions([
                     'field' => 'sameday_feedback',
+                    'clickable' => false,
                 ])
         );
     }
@@ -3402,7 +3503,8 @@ class SamedayCourier extends CarrierModule
             $record['sameday_feedback'] = SamedayOrderBulkAwb::formatForGrid(
                 $bulkRows[$orderId] ?? null,
                 $awbRows[$orderId] ?? null,
-                $this
+                $this,
+                $orderId
             );
         }
         unset($record);

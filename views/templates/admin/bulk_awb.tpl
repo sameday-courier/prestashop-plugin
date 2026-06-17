@@ -135,4 +135,70 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade sameday-bulk-awb-modal" id="samedayBulkAwbHistoryModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header sameday-bulk-awb-header">
+                <h4 class="modal-title">{l s='AWB History' mod='samedaycourier'}</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr><td>{l s='Summary' mod='samedaycourier'}</td></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>{l s='Parcel number' mod='samedaycourier'}</th>
+                                            <th>{l s='Parcel weight' mod='samedaycourier'}</th>
+                                            <th>{l s='Delivered' mod='samedaycourier'}</th>
+                                            <th>{l s='Delivery attempts' mod='samedaycourier'}</th>
+                                            <th>{l s='Is picked up' mod='samedaycourier'}</th>
+                                            <th>{l s='Picked up at' mod='samedaycourier'}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="samedayBulkAwbSummary"></tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr><td>{l s='History' mod='samedaycourier'}</td></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>{l s='Parcel number' mod='samedaycourier'}</th>
+                                            <th>{l s='Status' mod='samedaycourier'}</th>
+                                            <th>{l s='Label' mod='samedaycourier'}</th>
+                                            <th>{l s='State' mod='samedaycourier'}</th>
+                                            <th>{l s='Date' mod='samedaycourier'}</th>
+                                            <th>{l s='County' mod='samedaycourier'}</th>
+                                            <th>{l s='Transit location' mod='samedaycourier'}</th>
+                                            <th>{l s='Reason' mod='samedaycourier'}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="samedayBulkAwbHistories"></tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">{l s='Close' mod='samedaycourier'}</button>
+            </div>
+        </div>
+    </div>
+</div>
 {/if}
