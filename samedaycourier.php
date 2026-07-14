@@ -3623,7 +3623,6 @@ class SamedayCourier extends CarrierModule
             return;
         }
 
-        $fields = &$params['fields'];
         $column = [
             'title' => $this->l('Sameday feedback'),
             'align' => 'text-left',
@@ -3635,13 +3634,18 @@ class SamedayCourier extends CarrierModule
             'remove_onclick' => true,
         ];
 
-        if (isset($fields['id_pdf'])) {
-            $fields = $this->insertArrayKeyAfter($fields, 'id_pdf', 'sameday_feedback', $column);
+        if (isset($params['fields']['id_pdf'])) {
+            $params['fields'] = $this->insertArrayKeyAfter(
+                $params['fields'],
+                'id_pdf',
+                'sameday_feedback',
+                $column
+            );
 
             return;
         }
 
-        $fields['sameday_feedback'] = $column;
+        $params['fields']['sameday_feedback'] = $column;
     }
 
     public function hookActionAdminOrdersListingResultsModifier(array $params)
