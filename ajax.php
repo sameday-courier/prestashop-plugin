@@ -28,7 +28,13 @@ if (in_array($action, $bulkActions, true) && !defined('_PS_ADMIN_DIR_')) {
 }
 
 include(dirname(__FILE__).'/../../config/config.inc.php');
-include(dirname(__FILE__).'/../../init.php');
+
+// Bulk admin actions boot with _PS_ADMIN_DIR_ set; PS 1.7 skips customer init in that
+// mode and init.php would run FrontController->init() against a missing customer.
+if (!in_array($action, $bulkActions, true)) {
+    include(dirname(__FILE__).'/../../init.php');
+}
+
 include __DIR__ . '/classes/autoload.php';
 
 if (in_array($action, $bulkActions, true)) {
