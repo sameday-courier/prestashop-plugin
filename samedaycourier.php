@@ -3142,6 +3142,51 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
+     * Register legacy list hooks when upgrade was skipped (e.g. files copied without BO upgrade).
+     * Called from actionAdminControllerSetMedia, which runs before processFilter/renderList.
+     *
+     * @return void
+     */
+    private function ensureBulkAwbLegacyOrdersListHooksRegistered()
+    {
+        if (!$this->isBulkAwbLegacyOrdersListSupported()) {
+            return;
+        }
+
+        static $checked = false;
+        if ($checked) {
+            return;
+        }
+        $checked = true;
+
+        $hooks = [
+            'actionAdminOrdersListingFieldsModifier',
+            'actionAdminOrdersListingResultsModifier',
+        ];
+
+        $registeredAny = false;
+        foreach ($hooks as $hook) {
+            if (!$this->isRegisteredInHook($hook)) {
+                if ($this->registerHook($hook)) {
+                    $registeredAny = true;
+                }
+            }
+        }
+
+        if (!$registeredAny) {
+            return;
+        }
+
+        if (class_exists('Cache')) {
+            $context = $this->context;
+            $cacheId = 'hook_module_exec_list_'
+                . (isset($context->shop->id) ? '_' . $context->shop->id : '')
+                . (isset($context->customer) ? '_' . $context->customer->id : '');
+            Cache::clean($cacheId);
+        }
+    }
+
+    /**
      * Symfony orders grid (PS 1.7.7+): toolbar in displayAdminAfterHeader; JS enables
      * Generate/Remove only after order row checkboxes are selected.
      *
@@ -3521,6 +3566,8 @@ class SamedayCourier extends CarrierModule
         if (!$this->isBulkAwbSupported() || !$this->isAdminOrdersListPage()) {
             return;
         }
+
+        $this->ensureBulkAwbLegacyOrdersListHooksRegistered();
 
         $this->context->controller->addCSS($this->_path . 'views/css/bulkAwb.css');
         $this->context->controller->addJS($this->_path . 'views/js/bulkAwb.js');
