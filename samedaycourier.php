@@ -183,7 +183,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.8.6';
+        $this->version = '1.8.7';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -246,6 +246,16 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
+     * Legacy AdminOrders list (PS 1.6 and PS 1.7.0–1.7.6).
+     *
+     * @return bool
+     */
+    public function isBulkAwbLegacyOrdersListSupported()
+    {
+        return $this->isBulkAwbSupported() && !$this->isBulkAwbGridSupported();
+    }
+
+    /**
      * Don't forget to create update methods if needed:
      * http://doc.prestashop.com/display/PS16/Enabling+the+Auto-Update
      */
@@ -290,6 +300,12 @@ class SamedayCourier extends CarrierModule
             $result = $result
                 && $this->registerHook('actionOrderGridDefinitionModifier')
                 && $this->registerHook('actionOrderGridDataModifier');
+        }
+
+        if ($this->isBulkAwbLegacyOrdersListSupported()) {
+            $result = $result
+                && $this->registerHook('actionAdminOrdersListingFieldsModifier')
+                && $this->registerHook('actionAdminOrdersListingResultsModifier');
         }
 
         return $result;
@@ -3552,6 +3568,94 @@ class SamedayCourier extends CarrierModule
         return (new SamedayGridHtmlColumn('sameday_feedback'))
             ->setName($name)
             ->setOptions($options);
+    }
+
+    public function hookActionAdminOrdersListingFieldsModifier(array $params)
+    {
+        if (!$this->isBulkAwbLegacyOrdersListSupported()) {
+            return;
+        }
+
+        $fields = &$params['fields'];
+        $column = [
+            'title' => $this->l('Sameday feedback'),
+            'align' => 'text-left',
+            'class' => 'column-sameday_feedback',
+            'callback' => 'renderLegacySamedayFeedback',
+            'callback_object' => $this,
+            'orderby' => false,
+            'search' => false,
+            'remove_onclick' => true,
+        ];
+
+        if (isset($fields['id_pdf'])) {
+            $fields = $this->insertArrayKeyAfter($fields, 'id_pdf', 'sameday_feedback', $column);
+
+            return;
+        }
+
+        $fields['sameday_feedback'] = $column;
+    }
+
+    public function hookActionAdminOrdersListingResultsModifier(array $params)
+    {
+        if (!$this->isBulkAwbLegacyOrdersListSupported()) {
+            return;
+        }
+
+        $list = &$params['list'];
+        if ($list === []) {
+            return;
+        }
+
+        $orderIds = array_map('intval', array_column($list, 'id_order'));
+        $bulkRows = SamedayOrderBulkAwb::getByOrderIds($orderIds);
+        $awbRows = SamedayAwb::getByOrderIds($orderIds);
+
+        foreach ($list as &$row) {
+            $orderId = (int) $row['id_order'];
+            $row['sameday_feedback'] = SamedayOrderBulkAwb::formatForGrid(
+                $bulkRows[$orderId] ?? null,
+                $awbRows[$orderId] ?? null,
+                $this,
+                $orderId
+            );
+        }
+        unset($row);
+    }
+
+    /**
+     * Legacy list callback: output pre-rendered HTML without Smarty escaping.
+     *
+     * @param mixed $html
+     * @param array $tr
+     *
+     * @return string
+     */
+    public function renderLegacySamedayFeedback($html, array $tr)
+    {
+        return is_string($html) ? $html : '';
+    }
+
+    /**
+     * @param array $array
+     * @param string $afterKey
+     * @param string $newKey
+     * @param mixed $newValue
+     *
+     * @return array
+     */
+    private function insertArrayKeyAfter(array $array, $afterKey, $newKey, $newValue)
+    {
+        $result = [];
+        foreach ($array as $key => $value) {
+            $result[$key] = $value;
+            if ($key === $afterKey) {
+                $result[$newKey] = $newValue;
+            }
+        }
+
+        return $result;
     }
 
     public function hookActionOrderGridDefinitionModifier(array $params)

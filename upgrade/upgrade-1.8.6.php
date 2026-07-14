@@ -57,6 +57,19 @@ function upgrade_module_1_8_6($object)
                 }
             }
         }
+    } else {
+        $legacyListHooks = [
+            'actionAdminOrdersListingFieldsModifier',
+            'actionAdminOrdersListingResultsModifier',
+        ];
+
+        foreach ($legacyListHooks as $hook) {
+            if (!$object->isRegisteredInHook($hook)) {
+                if (!$object->registerHook($hook)) {
+                    return false;
+                }
+            }
+        }
     }
 
     return true;
