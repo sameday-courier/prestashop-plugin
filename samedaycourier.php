@@ -3531,7 +3531,7 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * HtmlColumn exists from PS 8; PS 1.7 uses DataColumn (same raw HTML rendering in grid twig).
+     * HtmlColumn exists from PS 8; PS 1.7 uses SamedayGridHtmlColumn + module twig override.
      *
      * @return \PrestaShop\PrestaShop\Core\Grid\Column\ColumnInterface
      */
@@ -3549,13 +3549,7 @@ class SamedayCourier extends CarrierModule
                 ->setOptions($options);
         }
 
-        if (class_exists('PrestaShop\\PrestaShop\\Core\\Grid\\Column\\Type\\Common\\DataColumn')) {
-            return (new PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\DataColumn('sameday_feedback'))
-                ->setName($name)
-                ->setOptions($options);
-        }
-
-        return (new PrestaShop\PrestaShop\Core\Grid\Column\Type\DataColumn('sameday_feedback'))
+        return (new SamedayGridHtmlColumn('sameday_feedback'))
             ->setName($name)
             ->setOptions($options);
     }
