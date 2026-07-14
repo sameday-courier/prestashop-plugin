@@ -2,7 +2,15 @@
     'use strict';
 
     var config = typeof samedayBulkAwb !== 'undefined' ? samedayBulkAwb : null;
-    var BULK_CHECKBOX_SELECTOR = '#order_grid input.js-bulk-action-checkbox, input[name="orderBox[]"]';
+    var BULK_CHECKBOX_SELECTOR = [
+        '#order_grid table.js-grid-table tbody input.js-bulk-action-checkbox:checked',
+        'table.order tbody input[name="orderBox[]"]:checked',
+    ].join(', ');
+    var BULK_CHECKBOX_INPUT_SELECTOR = [
+        '#order_grid table.js-grid-table tbody input.js-bulk-action-checkbox',
+        'table.order tbody input[name="orderBox[]"]',
+    ].join(', ');
+    var pendingBulkOrderIds = [];
     var bulkRunResults = {
         generate: [],
         remove: [],
@@ -25,15 +33,34 @@
     }
 
     function getSelectedOrderIds() {
+        var seen = {};
         var ids = [];
-        document.querySelectorAll(BULK_CHECKBOX_SELECTOR + ':checked').forEach(function (input) {
+
+        document.querySelectorAll(BULK_CHECKBOX_SELECTOR).forEach(function (input) {
+            if (input.classList.contains('js-bulk-action-select-all')) {
+                return;
+            }
+
             var value = parseInt(input.value, 10);
-            if (value > 0) {
+            if (value > 0 && !seen[value]) {
+                seen[value] = true;
                 ids.push(value);
             }
         });
 
         return ids;
+    }
+
+    function isBulkCheckboxChange(eventTarget) {
+        if (!eventTarget || !eventTarget.matches) {
+            return false;
+        }
+
+        if (eventTarget.matches('.js-bulk-action-select-all')) {
+            return true;
+        }
+
+        return eventTarget.matches(BULK_CHECKBOX_INPUT_SELECTOR);
     }
 
     function updateToolbarState() {
@@ -190,7 +217,8 @@
 
     function updateOrderFeedback(orderId, feedback) {
         var checkbox = document.querySelector(
-            BULK_CHECKBOX_SELECTOR + '[value="' + orderId + '"]'
+            '#order_grid table.js-grid-table tbody input.js-bulk-action-checkbox[value="' + orderId + '"], ' +
+            'table.order tbody input[name="orderBox[]"][value="' + orderId + '"]'
         );
         if (!checkbox) {
             var rowById = document.querySelector('#order_grid tbody tr[data-order-id="' + orderId + '"]');
@@ -559,6 +587,7 @@
     }
 
     function resetGenerateModal() {
+        pendingBulkOrderIds = [];
         document.getElementById('samedayBulkGenerateConfirm').style.display = 'block';
         document.getElementById('samedayBulkGenerateProgress').style.display = 'none';
         document.getElementById('samedayBulkGenerateFooterConfirm').style.display = 'block';
@@ -576,6 +605,7 @@
     }
 
     function resetRemoveModal() {
+        pendingBulkOrderIds = [];
         document.getElementById('samedayBulkRemoveConfirm').style.display = 'block';
         document.getElementById('samedayBulkRemoveProgress').style.display = 'none';
         document.getElementById('samedayBulkRemoveFooterConfirm').style.display = 'block';
@@ -624,7 +654,7 @@
         updateToolbarState();
 
         document.addEventListener('change', function (event) {
-            if (event.target && event.target.matches(BULK_CHECKBOX_SELECTOR)) {
+            if (isBulkCheckboxChange(event.target)) {
                 updateToolbarState();
             }
         });
@@ -632,7 +662,7 @@
         var gridPanel = getOrderGridPanel();
         if (gridPanel) {
             gridPanel.addEventListener('change', function (event) {
-                if (event.target && event.target.matches(BULK_CHECKBOX_SELECTOR)) {
+                if (isBulkCheckboxChange(event.target)) {
                     updateToolbarState();
                 }
             });
@@ -641,7 +671,7 @@
         var legacyPanel = getLegacyOrdersPanel();
         if (legacyPanel) {
             legacyPanel.addEventListener('change', function (event) {
-                if (event.target && event.target.matches(BULK_CHECKBOX_SELECTOR)) {
+                if (isBulkCheckboxChange(event.target)) {
                     updateToolbarState();
                 }
             });
@@ -670,15 +700,16 @@
                 if (orderIds.length === 0) {
                     return;
                 }
-                fillOrderList(document.getElementById('samedayBulkGenerateOrderList'), orderIds);
                 resetGenerateModal();
+                pendingBulkOrderIds = orderIds.slice();
+                fillOrderList(document.getElementById('samedayBulkGenerateOrderList'), pendingBulkOrderIds);
                 showBulkModal('samedayBulkGenerateModal');
             });
         }
 
         if (generateProcess) {
             generateProcess.addEventListener('click', function () {
-                var orderIds = getSelectedOrderIds();
+                var orderIds = pendingBulkOrderIds.slice();
                 if (orderIds.length === 0) {
                     return;
                 }
@@ -713,15 +744,16 @@
                 if (orderIds.length === 0) {
                     return;
                 }
-                fillOrderList(document.getElementById('samedayBulkRemoveOrderList'), orderIds);
                 resetRemoveModal();
+                pendingBulkOrderIds = orderIds.slice();
+                fillOrderList(document.getElementById('samedayBulkRemoveOrderList'), pendingBulkOrderIds);
                 showBulkModal('samedayBulkRemoveModal');
             });
         }
 
         if (removeProcess) {
             removeProcess.addEventListener('click', function () {
-                var orderIds = getSelectedOrderIds();
+                var orderIds = pendingBulkOrderIds.slice();
                 if (orderIds.length === 0) {
                     return;
                 }

@@ -1779,11 +1779,8 @@ class SamedayCourier extends CarrierModule
 
         $output = $this->display(__FILE__, 'displayAdminAfterHeader.tpl');
 
-        if ($this->isBulkAwbSupported() && $this->isAdminOrdersListPage()) {
-            $this->context->smarty->assign([
-                'sameday_bulk_awb_enabled' => true,
-            ]);
-            $output .= $this->display(__FILE__, 'views/templates/admin/bulk_awb.tpl');
+        if ($this->shouldRenderBulkAwbOnAdminAfterHeader()) {
+            $output .= $this->renderBulkAwbOrdersListMarkup();
         }
 
         return $output;
@@ -3128,6 +3125,42 @@ class SamedayCourier extends CarrierModule
         return true;
     }
 
+    /**
+     * Symfony orders grid (PS 1.7.7+): toolbar in displayAdminAfterHeader; JS enables
+     * Generate/Remove only after order row checkboxes are selected.
+     *
+     * @return bool
+     */
+    private function shouldRenderBulkAwbOnAdminAfterHeader()
+    {
+        return $this->isBulkAwbGridSupported()
+            && $this->isAdminOrdersListPage();
+    }
+
+    /**
+     * Legacy orders list (PS 1.6): displayAdminAfterHeader is not executed.
+     *
+     * @return bool
+     */
+    private function shouldRenderBulkAwbOnBackOfficeTop()
+    {
+        return $this->isBulkAwbSupported()
+            && !$this->isBulkAwbGridSupported()
+            && $this->isAdminOrdersListPage();
+    }
+
+    /**
+     * @return string
+     */
+    private function renderBulkAwbOrdersListMarkup()
+    {
+        $this->context->smarty->assign([
+            'sameday_bulk_awb_enabled' => true,
+        ]);
+
+        return $this->display(__FILE__, 'views/templates/admin/bulk_awb.tpl');
+    }
+
     private function isAdminOrderDetailPage(): bool
     {
         if (Tools::getIsset('id_order') || Tools::getIsset('vieworder')) {
@@ -3460,7 +3493,11 @@ class SamedayCourier extends CarrierModule
 
     public function hookDisplayBackOfficeTop($params)
     {
-        return '';
+        if (!$this->shouldRenderBulkAwbOnBackOfficeTop()) {
+            return '';
+        }
+
+        return $this->renderBulkAwbOrdersListMarkup();
     }
 
     public function hookActionAdminControllerSetMedia($params)
