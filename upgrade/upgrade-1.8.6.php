@@ -57,7 +57,8 @@ function upgrade_module_1_8_6($object)
                 }
             }
         }
-    } else {
+    } elseif (version_compare(_PS_VERSION_, '1.7.0', '>=')) {
+        // Feedback column on legacy list (PS 1.7.0–1.7.6). Omitted on PS 1.6.
         $legacyListHooks = [
             'actionAdminOrdersListingFieldsModifier',
             'actionAdminOrdersListingResultsModifier',

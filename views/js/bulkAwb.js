@@ -356,15 +356,30 @@
         showBulkModal('samedayBulkAwbHistoryModal');
     }
 
+    function appendQuery(url, params) {
+        var parts = [];
+        Object.keys(params).forEach(function (key) {
+            if (params[key] === undefined || params[key] === null) {
+                return;
+            }
+            parts.push(encodeURIComponent(key) + '=' + encodeURIComponent(params[key]));
+        });
+        if (!parts.length) {
+            return url;
+        }
+        return url + (url.indexOf('?') === -1 ? '?' : '&') + parts.join('&');
+    }
+
     function fetchAwbHistory(awbId) {
         if (!config) {
             return Promise.reject(new Error('Missing bulk configuration'));
         }
 
-        var url = config.ajaxUrl +
-            '?action=awb_history' +
-            '&awb_id=' + encodeURIComponent(awbId) +
-            '&token=' + encodeURIComponent(config.token);
+        var url = appendQuery(config.ajaxUrl, {
+            action: 'awb_history',
+            awb_id: awbId,
+            token: config.token,
+        });
 
         return fetch(url, {
             method: 'GET',
@@ -382,13 +397,14 @@
             return Promise.reject(new Error('Missing bulk configuration'));
         }
 
-        var url = config.ajaxUrl +
-            '?action=' + encodeURIComponent(action) +
-            '&token=' + encodeURIComponent(config.token);
-
+        var params = {
+            action: action,
+            token: config.token,
+        };
         if (orderId) {
-            url += '&order_id=' + encodeURIComponent(orderId);
+            params.order_id = orderId;
         }
+        var url = appendQuery(config.ajaxUrl, params);
 
         return fetch(url, {
             method: 'GET',

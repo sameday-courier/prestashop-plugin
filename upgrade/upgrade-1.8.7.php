@@ -15,7 +15,10 @@ if (!defined('_PS_VERSION_')) {
 
 function upgrade_module_1_8_7($object)
 {
-    if (version_compare(_PS_VERSION_, '1.7.7', '>=')) {
+    // Feedback column only on PS 1.7.0–1.7.6 legacy list (omit on 1.6; grid handles ≥1.7.7).
+    if (version_compare(_PS_VERSION_, '1.7.7', '>=')
+        || version_compare(_PS_VERSION_, '1.7.0', '<')
+    ) {
         return true;
     }
 

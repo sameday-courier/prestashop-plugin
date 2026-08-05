@@ -212,10 +212,11 @@ class SamedayOrderBulkAwb
         $awbNumber = (string) $awbRow['awb_number'];
         $awbId = (int) $awbRow['id'];
 
-        $pdfUrl = $module->getBulkAwbAjaxUrl() .
-            '?action=download_awb_pdf' .
-            '&order_id=' . (int) $orderId .
-            '&token=' . urlencode($module->getBulkAwbAdminToken());
+        $pdfUrl = SamedayTools::appendQueryParams($module->getBulkAwbAjaxUrl(), [
+            'action' => 'download_awb_pdf',
+            'order_id' => (int) $orderId,
+            'token' => $module->getBulkAwbAdminToken(),
+        ]);
 
         $pdfTitle = htmlspecialchars($module->l('Download AWB'), ENT_QUOTES, 'UTF-8');
         $removeTitle = htmlspecialchars($module->l('Remove AWB'), ENT_QUOTES, 'UTF-8');

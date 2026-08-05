@@ -42,31 +42,61 @@
             }
         }
 
-        docReady(function () {
-            if (_isSet(() => document.getElementById("locker_name"))) {
-                if (_getCookie("samedaycourier_locker_name").length > 1) {
-                    let lockerIdCookie = _getCookie("samedaycourier_locker_id");
-                    let lockerNameCookie = _getCookie("samedaycourier_locker_name");
-                    let lockerAddressCookie = _getCookie("samedaycourier_locker_address");
-                    let lockerOohType = _getCookie("samedaycourier_locker_ooh_type");
-                    document.getElementById("locker_name").value = lockerNameCookie;
-                    document.getElementById("locker_address").value = lockerAddressCookie;
-                    document.getElementById("locker_ooh_type").value = lockerOohType;
+        const _getLockerStoreElement = () => {
+            return document.getElementById('showLockerMap') || document.getElementById('lockerIdSelector');
+        }
 
-                    document.getElementById("showLockerDetails").style.display = "block";
-                    document.getElementById("showLockerDetails").innerHTML = lockerNameCookie + '<br/>' + lockerAddressCookie;
-
-                    _storeLocker(JSON.stringify({
-                        'locker_id' : lockerIdCookie,
-                        'locker_name': lockerNameCookie,
-                        'locker_address': lockerAddressCookie,
-                        'ooh_type': lockerOohType,
-                    }));
-                } else {
-                    document.getElementById("showLockerDetails").style.display = "none";
-                }
+        const _storeLocker = (locker) => {
+            let el = _getLockerStoreElement();
+            if (!el) {
+                return;
             }
 
+            let storeLockerRoute = el.getAttribute('data-store_locker_route');
+            let idCart = el.getAttribute('data-id_cart');
+            if (!storeLockerRoute || !idCart) {
+                return;
+            }
+
+            $.ajax({
+                url: storeLockerRoute,
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    action: 'store_locker',
+                    locker: locker,
+                    idCart: idCart,
+                },
+            });
+        }
+
+        const _setCookie = (key, value, days) => {
+            let d = new Date();
+            d.setTime(d.getTime() + (days*24*60*60*1000));
+            let expires = "expires=" + d.toUTCString();
+
+            document.cookie = key + "=" + value + ";" + expires + ";path=/";
+        }
+
+        const _getCookie = (key) => {
+            let cookie = '';
+            document.cookie.split(';').forEach(function (value) {
+                if (value.split('=')[0].trim() === key) {
+                    return cookie = value.split('=')[1];
+                }
+            });
+
+            return cookie;
+        }
+
+        const _clearLockerCookies = () => {
+            ['cookie_locker_id', 'cookie_locker_name', 'cookie_locker_address', 'cookie_locker_ooh_type'].forEach(function () {});
+            ['samedaycourier_locker_id', 'samedaycourier_locker_name', 'samedaycourier_locker_address', 'samedaycourier_locker_ooh_type'].forEach(function (key) {
+                document.cookie = key + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+            });
+        }
+
+        docReady(function () {
             const cookie_locker_id = 'samedaycourier_locker_id';
             const cookie_locker_name = 'samedaycourier_locker_name';
             const cookie_locker_address = 'samedaycourier_locker_address';
@@ -74,6 +104,56 @@
 
             let showLockerMap = document.getElementById('showLockerMap');
             let showLockerSelector = document.getElementById('lockerIdSelector');
+
+            if (_isSet(() => document.getElementById("locker_name"))) {
+                if (_getCookie("samedaycourier_locker_name").length > 1) {
+                    let lockerIdCookie = _getCookie("samedaycourier_locker_id");
+                    let lockerNameCookie = _getCookie("samedaycourier_locker_name");
+                    let lockerAddressCookie = _getCookie("samedaycourier_locker_address");
+                    let lockerOohType = _getCookie("samedaycourier_locker_ooh_type");
+
+                    // Dropdown mode: only restore cookies that match an imported locker option.
+                    if (_isSet(() => showLockerSelector) && !_isSet(() => showLockerMap)) {
+                        let matched = false;
+                        Array.prototype.forEach.call(showLockerSelector.options, function (opt) {
+                            if (String(opt.value) === String(lockerIdCookie) && opt.value !== '') {
+                                matched = true;
+                            }
+                        });
+                        if (!matched) {
+                            _clearLockerCookies();
+                        } else {
+                            showLockerSelector.value = lockerIdCookie;
+                            _storeLocker(JSON.stringify({
+                                'locker_id' : lockerIdCookie,
+                                'locker_name': lockerNameCookie,
+                                'locker_address': lockerAddressCookie,
+                                'ooh_type': lockerOohType || 0,
+                            }));
+                        }
+                    } else {
+                        document.getElementById("locker_name").value = lockerNameCookie;
+                        document.getElementById("locker_address").value = lockerAddressCookie;
+                        if (document.getElementById("locker_ooh_type")) {
+                            document.getElementById("locker_ooh_type").value = lockerOohType;
+                        }
+
+                        if (document.getElementById("showLockerDetails")) {
+                            document.getElementById("showLockerDetails").style.display = "block";
+                            document.getElementById("showLockerDetails").innerHTML = lockerNameCookie + '<br/>' + lockerAddressCookie;
+                        }
+
+                        _storeLocker(JSON.stringify({
+                            'locker_id' : lockerIdCookie,
+                            'locker_name': lockerNameCookie,
+                            'locker_address': lockerAddressCookie,
+                            'ooh_type': lockerOohType,
+                        }));
+                    }
+                } else if (document.getElementById("showLockerDetails")) {
+                    document.getElementById("showLockerDetails").style.display = "none";
+                }
+            }
 
             if (_isSet(() => showLockerMap)) {
                 const clientId="b8cb2ee3-41b9-4c3d-aafe-1527b453d65e";//each integrator will have a unique clientId
@@ -131,50 +211,30 @@
 
                     lockerPlugin.close();
                 });
-            } else {
+            } else if (_isSet(() => showLockerSelector)) {
                 showLockerSelector.onchange = (event) => {
                     let _target = event.target;
                     let option = _target.options[_target.selectedIndex];
+                    if (!_target.value) {
+                        return;
+                    }
+
+                    let lockerName = option.getAttribute('data-name') || '';
+                    let lockerAddress = option.getAttribute('data-address') || '';
 
                     _setCookie(cookie_locker_id, _target.value, 30);
-                    _setCookie(cookie_locker_name, option.getAttribute('data-name'), 30);
-                    _setCookie(cookie_locker_address, option.getAttribute('data-address'), 30);
-                }
+                    _setCookie(cookie_locker_name, lockerName, 30);
+                    _setCookie(cookie_locker_address, lockerAddress, 30);
+                    _setCookie(cookie_locker_ooh_type, 0, 30);
+
+                    _storeLocker(JSON.stringify({
+                        'locker_id' : _target.value,
+                        'locker_name': lockerName,
+                        'locker_address': lockerAddress,
+                        'ooh_type': 0,
+                    }));
+                };
             }
         });
-
-        const _storeLocker = (locker) => {
-            let storeLockerRoute = document.getElementById('showLockerMap').getAttribute('data-store_locker_route');
-            let idCart = document.getElementById('showLockerMap').getAttribute('data-id_cart');
-
-            $.ajax({
-                url: storeLockerRoute,
-                method: 'POST',
-                data: {
-                    action: 'store_locker',
-                    locker: locker,
-                    idCart: idCart,
-                },
-            });
-        }
-
-        const _setCookie = (key, value, days) => {
-            let d = new Date();
-            d.setTime(d.getTime() + (days*24*60*60*1000));
-            let expires = "expires=" + d.toUTCString();
-
-            document.cookie = key + "=" + value + ";" + expires + ";path=/";
-        }
-
-        const _getCookie = (key) => {
-            let cookie = '';
-            document.cookie.split(';').forEach(function (value) {
-                if (value.split('=')[0].trim() === key) {
-                    return cookie = value.split('=')[1];
-                }
-            });
-
-            return cookie;
-        }
     {/literal}
 </script>

@@ -183,7 +183,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.8.7';
+        $this->version = '1.8.8';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -199,7 +199,9 @@ class SamedayCourier extends CarrierModule
         $this->logger = new FileLogger(0);
         $this->logger->setFilename(__DIR__ . '/log/' . md5(date('Ymd')) . '_sameday.log');
         $this->messages = array();
-        $this->ajaxRoute = $this->baseUrl()._MODULE_DIR_.'samedaycourier/ajax.php?token=' . Tools::substr(Tools::encrypt(Configuration::get('SAMEDAY_CRON_TOKEN')), 0, 10);
+        $this->ajaxRoute = SamedayTools::getEndpointUrl('ajax', 'ajax.php', [
+            'token' => SamedayTools::getCronUrlToken(),
+        ]);
         $this->generalHelper = new SamedayGeneralHelper();
         $this->samedayApiHelper = new SamedayApiHelper();
     }
@@ -246,13 +248,34 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * Legacy AdminOrders list (PS 1.6 and PS 1.7.0–1.7.6).
+     * Legacy AdminOrders list toolbar path (PS 1.6 and PS 1.7.0–1.7.6).
      *
      * @return bool
      */
     public function isBulkAwbLegacyOrdersListSupported()
     {
         return $this->isBulkAwbSupported() && !$this->isBulkAwbGridSupported();
+    }
+
+    /**
+     * Feedback column (legacy list or Symfony grid). Omitted on PS 1.6.
+     *
+     * @return bool
+     */
+    public function isBulkAwbFeedbackColumnSupported()
+    {
+        return version_compare(_PS_VERSION_, '1.7.0', '>=');
+    }
+
+    /**
+     * Feedback column on the legacy AdminOrders list (PS 1.7.0–1.7.6 only).
+     *
+     * @return bool
+     */
+    public function isBulkAwbLegacyFeedbackColumnSupported()
+    {
+        return $this->isBulkAwbFeedbackColumnSupported()
+            && $this->isBulkAwbLegacyOrdersListSupported();
     }
 
     /**
@@ -302,7 +325,7 @@ class SamedayCourier extends CarrierModule
                 && $this->registerHook('actionOrderGridDataModifier');
         }
 
-        if ($this->isBulkAwbLegacyOrdersListSupported()) {
+        if ($this->isBulkAwbLegacyFeedbackColumnSupported()) {
             $result = $result
                 && $this->registerHook('actionAdminOrdersListingFieldsModifier')
                 && $this->registerHook('actionAdminOrdersListingResultsModifier');
@@ -644,12 +667,12 @@ class SamedayCourier extends CarrierModule
                         'values'  => array(
                             array(
                                 'id'    => 'active_on',
-                                'value' => true,
+                                'value' => 1,
                                 'label' => $this->l('Enabled'),
                             ),
                             array(
                                 'id'    => 'active_off',
-                                'value' => false,
+                                'value' => 0,
                                 'label' => $this->l('Disabled'),
                             ),
                         ),
@@ -662,12 +685,12 @@ class SamedayCourier extends CarrierModule
                         'values'  => array(
                             array(
                                 'id'    => 'active_on',
-                                'value' => true,
+                                'value' => 1,
                                 'label' => $this->l('Enabled'),
                             ),
                             array(
                                 'id'    => 'active_off',
-                                'value' => false,
+                                'value' => 0,
                                 'label' => $this->l('Disabled'),
                             ),
                         ),
@@ -681,12 +704,12 @@ class SamedayCourier extends CarrierModule
                         'values'  => array(
                             array(
                                 'id'    => 'active_on',
-                                'value' => true,
+                                'value' => 1,
                                 'label' => $this->l('Enabled'),
                             ),
                             array(
                                 'id'    => 'active_off',
-                                'value' => false,
+                                'value' => 0,
                                 'label' => $this->l('Disabled'),
                             ),
                         ),
@@ -703,12 +726,12 @@ class SamedayCourier extends CarrierModule
                         'values'  => array(
                             array(
                                 'id'    => 'active_on',
-                                'value' => true,
+                                'value' => 1,
                                 'label' => $this->l('Enabled'),
                             ),
                             array(
                                 'id'    => 'active_off',
-                                'value' => false,
+                                'value' => 0,
                                 'label' => $this->l('Disabled'),
                             ),
                         ),
@@ -717,7 +740,6 @@ class SamedayCourier extends CarrierModule
                         'type'    => 'select',
                         'label'   => $this->l('Show locker map method'),
                         'name'    => 'SAMEDAY_LOCKERS_MAP',
-                        'is_bool' => true,
                         'desc'    => $this->l('This will show in the checkout page of your site as a drop-down list or 
                         as interactive map'),
                         'options'  => array(
@@ -760,12 +782,12 @@ class SamedayCourier extends CarrierModule
                         'values'  => array(
                             array(
                                 'id'    => 'active_on',
-                                'value' => true,
+                                'value' => 1,
                                 'label' => $this->l('Enabled'),
                             ),
                             array(
                                 'id'    => 'active_off',
-                                'value' => false,
+                                'value' => 0,
                                 'label' => $this->l('Disabled'),
                             ),
                         ),
@@ -779,6 +801,23 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
+     * Config keys stored as 0/1 in ps_configuration.
+     *
+     * @return string[]
+     */
+    private function getBooleanConfigKeys()
+    {
+        return [
+            'SAMEDAY_STATUS_MODE',
+            'SAMEDAY_ESTIMATED_COST',
+            'SAMEDAY_OPEN_PACKAGE',
+            'SAMEDAY_USE_CITIES_NOMENCLATURE',
+            'SAMEDAY_LOCKERS_MAP',
+            'SAMEDAY_DEBUG_MODE',
+        ];
+    }
+
+    /**
      * Set values for the inputs.
      */
     protected function getConfigFormValues()
@@ -788,38 +827,43 @@ class SamedayCourier extends CarrierModule
             Configuration::get('SAMEDAY_LOCKER_MAX_ITEMS', null)
         );
 
-        if (false === $lockerMaxItems) {
+        if (false === $lockerMaxItems || $lockerMaxItems === '') {
             $lockerMaxItems = self::DEFAULT_VALUE_LOCKER_MAX_ITEMS;
         }
 
-        return array(
+        // HelperForm password inputs always POST empty; keep stored password for login/display defaults.
+        $postedPassword = Tools::getValue('SAMEDAY_ACCOUNT_PASSWORD');
+        if ($postedPassword === false || $postedPassword === null || $postedPassword === '') {
+            $password = Configuration::get('SAMEDAY_ACCOUNT_PASSWORD');
+        } else {
+            $password = $postedPassword;
+        }
+
+        $values = array(
             'SAMEDAY_STATUS_MODE'      => Tools::getValue(
                 'SAMEDAY_STATUS_MODE',
-                Configuration::get('SAMEDAY_STATUS_MODE', false)
+                Configuration::get('SAMEDAY_STATUS_MODE', 0)
             ),
             'SAMEDAY_ACCOUNT_USER'     => Tools::getValue(
                 'SAMEDAY_ACCOUNT_USER',
                 Configuration::get('SAMEDAY_ACCOUNT_USER', null)
             ),
-            'SAMEDAY_ACCOUNT_PASSWORD' => Tools::getValue(
-                'SAMEDAY_ACCOUNT_PASSWORD',
-                Configuration::get('SAMEDAY_ACCOUNT_PASSWORD', null)
-            ),
+            'SAMEDAY_ACCOUNT_PASSWORD' => $password,
             'SAMEDAY_ESTIMATED_COST' => Tools::getValue(
                 'SAMEDAY_ESTIMATED_COST',
-                Configuration::get('SAMEDAY_ESTIMATED_COST', null)
+                Configuration::get('SAMEDAY_ESTIMATED_COST', 0)
             ),
             'SAMEDAY_OPEN_PACKAGE' => Tools::getValue(
                 'SAMEDAY_OPEN_PACKAGE',
-                Configuration::get('SAMEDAY_OPEN_PACKAGE', null)
+                Configuration::get('SAMEDAY_OPEN_PACKAGE', 0)
             ),
             'SAMEDAY_USE_CITIES_NOMENCLATURE' => Tools::getValue(
                 'SAMEDAY_USE_CITIES_NOMENCLATURE',
-                Configuration::get('SAMEDAY_USE_CITIES_NOMENCLATURE', null)
+                Configuration::get('SAMEDAY_USE_CITIES_NOMENCLATURE', 0)
             ),
             'SAMEDAY_LOCKERS_MAP' => Tools::getValue(
                 'SAMEDAY_LOCKERS_MAP',
-                Configuration::get('SAMEDAY_LOCKERS_MAP', null)
+                Configuration::get('SAMEDAY_LOCKERS_MAP', 0)
             ),
             'SAMEDAY_OPEN_PACKAGE_LABEL' => Tools::getValue(
                 'SAMEDAY_OPEN_PACKAGE_LABEL',
@@ -828,7 +872,7 @@ class SamedayCourier extends CarrierModule
             'SAMEDAY_LOCKER_MAX_ITEMS' => $lockerMaxItems,
             'SAMEDAY_DEBUG_MODE'       => Tools::getValue(
                 'SAMEDAY_DEBUG_MODE',
-                Configuration::get('SAMEDAY_DEBUG_MODE', null)
+                Configuration::get('SAMEDAY_DEBUG_MODE', 0)
             ),
             'SAMEDAY_COD_REFERENCES' => Tools::getValue(
                 'SAMEDAY_COD_REFERENCES',
@@ -839,6 +883,12 @@ class SamedayCourier extends CarrierModule
                 Configuration::get('SAMEDAY_AWB_PDF_FORMAT', null)
             ),
         );
+
+        foreach ($this->getBooleanConfigKeys() as $boolKey) {
+            $values[$boolKey] = (int) $values[$boolKey];
+        }
+
+        return $values;
     }
 
     /**
@@ -910,6 +960,14 @@ class SamedayCourier extends CarrierModule
             ),
         );
 
+        if (SamedayTools::isPrestaShop9()) {
+            unset($fields['free_delivery']['icon'], $fields['status']['icon']);
+            $fields['free_delivery']['callback'] = 'displayHelperListEnabledDisabledIcon';
+            $fields['free_delivery']['callback_object'] = $this;
+            $fields['status']['callback'] = 'displayHelperListStatusIcon';
+            $fields['status']['callback_object'] = $this;
+        }
+
         $helper = new HelperList();
         $helper->toolbar_btn['new'] = array(
             'href' => $this->currentIndex . '&import_services&token=' . Tools::getAdminTokenLite('AdminModules'),
@@ -933,6 +991,39 @@ class SamedayCourier extends CarrierModule
         $helper->currentIndex = $this->currentIndex;
 
         $this->html .= $helper->generateList($services, $fields);
+    }
+
+    /**
+     * PS9 HelperList: relative admin gif paths break under deep configure URLs.
+     *
+     * @param mixed $value
+     * @param array $tr
+     *
+     * @return string
+     */
+    public function displayHelperListEnabledDisabledIcon($value, $tr)
+    {
+        $icon = ((int) $value === 1) ? 'enabled.gif' : 'disabled.gif';
+
+        return '<img src="' . htmlspecialchars(SamedayTools::getAdminImgBaseUrl() . $icon, ENT_QUOTES, 'UTF-8') . '" alt="" />';
+    }
+
+    /**
+     * @param mixed $value
+     * @param array $tr
+     *
+     * @return string
+     */
+    public function displayHelperListStatusIcon($value, $tr)
+    {
+        $map = [
+            0 => 'disabled.gif',
+            1 => 'enabled.gif',
+            2 => 'date.png',
+        ];
+        $icon = isset($map[(int) $value]) ? $map[(int) $value] : 'disabled.gif';
+
+        return '<img src="' . htmlspecialchars(SamedayTools::getAdminImgBaseUrl() . $icon, ENT_QUOTES, 'UTF-8') . '" alt="" />';
     }
 
     /**
@@ -1001,8 +1092,10 @@ class SamedayCourier extends CarrierModule
             'countries' => [SamedayConstants::DEFAULTS_COUNTRIES[$this->generalHelper->getHostCountry()]],
             'counties' => $this->samedayApiHelper->getSamedayCounties(),
             'cities' => $this->samedayApiHelper->getSamedayCities(),
-            'token' => Tools::getAdminToken('Samedaycourier'),
-            'changeCountyAction' => $this->ajaxRoute,
+            'token' => SamedayTools::isPrestaShop9()
+                ? SamedayTools::getModuleAjaxToken()
+                : Tools::getAdminToken('Samedaycourier'),
+            'changeCountyAction' => SamedayTools::getEndpointUrl('ajax', 'ajax.php'),
         ]);
 
         return $this->display(__FILE__, 'views/templates/admin/addNewPickupPoint.tpl');
@@ -1226,25 +1319,33 @@ class SamedayCourier extends CarrierModule
     {
         if ((Tools::isSubmit('submit_sameday')) === true) {
             $form_values = $this->getConfigFormValues();
+            $passwordPosted = Tools::getValue('SAMEDAY_ACCOUNT_PASSWORD');
+            $shouldUpdatePassword = !($passwordPosted === false || $passwordPosted === null || $passwordPosted === '');
 
             if ($this->connectionLogin($form_values)) {
                 //Reset old token
                 $form_values[SamedayPersistenceDataHandler::KEYS[\Sameday\SamedayClient::KEY_TOKEN]] = '';
                 $form_values[SamedayPersistenceDataHandler::KEYS[\Sameday\SamedayClient::KEY_TOKEN_EXPIRES]] = '';
 
-                foreach (array_keys($form_values) as $key) {
-                    $value = Tools::getValue($key);
+                foreach ($form_values as $key => $value) {
+                    // Password inputs always POST empty; never wipe the stored password.
+                    if ($key === 'SAMEDAY_ACCOUNT_PASSWORD' && !$shouldUpdatePassword) {
+                        continue;
+                    }
 
                     // Convert COD references from comma-separated string to JSON array
                     if ($key === 'SAMEDAY_COD_REFERENCES') {
-                        if (Tools::getValue($key)) {
-                            $codArray = array_map('trim', explode(',', $value));
+                        if ($value !== null && $value !== '') {
+                            $codArray = array_map('trim', explode(',', (string) $value));
                             $codArray = array_filter($codArray); // Remove empty values
-                            $value = json_encode($codArray);
+                            $value = json_encode(array_values($codArray));
                         } else {
                             $value = null;
                         }
+                    }
 
+                    if (in_array($key, $this->getBooleanConfigKeys(), true)) {
+                        $value = (int) $value;
                     }
 
                     Configuration::updateValue($key, $value);
@@ -1253,6 +1354,8 @@ class SamedayCourier extends CarrierModule
                 // Import local data Services and PickupPoints
                 $this->importServices();
                 $this->importPickupPoints();
+
+                $this->addMessage('success', $this->l('Settings updated.'));
             } else {
                 $this->addMessage('danger',
                     $this->l('Connection failed! Verify your credentials and try again later!')
@@ -2111,7 +2214,24 @@ class SamedayCourier extends CarrierModule
      */
     public function hookDisplayCarrierExtraContent($params)
     {
-        $service = SamedayService::findByCarrierId($params['carrier']['id']);
+        $carrierId = 0;
+        if (isset($params['carrier'])) {
+            if (is_array($params['carrier']) && isset($params['carrier']['id'])) {
+                $carrierId = (int) $params['carrier']['id'];
+            } elseif (is_object($params['carrier'])) {
+                if (isset($params['carrier']->id_carrier)) {
+                    $carrierId = (int) $params['carrier']->id_carrier;
+                } elseif (isset($params['carrier']->id)) {
+                    $carrierId = (int) $params['carrier']->id;
+                }
+            }
+        }
+
+        if ($carrierId <= 0) {
+            return '';
+        }
+
+        $service = SamedayService::findByCarrierId($carrierId);
         if (!$service) {
             return '';
         }
@@ -2150,10 +2270,19 @@ class SamedayCourier extends CarrierModule
             $useLockerMap = (bool) Configuration::get('SAMEDAY_LOCKERS_MAP');
 
             $lockers = null;
-            if (! $useLockerMap) {
-                // Use locker list from Local Import
+            if (!$useLockerMap) {
                 $lockersList = SamedayLocker::getLockers();
-                if (isset($lockersList) && !empty($lockersList)) {
+                if (empty($lockersList)) {
+                    try {
+                        $this->importLockers();
+                        $lockersList = SamedayLocker::getLockers();
+                    } catch (Exception $e) {
+                        $this->log($e->getMessage(), SamedayConstants::ERROR);
+                        $lockersList = [];
+                    }
+                }
+
+                if (!empty($lockersList)) {
                     foreach ($lockersList as $locker) {
                         $lockers[$locker['city']][] = [
                             'id' => $locker['id_locker'],
@@ -2180,17 +2309,18 @@ class SamedayCourier extends CarrierModule
             $this->smarty->assign('county', $stateName);
             $this->smarty->assign('countryCode', $countryCode);
             $this->smarty->assign('samedayUser', $sameday_user);
-            $storeLockerRoute = sprintf(
-                '%s%ssamedaycourier/ajax.php?token=%s',
-                $this->baseUrl(),
-                _MODULE_DIR_,
-                Tools::getAdminToken('Samedaycourier')
-            );
+            $storeLockerToken = SamedayTools::isPrestaShop9()
+                ? SamedayTools::getModuleAjaxToken()
+                : Tools::getAdminToken('Samedaycourier');
+            $storeLockerRoute = SamedayTools::getEndpointUrl('ajax', 'ajax.php', [
+                'token' => $storeLockerToken,
+            ]);
             $this->smarty->assign('storeLockerRoute', $storeLockerRoute);
-            $html = $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_selector']);
 
-            if(Configuration::get('SAMEDAY_LOCKERS_MAP')) {
+            if ($useLockerMap) {
                 $html = $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_map']);
+            } else {
+                $html = $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['locker_options_selector']);
             }
         }
 
@@ -2730,12 +2860,31 @@ class SamedayCourier extends CarrierModule
 
     public function getBulkAwbAjaxUrl(): string
     {
-        return $this->baseUrl() . _MODULE_DIR_ . 'samedaycourier/ajax.php';
+        return SamedayTools::getEndpointUrl('ajax', 'ajax.php');
     }
 
+    /**
+     * Token embedded in BO orders list for bulk AJAX.
+     * PS9: module AJAX token (FO controllers cannot rely on employee isLoggedBack / AdminOrders CSRF).
+     * Older PS: AdminOrders token (unchanged).
+     */
     public function getBulkAwbAdminToken(): string
     {
+        if (SamedayTools::isPrestaShop9()) {
+            return SamedayTools::getModuleAjaxToken();
+        }
+
         return Tools::getAdminTokenLite('AdminOrders');
+    }
+
+    /**
+     * Cron status-sync URL shown / used for scheduled jobs.
+     */
+    public function getStatusSyncCronUrl(): string
+    {
+        return SamedayTools::getEndpointUrl('sync', 'sync.php', [
+            'token' => SamedayTools::getCronUrlToken(),
+        ]);
     }
 
     public function getBulkAwbGridFeedback(int $orderId): string
@@ -3149,7 +3298,7 @@ class SamedayCourier extends CarrierModule
      */
     private function ensureBulkAwbLegacyOrdersListHooksRegistered()
     {
-        if (!$this->isBulkAwbLegacyOrdersListSupported()) {
+        if (!$this->isBulkAwbLegacyFeedbackColumnSupported()) {
             return;
         }
 
@@ -3619,7 +3768,7 @@ class SamedayCourier extends CarrierModule
 
     public function hookActionAdminOrdersListingFieldsModifier(array $params)
     {
-        if (!$this->isBulkAwbLegacyOrdersListSupported()) {
+        if (!$this->isBulkAwbLegacyFeedbackColumnSupported()) {
             return;
         }
 
@@ -3650,7 +3799,7 @@ class SamedayCourier extends CarrierModule
 
     public function hookActionAdminOrdersListingResultsModifier(array $params)
     {
-        if (!$this->isBulkAwbLegacyOrdersListSupported()) {
+        if (!$this->isBulkAwbLegacyFeedbackColumnSupported()) {
             return;
         }
 
@@ -3711,7 +3860,7 @@ class SamedayCourier extends CarrierModule
 
     public function hookActionOrderGridDefinitionModifier(array $params)
     {
-        if (!$this->isBulkAwbGridSupported()) {
+        if (!$this->isBulkAwbGridSupported() || !$this->isBulkAwbFeedbackColumnSupported()) {
             return;
         }
 
@@ -3730,7 +3879,7 @@ class SamedayCourier extends CarrierModule
 
     public function hookActionOrderGridDataModifier(array $params)
     {
-        if (!$this->isBulkAwbGridSupported()) {
+        if (!$this->isBulkAwbGridSupported() || !$this->isBulkAwbFeedbackColumnSupported()) {
             return;
         }
 
