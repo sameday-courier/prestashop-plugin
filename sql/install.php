@@ -117,6 +117,15 @@ $sql[] = 'CREATE TABLE `' . _DB_PREFIX_ . SamedayOpenPackage::TABLE_NAME ."` (
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
+$sql[] = 'CREATE TABLE `' . _DB_PREFIX_ . SamedayOrderBulkAwb::TABLE_NAME . "` (
+          `id_order` int(11) unsigned NOT NULL,
+          `status` tinyint(1) NOT NULL DEFAULT '0',
+          `feedback` text,
+          `date_add` datetime NOT NULL,
+          `date_upd` datetime NOT NULL,
+          PRIMARY KEY (`id_order`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+
 foreach ($sql as $query) {
     if (!Db::getInstance()->execute($query)) {
         return false;

@@ -37,9 +37,11 @@ class SamedayGeneralQueryHelper
      */
     public function dropTable(string $tableName)
     {
-        if ($this->isTableExists($tableName)) {
-            Db::getInstance()->execute(sprintf("DROP TABLE %s", $tableName));
+        if (!$this->isTableExists($tableName)) {
+            return;
         }
+
+        Db::getInstance()->execute(sprintf('DROP TABLE IF EXISTS `%s`', pSQL($tableName)));
     }
 
     /**
@@ -49,7 +51,11 @@ class SamedayGeneralQueryHelper
      */
     public function isTableExists(string $tableName): bool
     {
-        return Db::getInstance()->execute(sprintf("SHOW TABLES LIKE '%s'", $tableName));
+        $result = Db::getInstance()->executeS(
+            'SHOW TABLES LIKE \'' . pSQL($tableName) . '\''
+        );
+
+        return is_array($result) && count($result) > 0;
     }
 
     /**
@@ -57,17 +63,20 @@ class SamedayGeneralQueryHelper
      */
     public function isColumnExists(string $tableName, string $columnName): bool
     {
-        $columns = Db::getInstance()->executeS(sprintf("SHOW COLUMNS FROM %s", $tableName));
+        if (!$this->isTableExists($tableName)) {
+            return false;
+        }
 
-        $searchedColumn = array_filter(
-            $columns,
-            static function ($column) use ($columnName) {
-                return $column['Field'] === $columnName;
+        $columns = Db::getInstance()->executeS(sprintf('SHOW COLUMNS FROM `%s`', pSQL($tableName)));
+
+        if (!is_array($columns)) {
+            return false;
+        }
+
+        foreach ($columns as $column) {
+            if (isset($column['Field']) && $column['Field'] === $columnName) {
+                return true;
             }
-        );
-
-        if (!empty($searchedColumn)) {
-            return true;
         }
 
         return false;
