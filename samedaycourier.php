@@ -81,13 +81,11 @@ class SamedayCourier extends CarrierModule
             'locker_options_map' => 'checkout_lockers.v16.tpl',
             'locker_options_selector' => 'checkout_lockers_selector.v16.tpl',
             'open_package_option' => 'checkout_open_package.v16.tpl',
-            'bgn_conversion_label' => 'bgn_conversion_label.v16.tpl',
         ],
         '1.7' => [
             'locker_options_map' => 'checkout_lockers.v17.tpl',
             'locker_options_selector' => 'checkout_lockers_selector.v17.tpl',
             'open_package_option' => 'checkout_open_package.v17.tpl',
-            'bgn_conversion_label' => 'bgn_conversion_label.v17.tpl',
         ]
     ];
 
@@ -172,7 +170,7 @@ class SamedayCourier extends CarrierModule
     const CURRENCIES = [
         'RON' => SamedayConstants::API_HOST_LOCALE_RO,
         'HUF' => SamedayConstants::API_HOST_LOCALE_HU,
-        'BGN' => SamedayConstants::API_HOST_LOCALE_BG,
+        'EUR' => SamedayConstants::API_HOST_LOCALE_BG,
     ];
 
     /**
@@ -183,7 +181,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.8.8';
+        $this->version = '1.8.9';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1658,36 +1656,13 @@ class SamedayCourier extends CarrierModule
             0,
             $params->getOrderTotal(true, 4),
             null,
-            array()
+            array(),
+            $this->getDestCurrencyByDestCountryCode(strtolower(CountryCore::getIsoById($address->id_country)))
         );
 
         try {
             $estimation = $sameday->postAwbEstimation($request);
-            $price = $estimation->getCost();
-            $estimatedCurrency = $estimation->getCurrency();
-
-            $this->servicePriceCache[$service['id']] = $price;
-
-            // Business logic for Bulgarian Currency
-            $storeCurrency = Currency::getCurrencyInstance($params->id_currency);
-            $storeCurrencyCode = $storeCurrency->iso_code;
-            if ($storeCurrencyCode !== $estimatedCurrency) {
-                try {
-                    $bgnCurrencyConvertor = new SamedayBgnCurrencyConvertor($storeCurrencyCode, $price);
-                    $this->servicePriceCache[$service['id']] = $bgnCurrencyConvertor->convert();
-
-                    $this->context->smarty->assign(
-                        [
-                            "currency_label_" . $service['id'] => $bgnCurrencyConvertor->buildCurrencyConversionLabel(
-                                $this->servicePriceCache[$service['id']],
-                                $storeCurrency->symbol,
-                                $price,
-                                $estimatedCurrency
-                            )
-                        ]
-                    );
-                } catch (Exception $exception) {}
-            }
+            $this->servicePriceCache[$service['id']] = $estimation->getCost();
         } catch (Exception $exception) {
             $this->servicePriceCache[$service['id']] = $shipping_cost;
         }
@@ -2332,13 +2307,6 @@ class SamedayCourier extends CarrierModule
             $this->smarty->assign('label', Configuration::get('SAMEDAY_OPEN_PACKAGE_LABEL'));
 
             $html = $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['open_package_option']);
-        }
-
-        // Business logic for construct Bulgarian Currency label
-        $currencyConversionLabel = $this->context->smarty->getTemplateVars('currency_label_' . $service['id']);
-        if (null !== $currencyConversionLabel) {
-            $this->smarty->assign("currency_conversion_label", $currencyConversionLabel);
-            $html .= $this->display(__FILE__, self::TEMPLATE_VERSION[$fileVersion]['bgn_conversion_label']);
         }
 
         return $html;
