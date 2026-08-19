@@ -29,7 +29,11 @@
             <tr>
                 <td>{l s='Select location' mod='samedaycourier'}</td>
                 <td>
-                    <select name="samedaycourier_locker_id" id="lockerIdSelector">
+                    <select name="samedaycourier_locker_id"
+                            id="lockerIdSelector"
+                            data-id_cart="{$idCart|escape:'htmlall':'UTF-8'}"
+                            data-store_locker_route="{$storeLockerRoute|escape:'htmlall':'UTF-8'}"
+                    >
                         <option value=""> {l s='Select location' mod='samedaycourier'} </option>
                         {foreach from=$lockers key=city item = cityLockers}
                             <optgroup label="{$city|escape:'htmlall':'UTF-8'}">

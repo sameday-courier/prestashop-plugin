@@ -25,27 +25,31 @@
 <script src="https://cdn.sameday.ro/locker-plugin/lockerpluginsdk.js"></script>
 
 {include file='./_partials/checkout_lockers.tpl'}
-<div class="col-sm-2">
-    {l s='Select location' mod='samedaycourier'}
-</div>
-<div class="col-sm-8">
-    <button type="button" style="display:inline-block"
-            name="samedaycourier_locker_id" id="showLockerMap"
-            data-username='{$samedayUser}'
-            data-country='{$countryCode}'
-            data-id_cart='{$idCart}'
-            data-city='{$city}'
-            data-county='{$county}'
-            data-store_locker_route='{$storeLockerRoute}'
-            class="button-exclusive btn btn-default"
-    >
-        {l s='Show locations' mod='samedaycourier'}
-    </button>
+<div class="row">
+    <div class="col-sm-12">
+        <div class="col-sm-2">
+            {l s='Select location' mod='samedaycourier'}
+        </div>
+        <div class="col-sm-10">
+            <button type="button" style="display:inline-block"
+                    name="samedaycourier_locker_id" id="showLockerMap"
+                    data-username='{$samedayUser}'
+                    data-country='{$countryCode}'
+                    data-id_cart='{$idCart}'
+                    data-city='{$city}'
+                    data-county='{$county}'
+                    data-store_locker_route='{$storeLockerRoute}'
+                    class="button-exclusive btn btn-default"
+            >
+                {l s='Show locations' mod='samedaycourier'}
+            </button>
 
-    <div style="display:inline-block;    vertical-align: middle;">
-        <input type="hidden" id="locker_name" name="locker_name">
-        <input type="hidden" id="locker_ooh_type" name="locker_ooh_type">
-        <input type="text" id="locker_address" name="locker_address" style="width:0px;height:0px;opacity:0;">
-        <span style="padding-bottom: 10px;font-size: 13px; font-weight: bold; line-height: 22px;width:100%;display:block" id="showLockerDetails"></span>
+            <div style="display:inline-block;    vertical-align: middle;">
+                <input type="hidden" id="locker_name" name="locker_name">
+                <input type="hidden" id="locker_ooh_type" name="locker_ooh_type">
+                <input type="text" id="locker_address" name="locker_address" style="width:0px;height:0px;opacity:0;">
+                <span style="padding-bottom: 10px;font-size: 13px; font-weight: bold; line-height: 22px;width:100%;display:block" id="showLockerDetails"></span>
+            </div>
+        </div>
     </div>
 </div>

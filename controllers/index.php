@@ -12,14 +12,14 @@
  * @copyright 2007-2020 PrestaShop SA
  * @license   http://addons.prestashop.com/en/content/12-terms-and-conditions-of-use
  * International Registered Trademark & Property of PrestaShop SA
- *
- * Legacy entry point for PrestaShop &lt; 9. On PS9 use ModuleFrontController
- * (modules/.htaccess blocks direct PHP under /modules/).
  */
 
-include(dirname(__FILE__) . '/libs/sameday-php-sdk/src/Sameday/autoload.php');
-include(dirname(__FILE__).'/../../config/config.inc.php');
-include(dirname(__FILE__).'/../../init.php');
-include __DIR__ . '/classes/autoload.php';
+header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
 
-SamedaySyncHandler::run();
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Cache-Control: post-check=0, pre-check=0', false);
+header('Pragma: no-cache');
+
+header('Location: ../');
+exit;
