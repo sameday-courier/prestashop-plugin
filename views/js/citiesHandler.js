@@ -1,24 +1,12 @@
 $(document).ready(() => {
+    bindCityNomenclature();
+
     $(document).on('ajaxComplete', (event, xhr, settings) => {
         if (settings.url.includes("addressForm")) {
-            if (formElements.state.length > 0) {
-                $(document).off('change', `#${formElements.state[0].id}`);
-                $(document).on('change', `#${formElements.state[0].id}`, (event) => {
-                    updateCities(
-                        document.getElementById(formElements.city[0].id),
-                        event.target.value,
-                        document.getElementById(formElements.country[0].id).value
-                    );
-                });
-            }
+            bindCityNomenclature();
+            updateCityFieldFromCurrentState();
         }
     });
-
-    if (undefined !== formElements.state && formElements.state.length > 0) {
-        formElements.state.on('change', (event) => {
-            updateCities(formElements.city[0], event.target.value, formElements.country.val());
-        });
-    }
 });
 
 /**
@@ -34,13 +22,38 @@ const getFieldByName = (fieldName) => {
 
 let citySelectElement;
 
-let formElements = {
+const getFormElements = () => ({
     country: $(getFieldByName('country')),
     state: $(getFieldByName('state')),
     city: $(getFieldByName('city')),
+});
+
+const bindCityNomenclature = () => {
+    const formElements = getFormElements();
+    if (formElements.state.length === 0 || formElements.city.length === 0 || formElements.country.length === 0) {
+        return;
+    }
+
+    $(document).off('change.samedayCities', `#${formElements.state[0].id}`);
+    $(document).on('change.samedayCities', `#${formElements.state[0].id}`, (event) => {
+        updateCities(formElements.city[0], event.target.value, document.getElementById(formElements.country[0].id).value);
+    });
+};
+
+const updateCityFieldFromCurrentState = () => {
+    const formElements = getFormElements();
+    if (formElements.state.length === 0 || formElements.city.length === 0 || formElements.country.length === 0) {
+        return;
+    }
+
+    updateCities(formElements.city[0], formElements.state.val(), formElements.country.val());
 };
 
 const updateCities = (cityField, stateCode, countryCode) => {
+    if (!cityField || !stateCode || !countryCode) {
+        return;
+    }
+
     let cities = SamedayCities?.[countryCode]?.[stateCode] ?? [];
     if (cities.length > 0) {
         if (undefined !== citySelectElement && citySelectElement.length > 0) {
