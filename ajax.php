@@ -18,17 +18,12 @@
  */
 
 include(dirname(__FILE__) . '/libs/sameday-php-sdk/src/Sameday/autoload.php');
+include __DIR__ . '/classes/autoload.php';
 
-$bulkActions = [
-    'bulk_generate_awb',
-    'bulk_remove_awb',
-    'clear_bulk_errors',
-    'download_awb_pdf',
-    'awb_history',
-];
 $action = isset($_GET['action']) ? (string) $_GET['action'] : '';
+$isBulkAction = SamedayAjaxHandler::isBulkAction($action);
 
-if (in_array($action, $bulkActions, true) && !defined('_PS_ADMIN_DIR_')) {
+if ($isBulkAction && !defined('_PS_ADMIN_DIR_')) {
     $adminDirectories = glob(dirname(__FILE__) . '/../../admin*', GLOB_ONLYDIR) ?: [];
     if ($adminDirectories !== []) {
         define('_PS_ADMIN_DIR_', $adminDirectories[0]);
@@ -40,10 +35,8 @@ include(dirname(__FILE__).'/../../config/config.inc.php');
 
 // Bulk admin actions boot with _PS_ADMIN_DIR_ set; PS 1.7 skips customer init in that
 // mode and init.php would run FrontController->init() against a missing customer.
-if (!in_array($action, $bulkActions, true)) {
+if (!$isBulkAction) {
     include(dirname(__FILE__).'/../../init.php');
 }
-
-include __DIR__ . '/classes/autoload.php';
 
 SamedayAjaxHandler::dispatch();

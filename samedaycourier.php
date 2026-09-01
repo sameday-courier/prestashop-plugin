@@ -181,7 +181,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.8.10';
+        $this->version = '1.8.11';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -297,7 +297,8 @@ class SamedayCourier extends CarrierModule
         $hookHeader = 'displayHeader';
         if (($this->getMajorVersion() === 1) && ($this->getMinorVersion() === 6)) {
             $hookDisplayAdminOrder = 'displayAdminOrderContentShip';
-            $hookExtraCarrier = 'extraCarrier';
+            // PS 1.6 renamed extraCarrier -> displayCarrierList (Hook::getIdByName aliases it).
+            $hookExtraCarrier = 'displayCarrierList';
             $hookHeader = 'Header';
         }
 
@@ -2036,18 +2037,11 @@ class SamedayCourier extends CarrierModule
             ?? SamedayConstants::DEFAULT_HOST_COUNTRY
         ;
 
-        $orderCurrency = CurrencyCore::getCurrency($order->id_currency)['iso_code'];
-        $destCurrency = $this->getDestCurrencyByDestCountryCode($destCountryCode);
+        $orderCurrency = $this->getOrderCurrencyIsoCode($order);
 
         $xBorderWarning = '';
-        if (self::CURRENCIES[$orderCurrency] !== $destCountryCode
-            && $repayment > 0
-        ) {
-            $xBorderWarning = sprintf(
-                'Be aware that the intended currency is %s but the Repayment value is expressed in %s and please consider a conversion !!',
-                $destCurrency,
-                $orderCurrency
-            );
+        if ($repayment > 0) {
+            $xBorderWarning = (string) ($this->getRepaymentCurrencyAlertMessage($orderCurrency, $destCountryCode) ?? '');
         }
 
         $this->smarty->assign(
@@ -2108,11 +2102,100 @@ class SamedayCourier extends CarrierModule
 
     /**
      * @param $destCountryCode
-     * @return string
+     * @return string|null
      */
     private function getDestCurrencyByDestCountryCode($destCountryCode)
     {
         return array_keys(self::CURRENCIES, $destCountryCode, true)[0] ?? null;
+    }
+
+    /**
+     * Resolve order currency ISO even when the currency row is soft-deleted.
+     * CurrencyCore::getCurrency() excludes deleted currencies and returns false.
+     *
+     * @param Order|OrderCore $order
+     *
+     * @return string
+     */
+    private function getOrderCurrencyIsoCode($order)
+    {
+        $idCurrency = (int) $order->id_currency;
+        if ($idCurrency <= 0) {
+            return '';
+        }
+
+        $currency = new Currency($idCurrency);
+        if (Validate::isLoadedObject($currency) && !empty($currency->iso_code)) {
+            return strtoupper((string) $currency->iso_code);
+        }
+
+        $currencyRow = CurrencyCore::getCurrency($idCurrency);
+        if (is_array($currencyRow) && !empty($currencyRow['iso_code'])) {
+            return strtoupper((string) $currencyRow['iso_code']);
+        }
+
+        return '';
+    }
+
+    /**
+     * Warning when order (repayment) currency differs from destination-country currency.
+     *
+     * @param string|null $orderCurrency
+     * @param string|null $destinationCountryCode ISO 3166-1 alpha-2
+     *
+     * @return string|null
+     */
+    public function getRepaymentCurrencyAlertMessage($orderCurrency, $destinationCountryCode)
+    {
+        $orderCurrency = strtoupper(trim((string) $orderCurrency));
+        $destCurrency = $this->getDestCurrencyByDestCountryCode(
+            strtolower(trim((string) $destinationCountryCode))
+        );
+
+        if ($destCurrency === null || $orderCurrency === '' || $orderCurrency === $destCurrency) {
+            return null;
+        }
+
+        return sprintf(
+            'Be aware that the intended currency is %s but the Repayment value is expressed in %s. Please consider a conversion !!',
+            $destCurrency,
+            $orderCurrency
+        );
+    }
+
+    /**
+     * Currency mismatch alerts keyed by order id (string) for bulk AWB confirmation.
+     *
+     * @param int[] $orderIds
+     *
+     * @return array<string, string>
+     */
+    public function getBulkCurrencyAlerts(array $orderIds)
+    {
+        $alerts = [];
+        $orderIds = array_values(array_unique(array_filter(array_map('intval', $orderIds))));
+
+        foreach ($orderIds as $orderId) {
+            $order = new Order($orderId);
+            if (!Validate::isLoadedObject($order)) {
+                continue;
+            }
+
+            $orderCurrency = $this->getOrderCurrencyIsoCode($order);
+
+            $address = new AddressCore((int) $order->id_address_delivery);
+            $destCountryCode = '';
+            if (Validate::isLoadedObject($address)) {
+                $destCountryCode = strtolower((string) CountryCore::getIsoById((int) $address->id_country));
+            }
+
+            $message = $this->getRepaymentCurrencyAlertMessage($orderCurrency, $destCountryCode);
+            if ($message !== null) {
+                $alerts[(string) $orderId] = $message;
+            }
+        }
+
+        return $alerts;
     }
 
     /**
@@ -2173,6 +2256,50 @@ class SamedayCourier extends CarrierModule
         if (!$service) {
             return '';
         }
+
+        return $this->displayCarrierExtraContent(
+            $params,
+            $service,
+            '1.6'
+        );
+    }
+
+    /**
+     * @param $params
+     * @return false|string
+     *
+     * @throws PrestaShopDatabaseException
+     */
+    public function hookDisplayCarrierList($params)
+    {
+        $cart = isset($this->context->cart) ? $this->context->cart : null;
+        if (!$cart || !(int) $cart->id) {
+            return '';
+        }
+
+        $carrierId = (int) $cart->id_carrier;
+        if ($carrierId <= 0
+            && !empty($params['address'])
+            && is_object($params['address'])
+            && !empty($params['address']->id)
+        ) {
+            $deliveryOptions = $cart->getDeliveryOption(null, false, false);
+            $addressId = (int) $params['address']->id;
+            if (!empty($deliveryOptions[$addressId])) {
+                $carrierId = (int) $deliveryOptions[$addressId];
+            }
+        }
+
+        if ($carrierId <= 0) {
+            return '';
+        }
+
+        $service = SamedayService::findByCarrierId($carrierId);
+        if (!$service) {
+            return '';
+        }
+
+        $params['cart'] = $cart;
 
         return $this->displayCarrierExtraContent(
             $params,
@@ -2735,37 +2862,149 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * @param $order
+     * @param int|string $order
      */
     private function cancelAwb($order)
     {
-        try {
-            $awb = SamedayAwb::getOrderAwb($order);
-            $sameday = new Sameday\Sameday($this->samedayApiHelper->getSamedayClient());
+        $result = $this->cancelAwbBulk((int) $order);
 
-            if (SamedayAwb::cancelAwbByOrderId($order)) {
-                SamedayAwbParcel::deleteAwbParcels($awb['id']);
-                $request = new Sameday\Requests\SamedayDeleteAwbRequest($awb['awb_number']);
-                if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
-                    $this->log('Cancel awb', SamedayConstants::DEBUG);
-                    $this->log($request, SamedayConstants::DEBUG);
-                }
-                $sameday->deleteAwb($request);
-                $orderEntity = new Order((int) $order);
-                $orderCarrier = new OrderCarrier((int)$orderEntity->getIdOrderCarrier());
-                $orderCarrier->tracking_number = null;
-                $orderCarrier->update();
+        if (!empty($result['success'])) {
+            $this->addMessage('success', $result['message'] ?? $this->l('AWB was canceled'));
 
-                $this->addMessage('success', $this->l('AWB was canceled'));
-            }
-        } catch (Sameday\Exceptions\SamedayOtherException $e) {
-            $response = json_decode($e->getRawResponse()->getBody(), true);
-            $this->addMessage('danger', $response->error->message);
-            $this->log($e->getRawResponse()->getBody(), SamedayConstants::ERROR);
-        } catch (Exception $e) {
-            $this->log($e->getMessage(), SamedayConstants::ERROR);
-            $this->addMessage('danger', $this->l('An error occurred while trying to cancel AWB'));
+            return;
         }
+
+        $this->addMessage(
+            'danger',
+            $result['error'] ?? $this->l('An error occurred while trying to cancel AWB')
+        );
+    }
+
+    /**
+     * Remove local AWB rows, parcels, bulk feedback and carrier tracking.
+     *
+     * @param int $orderId
+     * @param array|null $awb
+     *
+     * @return void
+     */
+    private function purgeLocalAwbForOrder(int $orderId, $awb = null)
+    {
+        if (is_array($awb) && !empty($awb['id'])) {
+            SamedayAwbParcel::deleteAwbParcels($awb['id']);
+        }
+
+        SamedayAwb::cancelAwbByOrderId($orderId);
+        SamedayOrderBulkAwb::deleteByOrderId($orderId);
+        $this->clearOrderCarrierTracking($orderId);
+    }
+
+    /**
+     * @param int $orderId
+     *
+     * @return bool True when a non-empty tracking number was cleared
+     */
+    private function clearOrderCarrierTracking(int $orderId): bool
+    {
+        $orderEntity = new Order($orderId);
+        if (!Validate::isLoadedObject($orderEntity)) {
+            return false;
+        }
+
+        $idOrderCarrier = (int) $orderEntity->getIdOrderCarrier();
+        if ($idOrderCarrier <= 0) {
+            return false;
+        }
+
+        $orderCarrier = new OrderCarrier($idOrderCarrier);
+        if (!Validate::isLoadedObject($orderCarrier)) {
+            return false;
+        }
+
+        $hadTracking = trim((string) $orderCarrier->tracking_number) !== '';
+        $orderCarrier->tracking_number = '';
+        $updated = (bool) $orderCarrier->update();
+
+        return $updated && $hadTracking;
+    }
+
+    /**
+     * True when Sameday will not allow remote AWB cancellation (already closed / irreversible).
+     *
+     * @param string $message
+     *
+     * @return bool
+     */
+    private function isRemoteAwbDeleteBlocked($message): bool
+    {
+        $normalized = function_exists('mb_strtolower')
+            ? mb_strtolower((string) $message)
+            : strtolower((string) $message);
+
+        $needles = [
+            'inchis din punct de vedere operational',
+            'închis din punct de vedere operațional',
+            'operationally closed',
+            'closed from an operational',
+            'pentru a-l redeschide',
+            'already closed',
+            'nu poate fi anulat',
+            'cannot be cancelled',
+            'cannot be canceled',
+        ];
+
+        foreach ($needles as $needle) {
+            $needleNormalized = function_exists('mb_strtolower')
+                ? mb_strtolower($needle)
+                : strtolower($needle);
+
+            if ($needleNormalized !== '' && strpos($normalized, $needleNormalized) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param Exception $exception
+     *
+     * @return string
+     */
+    private function extractSamedayCancelExceptionMessage(Exception $exception): string
+    {
+        if ($exception instanceof \Sameday\Exceptions\SamedayBadRequestException) {
+            $parts = [];
+            foreach ($exception->getErrors() as $error) {
+                $messages = $error['errors'] ?? '';
+                if (is_array($messages)) {
+                    $parts[] = implode(', ', array_map('strval', $messages));
+                } elseif ((string) $messages !== '') {
+                    $parts[] = (string) $messages;
+                }
+            }
+
+            $joined = implode('; ', array_filter($parts));
+            if ($joined !== '') {
+                return $joined;
+            }
+        }
+
+        if (
+            $exception instanceof \Sameday\Exceptions\SamedayOtherException
+            && method_exists($exception, 'getRawResponse')
+            && $exception->getRawResponse()
+        ) {
+            $json = json_decode($exception->getRawResponse()->getBody(), true);
+            if (!empty($json['error']['message'])) {
+                return (string) $json['error']['message'];
+            }
+            if (!empty($json['message'])) {
+                return (string) $json['message'];
+            }
+        }
+
+        return trim((string) $exception->getMessage());
     }
 
     /**
@@ -3618,7 +3857,20 @@ class SamedayCourier extends CarrierModule
         ];
 
         $awb = SamedayAwb::getOrderAwb($orderId);
-        if (empty($awb['awb_number'])) {
+        $awbNumber = !empty($awb['awb_number']) ? (string) $awb['awb_number'] : '';
+
+        // Previous failed cancel may have removed the local AWB row but left tracking behind.
+        if ($awbNumber === '') {
+            if ($this->clearOrderCarrierTracking($orderId)) {
+                SamedayOrderBulkAwb::deleteByOrderId($orderId);
+
+                return [
+                    'success' => true,
+                    'order_id' => $orderId,
+                    'message' => $this->l('AWB was canceled'),
+                ];
+            }
+
             return array_merge($result, [
                 'error' => $this->l('AWB not found for this order.'),
             ]);
@@ -3626,47 +3878,76 @@ class SamedayCourier extends CarrierModule
 
         try {
             $sameday = new Sameday\Sameday($this->samedayApiHelper->getSamedayClient());
+            $request = new Sameday\Requests\SamedayDeleteAwbRequest($awbNumber);
+            if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
+                $this->log('Bulk cancel awb', SamedayConstants::DEBUG);
+                $this->log($request, SamedayConstants::DEBUG);
+            }
+            $sameday->deleteAwb($request);
+            $this->purgeLocalAwbForOrder($orderId, $awb);
 
-            if (SamedayAwb::cancelAwbByOrderId($orderId)) {
-                SamedayAwbParcel::deleteAwbParcels($awb['id']);
-                $request = new Sameday\Requests\SamedayDeleteAwbRequest($awb['awb_number']);
-                if (Configuration::get('SAMEDAY_DEBUG_MODE', 0)) {
-                    $this->log('Bulk cancel awb', SamedayConstants::DEBUG);
-                    $this->log($request, SamedayConstants::DEBUG);
-                }
-                $sameday->deleteAwb($request);
-                $orderEntity = new Order($orderId);
-                $orderCarrier = new OrderCarrier((int) $orderEntity->getIdOrderCarrier());
-                $orderCarrier->tracking_number = null;
-                $orderCarrier->update();
+            return [
+                'success' => true,
+                'order_id' => $orderId,
+                'awb_number' => $awbNumber,
+                'message' => $this->l('AWB was canceled'),
+            ];
+        } catch (Sameday\Exceptions\SamedayNotFoundException $e) {
+            // Already gone remotely — free the order locally.
+            $this->purgeLocalAwbForOrder($orderId, $awb);
 
-                SamedayOrderBulkAwb::deleteByOrderId($orderId);
+            return [
+                'success' => true,
+                'order_id' => $orderId,
+                'awb_number' => $awbNumber,
+                'message' => $this->l('AWB was canceled'),
+            ];
+        } catch (Sameday\Exceptions\SamedayBadRequestException $e) {
+            $message = $this->extractSamedayCancelExceptionMessage($e);
+            $this->log($message !== '' ? $message : $e->getErrors(), SamedayConstants::ERROR);
+
+            if ($this->isRemoteAwbDeleteBlocked($message)) {
+                $this->purgeLocalAwbForOrder($orderId, $awb);
 
                 return [
                     'success' => true,
                     'order_id' => $orderId,
-                    'awb_number' => $awb['awb_number'],
+                    'awb_number' => $awbNumber,
                     'message' => $this->l('AWB was canceled'),
                 ];
             }
-        } catch (Sameday\Exceptions\SamedayOtherException $e) {
-            $response = json_decode($e->getRawResponse()->getBody(), true);
-            $this->log($e->getRawResponse()->getBody(), SamedayConstants::ERROR);
 
             return array_merge($result, [
-                'error' => $response['error']['message'] ?? $this->l('An error occurred while trying to cancel AWB'),
+                'error' => $message !== ''
+                    ? $message
+                    : $this->l('An error occurred while trying to cancel AWB'),
+                'awb_number' => $awbNumber,
+            ]);
+        } catch (Sameday\Exceptions\SamedayOtherException $e) {
+            $message = $this->extractSamedayCancelExceptionMessage($e);
+            if (method_exists($e, 'getRawResponse') && $e->getRawResponse()) {
+                $this->log($e->getRawResponse()->getBody(), SamedayConstants::ERROR);
+            } else {
+                $this->log($message !== '' ? $message : get_class($e), SamedayConstants::ERROR);
+            }
+
+            return array_merge($result, [
+                'error' => $message !== ''
+                    ? $message
+                    : $this->l('An error occurred while trying to cancel AWB'),
+                'awb_number' => $awbNumber,
             ]);
         } catch (Exception $e) {
-            $this->log($e->getMessage(), SamedayConstants::ERROR);
+            $message = $this->extractSamedayCancelExceptionMessage($e);
+            $this->log($message !== '' ? $message : get_class($e), SamedayConstants::ERROR);
 
             return array_merge($result, [
-                'error' => $this->l('An error occurred while trying to cancel AWB'),
+                'error' => $message !== ''
+                    ? $message
+                    : $this->l('An error occurred while trying to cancel AWB'),
+                'awb_number' => $awbNumber,
             ]);
         }
-
-        return array_merge($result, [
-            'error' => $this->l('An error occurred while trying to cancel AWB'),
-        ]);
     }
 
     public function hookDisplayBackOfficeTop($params)
@@ -3705,6 +3986,7 @@ class SamedayCourier extends CarrierModule
                     'removeFailed' => $this->l('Could not remove AWB.'),
                     'historyFailed' => $this->l('Error occurred while retrieving AWB history.'),
                     'noRecords' => $this->l('No records'),
+                    'currencyAlertsFailed' => $this->l('Could not verify currency warnings for selected orders.'),
                 ],
             ],
         ]);

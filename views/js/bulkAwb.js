@@ -29,6 +29,7 @@
             removeFailed: 'Could not remove AWB.',
             historyFailed: 'Error occurred while retrieving AWB history.',
             noRecords: 'No records',
+            currencyAlertsFailed: 'Could not verify currency warnings for selected orders.',
         };
     }
 
@@ -199,12 +200,111 @@
         }, 250);
     }
 
-    function fillOrderList(listEl, orderIds) {
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text == null ? '' : String(text);
+        return div.innerHTML;
+    }
+
+    function fillOrderList(listEl, orderIds, currencyAlerts) {
         listEl.innerHTML = '';
+        currencyAlerts = currencyAlerts || {};
+        var hasCurrencyWarning = false;
+
         orderIds.forEach(function (orderId) {
             var li = document.createElement('li');
-            li.textContent = '#' + orderId;
+            var alertMsg = currencyAlerts[String(orderId)] || currencyAlerts[orderId] || '';
+            if (alertMsg) {
+                hasCurrencyWarning = true;
+                li.className = 'sameday-bulk-currency-warning';
+                li.innerHTML = '#' + orderId + ' ! ' + escapeHtml(alertMsg);
+            } else {
+                li.textContent = '#' + orderId;
+            }
             listEl.appendChild(li);
+        });
+
+        return hasCurrencyWarning;
+    }
+
+    function updateGenerateConfirmState() {
+        var agree = document.getElementById('samedayBulkGenerateAgree');
+        var process = document.getElementById('samedayBulkGenerateProcess');
+        var currencyWrap = document.getElementById('samedayBulkCurrencyConfirmWrap');
+        var currencyAgree = document.getElementById('samedayBulkCurrencyAgree');
+
+        if (!agree || !process) {
+            return;
+        }
+
+        var needsCurrencyConfirm = currencyWrap
+            && currencyWrap.style.display !== 'none'
+            && window.getComputedStyle(currencyWrap).display !== 'none';
+        var currencyOk = !needsCurrencyConfirm || (currencyAgree && currencyAgree.checked);
+        process.disabled = !(agree.checked && currencyOk);
+    }
+
+    function fetchCurrencyAlerts(orderIds) {
+        if (!config || !orderIds.length) {
+            return Promise.resolve({});
+        }
+
+        var url = appendQuery(config.ajaxUrl, {
+            action: 'bulk_currency_alerts',
+            order_ids: orderIds.join(','),
+            token: config.token,
+        });
+
+        return fetch(url, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+            },
+        }).then(function (response) {
+            return response.json();
+        }).then(function (data) {
+            if (!data || data.success === false) {
+                throw new Error((data && data.error) || getLabels().currencyAlertsFailed);
+            }
+
+            return data.alerts || {};
+        });
+    }
+
+    function prepareGenerateConfirm(orderIds) {
+        var listEl = document.getElementById('samedayBulkGenerateOrderList');
+        var currencyWrap = document.getElementById('samedayBulkCurrencyConfirmWrap');
+        var currencyAgree = document.getElementById('samedayBulkCurrencyAgree');
+
+        if (listEl) {
+            fillOrderList(listEl, orderIds, {});
+        }
+        if (currencyWrap) {
+            currencyWrap.style.display = 'none';
+        }
+        if (currencyAgree) {
+            currencyAgree.checked = false;
+        }
+        updateGenerateConfirmState();
+
+        return fetchCurrencyAlerts(orderIds).then(function (alerts) {
+            var hasCurrencyWarning = listEl
+                ? fillOrderList(listEl, orderIds, alerts)
+                : false;
+
+            if (currencyWrap) {
+                currencyWrap.style.display = hasCurrencyWarning ? 'block' : 'none';
+            }
+            if (currencyAgree) {
+                currencyAgree.checked = false;
+            }
+            updateGenerateConfirmState();
+        }).catch(function () {
+            if (currencyWrap) {
+                currencyWrap.style.display = 'none';
+            }
+            updateGenerateConfirmState();
         });
     }
 
@@ -609,6 +709,14 @@
         document.getElementById('samedayBulkGenerateFooterConfirm').style.display = 'block';
         document.getElementById('samedayBulkGenerateFooterDone').style.display = 'none';
         document.getElementById('samedayBulkGenerateAgree').checked = false;
+        var currencyWrap = document.getElementById('samedayBulkCurrencyConfirmWrap');
+        var currencyAgree = document.getElementById('samedayBulkCurrencyAgree');
+        if (currencyWrap) {
+            currencyWrap.style.display = 'none';
+        }
+        if (currencyAgree) {
+            currencyAgree.checked = false;
+        }
         document.getElementById('samedayBulkGenerateProcess').disabled = true;
         document.getElementById('samedayBulkGenerateBar').style.width = '0';
         document.getElementById('samedayBulkGeneratePercent').textContent = '0%';
@@ -694,11 +802,13 @@
         }
 
         var generateAgree = document.getElementById('samedayBulkGenerateAgree');
+        var currencyAgree = document.getElementById('samedayBulkCurrencyAgree');
         var generateProcess = document.getElementById('samedayBulkGenerateProcess');
-        if (generateAgree && generateProcess) {
-            generateAgree.addEventListener('change', function () {
-                generateProcess.disabled = !generateAgree.checked;
-            });
+        if (generateAgree) {
+            generateAgree.addEventListener('change', updateGenerateConfirmState);
+        }
+        if (currencyAgree) {
+            currencyAgree.addEventListener('change', updateGenerateConfirmState);
         }
 
         var removeAgree = document.getElementById('samedayBulkRemoveAgree');
@@ -718,15 +828,27 @@
                 }
                 resetGenerateModal();
                 pendingBulkOrderIds = orderIds.slice();
-                fillOrderList(document.getElementById('samedayBulkGenerateOrderList'), pendingBulkOrderIds);
-                showBulkModal('samedayBulkGenerateModal');
+                prepareGenerateConfirm(pendingBulkOrderIds).then(function () {
+                    showBulkModal('samedayBulkGenerateModal');
+                });
             });
         }
 
         if (generateProcess) {
             generateProcess.addEventListener('click', function () {
                 var orderIds = pendingBulkOrderIds.slice();
+                var currencyWrap = document.getElementById('samedayBulkCurrencyConfirmWrap');
+                var needsCurrencyConfirm = currencyWrap
+                    && currencyWrap.style.display !== 'none'
+                    && window.getComputedStyle(currencyWrap).display !== 'none';
+
                 if (orderIds.length === 0) {
+                    return;
+                }
+                if (!generateAgree || !generateAgree.checked) {
+                    return;
+                }
+                if (needsCurrencyConfirm && (!currencyAgree || !currencyAgree.checked)) {
                     return;
                 }
 

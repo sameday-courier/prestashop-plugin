@@ -31,6 +31,12 @@
                             <small>{l s='I agree that the price estimations are subject to change due to bulk generation inaccuracy potential.' mod='samedaycourier'}</small>
                         </label>
                     </div>
+                    <div id="samedayBulkCurrencyConfirmWrap" class="sameday-bulk-currency-agree" style="display: none;">
+                        <label>
+                            <input type="checkbox" id="samedayBulkCurrencyAgree">
+                            <small>{l s='I confirm that I proceed with manual conversion for those orders.' mod='samedaycourier'}</small>
+                        </label>
+                    </div>
                 </div>
                 <div id="samedayBulkGenerateProgress" style="display:none;">
                     <div class="sameday-bulk-progress-label">
