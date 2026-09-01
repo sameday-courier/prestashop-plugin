@@ -9,6 +9,7 @@ class SamedayAjaxHandler
     public static $bulkActions = [
         'bulk_generate_awb',
         'bulk_remove_awb',
+        'bulk_currency_alerts',
         'clear_bulk_errors',
         'download_awb_pdf',
         'awb_history',
@@ -147,6 +148,20 @@ class SamedayAjaxHandler
                 'success' => true,
                 'deleted' => count($orderIds),
                 'order_ids' => $orderIds,
+            ]));
+        }
+
+        if ($action === 'bulk_currency_alerts') {
+            $rawOrderIds = Tools::getValue('order_ids', '');
+            if (is_array($rawOrderIds)) {
+                $orderIds = $rawOrderIds;
+            } else {
+                $orderIds = preg_split('/\s*,\s*/', (string) $rawOrderIds, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+            }
+
+            die(json_encode([
+                'success' => true,
+                'alerts' => $module->getBulkCurrencyAlerts($orderIds),
             ]));
         }
 

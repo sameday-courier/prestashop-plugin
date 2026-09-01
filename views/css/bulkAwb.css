@@ -42,12 +42,31 @@
     padding-left: 18px;
 }
 
+.sameday-bulk-awb-modal .sameday-bulk-confirm-list .sameday-bulk-currency-warning {
+    color: #dc2626;
+    margin-bottom: 6px;
+}
+
 .sameday-bulk-awb-modal .sameday-bulk-confirm-agree {
     margin-top: 16px;
     padding: 12px 14px;
     background: #f9fafb;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
+}
+
+.sameday-bulk-awb-modal .sameday-bulk-currency-agree {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: #fef2f2;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+}
+
+.sameday-bulk-awb-modal .sameday-bulk-currency-agree label,
+.sameday-bulk-awb-modal .sameday-bulk-currency-agree small {
+    color: #dc2626;
 }
 
 .sameday-bulk-progress-label {
