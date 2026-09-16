@@ -2779,7 +2779,10 @@ class SamedayCourier extends CarrierModule
             $samedayAwb->awb_cost = $response->getCost();
             $samedayAwb->awb_number = $response->getAwbNumber();
             $samedayAwb->created = date('Y-m-d H:i:s');
-            $this->prepareAwbInitialOrderStatus($order, $samedayAwb);
+            list($initialOrderStatus, $configuredOrderStatus) = $this->getAwbOrderStatusTransition($order);
+            if ($initialOrderStatus > 0) {
+                $samedayAwb->initial_order_status = $initialOrderStatus;
+            }
             if ($samedayAwb->save()) {
                 foreach ($response->getParcels() as $parcel) {
                     $samedayAwbParcel = new SamedayAwbParcel();
@@ -2788,7 +2791,9 @@ class SamedayCourier extends CarrierModule
                     $samedayAwbParcel->position = $parcel->getPosition();
                     $samedayAwbParcel->save();
                 }
-                $this->applyConfiguredOrderStatusOnAwbGenerate($order);
+                if ($configuredOrderStatus > 0) {
+                    $this->changeOrderStatus($order, $configuredOrderStatus);
+                }
             }
 
             $orderCarrier = new OrderCarrier((int)$order->getIdOrderCarrier());
@@ -2947,29 +2952,16 @@ class SamedayCourier extends CarrierModule
             );
         }
 
-        if (!$this->hasAwbOrderStatusConfig()) {
+        // Missing key => false; stored "Do not change" (0) is not false.
+        if (Configuration::get('SAMEDAY_AWB_ORDER_STATUS') === false) {
             Configuration::updateValue('SAMEDAY_AWB_ORDER_STATUS', 0);
         }
     }
 
     /**
-     * Whether SAMEDAY_AWB_ORDER_STATUS already exists in configuration.
-     *
-     * @return bool
-     */
-    private function hasAwbOrderStatusConfig()
-    {
-        if (method_exists('Configuration', 'hasKey')) {
-            return (bool) Configuration::hasKey('SAMEDAY_AWB_ORDER_STATUS');
-        }
-
-        return Configuration::get('SAMEDAY_AWB_ORDER_STATUS') !== false;
-    }
-
-    /**
      * Options for the "Order status after AWB generation" config select.
      *
-     * @return array<int, array{id: int, name: string}>
+     * @return array
      */
     private function getAwbOrderStatusOptions()
     {
@@ -2980,8 +2972,7 @@ class SamedayCourier extends CarrierModule
             ),
         );
 
-        $idLang = (int) $this->context->language->id;
-        $orderStates = OrderState::getOrderStates($idLang);
+        $orderStates = OrderState::getOrderStates((int) $this->context->language->id);
         if (!is_array($orderStates)) {
             return $options;
         }
@@ -2997,40 +2988,22 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * Store the order status that should be restored if the AWB is later removed.
+     * Status transition for AWB generate: [initial_status_id, configured_status_id], or [0, 0] if none.
      *
      * @param Order $order
-     * @param SamedayAwb $samedayAwb
      *
-     * @return void
+     * @return int[]
      */
-    private function prepareAwbInitialOrderStatus(Order $order, SamedayAwb $samedayAwb)
+    private function getAwbOrderStatusTransition(Order $order)
     {
         $configuredStatusId = (int) Configuration::get('SAMEDAY_AWB_ORDER_STATUS');
         $initialStatusId = (int) $order->current_state;
 
-        if ($configuredStatusId > 0 && $initialStatusId > 0 && $initialStatusId !== $configuredStatusId) {
-            $samedayAwb->initial_order_status = $initialStatusId;
-        }
-    }
-
-    /**
-     * Apply configured order status after AWB generation.
-     *
-     * @param Order $order
-     *
-     * @return void
-     */
-    private function applyConfiguredOrderStatusOnAwbGenerate(Order $order)
-    {
-        $configuredStatusId = (int) Configuration::get('SAMEDAY_AWB_ORDER_STATUS');
-        $currentStatusId = (int) $order->current_state;
-
-        if ($configuredStatusId <= 0 || $currentStatusId <= 0 || $currentStatusId === $configuredStatusId) {
-            return;
+        if ($configuredStatusId <= 0 || $initialStatusId <= 0 || $initialStatusId === $configuredStatusId) {
+            return array(0, 0);
         }
 
-        $this->changeOrderStatus($order, $configuredStatusId);
+        return array($initialStatusId, $configuredStatusId);
     }
 
     /**
@@ -3048,11 +3021,7 @@ class SamedayCourier extends CarrierModule
         }
 
         $order = new Order($orderId);
-        if (!Validate::isLoadedObject($order)) {
-            return;
-        }
-
-        if ((int) $order->current_state === $initialOrderStatus) {
+        if (!Validate::isLoadedObject($order) || (int) $order->current_state === $initialOrderStatus) {
             return;
         }
 
@@ -3062,8 +3031,7 @@ class SamedayCourier extends CarrierModule
     /**
      * Change PrestaShop order status without sending a customer email.
      *
-     * Failures here must not abort AWB create/cancel: OrderHistory hooks can throw
-     * "Kernel Container is not available" from legacy bulk ajax.php (no SF kernel).
+     * Failures must not abort AWB create/cancel (bulk ajax may lack Symfony kernel).
      *
      * @param Order $order
      * @param int $orderStatusId
@@ -3089,40 +3057,18 @@ class SamedayCourier extends CarrierModule
         $history = new OrderHistory();
         $history->id_order = (int) $order->id;
         $history->id_employee = $idEmployee;
+        $history->date_add = $this->getShopDateTime();
 
         try {
+            // add(true) sets date_add; do not use addWithemail(false) — first arg is $autodate.
             $useExistingPayment = method_exists($order, 'hasInvoice') ? !$order->hasInvoice() : false;
             $history->changeIdOrderState($orderStatusId, $order, $useExistingPayment);
-        } catch (Exception $e) {
-            $this->log(
-                sprintf(
-                    'Order status update failed for order %d to status %d: %s',
-                    (int) $order->id,
-                    $orderStatusId,
-                    $e->getMessage()
-                ),
-                SamedayConstants::ERROR
-            );
-
-            $order->current_state = $orderStatusId;
-            if (property_exists($order, 'valid')) {
-                $order->valid = (bool) $orderState->logable;
-            }
-            $order->update();
-        }
-
-        try {
-            // Use add(true) — NOT addWithemail(false). The first arg of addWithemail is $autodate;
-            // false disables date_add and yields 0000-00-00. add() does not send customer email.
-            if (!$history->date_add) {
-                $history->date_add = $this->getShopDateTime();
-            }
             $history->add(true);
             $order->current_state = $orderStatusId;
         } catch (Exception $e) {
             $this->log(
                 sprintf(
-                    'Order history write failed for order %d to status %d: %s',
+                    'Order status change failed for order %d to status %d: %s',
                     (int) $order->id,
                     $orderStatusId,
                     $e->getMessage()
@@ -3130,13 +3076,12 @@ class SamedayCourier extends CarrierModule
                 SamedayConstants::ERROR
             );
 
-            $this->insertOrderHistoryRow((int) $order->id, $orderStatusId, $idEmployee);
-
             $order->current_state = $orderStatusId;
             if (property_exists($order, 'valid')) {
                 $order->valid = (bool) $orderState->logable;
             }
             $order->update();
+            $this->insertOrderHistoryRow((int) $order->id, $orderStatusId, $idEmployee);
         }
     }
 
@@ -3159,26 +3104,25 @@ class SamedayCourier extends CarrierModule
             ORDER BY `id_order_history` DESC'
         );
 
-        // Partial success may have created the row with a wrong/empty timestamp.
         if (is_array($last) && (int) $last['id_order_state'] === $orderStatusId) {
             Db::getInstance()->update(
                 'order_history',
-                [
+                array(
                     'date_add' => $now,
                     'id_employee' => (int) $idEmployee,
-                ],
+                ),
                 'id_order_history = ' . (int) $last['id_order_history']
             );
 
             return;
         }
 
-        Db::getInstance()->insert('order_history', [
+        Db::getInstance()->insert('order_history', array(
             'id_order' => (int) $orderId,
             'id_order_state' => (int) $orderStatusId,
             'id_employee' => (int) $idEmployee,
             'date_add' => $now,
-        ]);
+        ));
     }
 
     /**
@@ -3194,9 +3138,7 @@ class SamedayCourier extends CarrierModule
         }
 
         try {
-            $dateTime = new DateTime('now', new DateTimeZone($timezone));
-
-            return $dateTime->format('Y-m-d H:i:s');
+            return (new DateTime('now', new DateTimeZone($timezone)))->format('Y-m-d H:i:s');
         } catch (Exception $e) {
             return date('Y-m-d H:i:s');
         }
@@ -3415,7 +3357,7 @@ class SamedayCourier extends CarrierModule
      *
      * @param int $orderId
      *
-     * @return array{id: int, name: string, color: string, text_color: string}|null
+     * @return array|null
      */
     public function getOrderListStatusPayload(int $orderId)
     {
@@ -3424,8 +3366,7 @@ class SamedayCourier extends CarrierModule
             return null;
         }
 
-        $idLang = (int) $this->context->language->id;
-        $orderState = new OrderState((int) $order->current_state, $idLang);
+        $orderState = new OrderState((int) $order->current_state, (int) $this->context->language->id);
         if (!Validate::isLoadedObject($orderState)) {
             return null;
         }
@@ -3436,12 +3377,28 @@ class SamedayCourier extends CarrierModule
             $textColor = Tools::getBrightness($color) < 128 ? 'white' : '#383838';
         }
 
-        return [
+        return array(
             'id' => (int) $orderState->id,
             'name' => (string) $orderState->name,
             'color' => $color,
             'text_color' => $textColor,
-        ];
+        );
+    }
+
+    /**
+     * Attach list feedback + status payload used by bulk AJAX responses.
+     *
+     * @param array $result
+     * @param int $orderId
+     *
+     * @return array
+     */
+    public function enrichBulkAwbResult(array $result, int $orderId)
+    {
+        $result['feedback'] = $this->getBulkAwbGridFeedback($orderId);
+        $result['order_status'] = $this->getOrderListStatusPayload($orderId);
+
+        return $result;
     }
 
     /**
@@ -4118,7 +4075,10 @@ class SamedayCourier extends CarrierModule
             $samedayAwb->awb_cost = $response->getCost();
             $samedayAwb->awb_number = $response->getAwbNumber();
             $samedayAwb->created = date('Y-m-d H:i:s');
-            $this->prepareAwbInitialOrderStatus($order, $samedayAwb);
+            list($initialOrderStatus, $configuredOrderStatus) = $this->getAwbOrderStatusTransition($order);
+            if ($initialOrderStatus > 0) {
+                $samedayAwb->initial_order_status = $initialOrderStatus;
+            }
             if ($samedayAwb->save()) {
                 foreach ($response->getParcels() as $parcel) {
                     $samedayAwbParcel = new SamedayAwbParcel();
@@ -4127,7 +4087,9 @@ class SamedayCourier extends CarrierModule
                     $samedayAwbParcel->position = $parcel->getPosition();
                     $samedayAwbParcel->save();
                 }
-                $this->applyConfiguredOrderStatusOnAwbGenerate($order);
+                if ($configuredOrderStatus > 0) {
+                    $this->changeOrderStatus($order, $configuredOrderStatus);
+                }
             }
 
             $orderCarrier = new OrderCarrier((int) $order->getIdOrderCarrier());

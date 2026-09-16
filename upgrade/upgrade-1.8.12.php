@@ -38,12 +38,8 @@ function upgrade_module_1_8_12($object)
         }
     }
 
-    // hasKey exists on PS 1.6+; get() fallback for unusual installs.
-    if (method_exists('Configuration', 'hasKey')) {
-        if (!Configuration::hasKey('SAMEDAY_AWB_ORDER_STATUS')) {
-            Configuration::updateValue('SAMEDAY_AWB_ORDER_STATUS', 0);
-        }
-    } elseif (Configuration::get('SAMEDAY_AWB_ORDER_STATUS') === false) {
+    // Missing key => false; stored "Do not change" (0) is not false.
+    if (Configuration::get('SAMEDAY_AWB_ORDER_STATUS') === false) {
         Configuration::updateValue('SAMEDAY_AWB_ORDER_STATUS', 0);
     }
 

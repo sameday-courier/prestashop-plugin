@@ -349,16 +349,21 @@
             return;
         }
 
+        function applyColors(el) {
+            if (!status.color || !el) {
+                return;
+            }
+            el.style.backgroundColor = status.color;
+            el.style.color = status.text_color || 'white';
+        }
+
         // Symfony order grid ChoiceColumn (PS 1.7.7+ / 8 / 9)
         var choiceBtn = row.querySelector(
             'td.column-osname .dropdown > button, td.column-osname button.dropdown-toggle'
         );
         if (choiceBtn) {
             choiceBtn.textContent = status.name;
-            if (status.color) {
-                choiceBtn.style.backgroundColor = status.color;
-                choiceBtn.style.color = status.text_color || 'white';
-            }
+            applyColors(choiceBtn);
 
             var menu = row.querySelector('td.column-osname .js-choice-options');
             if (menu && typeof status.id !== 'undefined') {
@@ -373,32 +378,32 @@
             return;
         }
 
-        // Legacy HelperList (PS 1.6 / early 1.7): colored label; td may lack column-osname
+        // Legacy HelperList (PS 1.6 / early 1.7)
         var legacyCell = row.querySelector('td.column-osname');
-        var badge = null;
-        if (legacyCell) {
-            badge = legacyCell.querySelector('span.label.color_field, span.color_field, span.label') || legacyCell;
-        } else {
-            badge = row.querySelector('span.label.color_field, span.color_field');
-        }
+        var badge = legacyCell
+            ? (legacyCell.querySelector('span.label.color_field, span.color_field, span.label') || legacyCell)
+            : row.querySelector('span.label.color_field, span.color_field');
 
         if (!badge) {
             return;
         }
 
-        // Keep only the status text node content when the label wraps the name.
-        if (badge.childNodes.length === 1 && badge.firstChild.nodeType === 3) {
-            badge.textContent = status.name;
-        } else {
-            badge.textContent = status.name;
+        badge.textContent = status.name;
+        applyColors(badge);
+        if (status.color && !badge.style.padding) {
+            badge.style.padding = '2px 6px';
+        }
+    }
+
+    function applyBulkListUpdates(orderId, data) {
+        if (typeof data.feedback !== 'undefined') {
+            updateOrderFeedback(orderId, data.feedback);
+        } else if (data.error) {
+            updateOrderFeedback(orderId, data.error);
         }
 
-        if (status.color) {
-            badge.style.backgroundColor = status.color;
-            badge.style.color = status.text_color || 'white';
-            if (!badge.style.padding) {
-                badge.style.padding = '2px 6px';
-            }
+        if (data.order_status) {
+            updateOrderStatus(orderId, data.order_status);
         }
     }
 
@@ -729,15 +734,7 @@
 
             var orderId = orderIds[processed];
             postAction(action, orderId).then(function (data) {
-                if (typeof data.feedback !== 'undefined') {
-                    updateOrderFeedback(orderId, data.feedback);
-                } else if (data.error) {
-                    updateOrderFeedback(orderId, data.error);
-                }
-
-                if (data.order_status) {
-                    updateOrderStatus(orderId, data.order_status);
-                }
+                applyBulkListUpdates(orderId, data);
 
                 var entry = buildResultEntry(orderId, data, false);
                 bulkRunResults[resultsKey].push(entry);
@@ -1054,15 +1051,7 @@
             removeBtn.disabled = true;
 
             postAction('bulk_remove_awb', orderId).then(function (data) {
-                if (typeof data.feedback !== 'undefined') {
-                    updateOrderFeedback(orderId, data.feedback);
-                } else if (data.error) {
-                    updateOrderFeedback(orderId, data.error);
-                }
-
-                if (data.order_status) {
-                    updateOrderStatus(orderId, data.order_status);
-                }
+                applyBulkListUpdates(orderId, data);
 
                 if (!data.success) {
                     window.alert(data.error || labels.removeFailed || 'Could not remove AWB.');

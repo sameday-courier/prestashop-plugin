@@ -174,25 +174,19 @@ class SamedayAjaxHandler
             SamedayOrderBulkAwb::bulkEntry($orderId);
             $result = $module->addAwbBulk($orderId);
 
-            if (!empty($result['skipped'])) {
-                $result['feedback'] = $module->getBulkAwbGridFeedback($orderId);
-                $result['order_status'] = $module->getOrderListStatusPayload($orderId);
-                die(json_encode($result));
+            if (empty($result['skipped'])) {
+                if (!empty($result['success'])) {
+                    SamedayOrderBulkAwb::updateFeedback($orderId, SamedayOrderBulkAwb::STATUS_SUCCESS, [
+                        'awb_number' => $result['awb_number'] ?? '',
+                    ]);
+                } else {
+                    SamedayOrderBulkAwb::updateFeedback($orderId, SamedayOrderBulkAwb::STATUS_ERROR, [
+                        'error' => $result['error'] ?? 'Unknown error',
+                    ]);
+                }
             }
 
-            if (!empty($result['success'])) {
-                SamedayOrderBulkAwb::updateFeedback($orderId, SamedayOrderBulkAwb::STATUS_SUCCESS, [
-                    'awb_number' => $result['awb_number'] ?? '',
-                ]);
-            } else {
-                SamedayOrderBulkAwb::updateFeedback($orderId, SamedayOrderBulkAwb::STATUS_ERROR, [
-                    'error' => $result['error'] ?? 'Unknown error',
-                ]);
-            }
-
-            $result['feedback'] = $module->getBulkAwbGridFeedback($orderId);
-            $result['order_status'] = $module->getOrderListStatusPayload($orderId);
-            die(json_encode($result));
+            die(json_encode($module->enrichBulkAwbResult($result, $orderId)));
         }
 
         if ($action === 'bulk_remove_awb') {
@@ -206,9 +200,7 @@ class SamedayAjaxHandler
                 ]);
             }
 
-            $result['feedback'] = $module->getBulkAwbGridFeedback($orderId);
-            $result['order_status'] = $module->getOrderListStatusPayload($orderId);
-            die(json_encode($result));
+            die(json_encode($module->enrichBulkAwbResult($result, $orderId)));
         }
 
         die(json_encode(['success' => false, 'error' => 'Unknown action']));
