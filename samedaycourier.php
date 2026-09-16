@@ -181,7 +181,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.8.11';
+        $this->version = '1.8.12';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -352,6 +352,7 @@ class SamedayCourier extends CarrierModule
         Configuration::deleteByName('SAMEDAY_OPEN_PACKAGE_LABEL');
         Configuration::deleteByName('SAMEDAY_LOCKER_MAX_ITEMS');
         Configuration::deleteByName('SAMEDAY_AWB_PDF_FORMAT');
+        Configuration::deleteByName('SAMEDAY_AWB_ORDER_STATUS');
         Configuration::deleteByName('SAMEDAY_LAST_SYNC');
         Configuration::deleteByName('SAMEDAY_STATUS_MODE');
         Configuration::deleteByName('SAMEDAY_LAST_LOCKERS');
@@ -387,6 +388,9 @@ class SamedayCourier extends CarrierModule
     public function getContent()
     {
         $this->html = '';
+
+        // Ensure DB schema for this release even if Module Manager cache hid the Upgrade action.
+        $this->ensureAwbOrderStatusSchema();
 
         $this->postProcess();
 
@@ -659,6 +663,17 @@ class SamedayCourier extends CarrierModule
                         ),
                     ),
                     array(
+                        'type'  => 'select',
+                        'name'  => 'SAMEDAY_AWB_ORDER_STATUS',
+                        'label' => $this->l('Order status after AWB generation'),
+                        'desc'  => $this->l('When an AWB is generated, the order status is changed to the selected value. On AWB removal the previous status is restored. Choose "Do not change" to leave the order status untouched.'),
+                        'options'  => array(
+                            'query' => $this->getAwbOrderStatusOptions(),
+                            'id' => 'id',
+                            'name' => 'name'
+                        ),
+                    ),
+                    array(
                         'type'    => 'switch',
                         'label'   => $this->l('Use estimated cost'),
                         'name'    => 'SAMEDAY_ESTIMATED_COST',
@@ -880,6 +895,10 @@ class SamedayCourier extends CarrierModule
             'SAMEDAY_AWB_PDF_FORMAT'   => Tools::getValue(
                 'SAMEDAY_AWB_PDF_FORMAT',
                 Configuration::get('SAMEDAY_AWB_PDF_FORMAT', null)
+            ),
+            'SAMEDAY_AWB_ORDER_STATUS' => (int) Tools::getValue(
+                'SAMEDAY_AWB_ORDER_STATUS',
+                Configuration::get('SAMEDAY_AWB_ORDER_STATUS', 0)
             ),
         );
 
@@ -2760,6 +2779,10 @@ class SamedayCourier extends CarrierModule
             $samedayAwb->awb_cost = $response->getCost();
             $samedayAwb->awb_number = $response->getAwbNumber();
             $samedayAwb->created = date('Y-m-d H:i:s');
+            list($initialOrderStatus, $configuredOrderStatus) = $this->getAwbOrderStatusTransition($order);
+            if ($initialOrderStatus > 0) {
+                $samedayAwb->initial_order_status = $initialOrderStatus;
+            }
             if ($samedayAwb->save()) {
                 foreach ($response->getParcels() as $parcel) {
                     $samedayAwbParcel = new SamedayAwbParcel();
@@ -2767,6 +2790,9 @@ class SamedayCourier extends CarrierModule
                     $samedayAwbParcel->awb_number = $parcel->getAwbNumber();
                     $samedayAwbParcel->position = $parcel->getPosition();
                     $samedayAwbParcel->save();
+                }
+                if ($configuredOrderStatus > 0) {
+                    $this->changeOrderStatus($order, $configuredOrderStatus);
                 }
             }
 
@@ -2890,6 +2916,11 @@ class SamedayCourier extends CarrierModule
      */
     private function purgeLocalAwbForOrder(int $orderId, $awb = null)
     {
+        $initialOrderStatus = 0;
+        if (is_array($awb) && isset($awb['initial_order_status'])) {
+            $initialOrderStatus = (int) $awb['initial_order_status'];
+        }
+
         if (is_array($awb) && !empty($awb['id'])) {
             SamedayAwbParcel::deleteAwbParcels($awb['id']);
         }
@@ -2897,6 +2928,255 @@ class SamedayCourier extends CarrierModule
         SamedayAwb::cancelAwbByOrderId($orderId);
         SamedayOrderBulkAwb::deleteByOrderId($orderId);
         $this->clearOrderCarrierTracking($orderId);
+
+        if ($initialOrderStatus > 0) {
+            $this->revertOrderStatusAfterAwbRemoval($orderId, $initialOrderStatus);
+        }
+    }
+
+    /**
+     * Create initial_order_status column and default config if missing.
+     *
+     * @return void
+     */
+    private function ensureAwbOrderStatusSchema()
+    {
+        $tableName = _DB_PREFIX_ . SamedayAwb::TABLE_NAME;
+        $generalHelper = new SamedayGeneralQueryHelper();
+
+        if ($generalHelper->isTableExists($tableName)
+            && !$generalHelper->isColumnExists($tableName, 'initial_order_status')
+        ) {
+            Db::getInstance()->execute(
+                'ALTER TABLE `' . $tableName . '` ADD `initial_order_status` INT(11) DEFAULT NULL'
+            );
+        }
+
+        // Missing key => false; stored "Do not change" (0) is not false.
+        if (Configuration::get('SAMEDAY_AWB_ORDER_STATUS') === false) {
+            Configuration::updateValue('SAMEDAY_AWB_ORDER_STATUS', 0);
+        }
+    }
+
+    /**
+     * Options for the "Order status after AWB generation" config select.
+     *
+     * @return array
+     */
+    private function getAwbOrderStatusOptions()
+    {
+        $options = array(
+            array(
+                'id' => 0,
+                'name' => $this->l('Do not change'),
+            ),
+        );
+
+        $orderStates = OrderState::getOrderStates((int) $this->context->language->id);
+        if (!is_array($orderStates)) {
+            return $options;
+        }
+
+        foreach ($orderStates as $orderState) {
+            $options[] = array(
+                'id' => (int) $orderState['id_order_state'],
+                'name' => (string) $orderState['name'],
+            );
+        }
+
+        return $options;
+    }
+
+    /**
+     * Status transition for AWB generate: [initial_status_id, configured_status_id], or [0, 0] if none.
+     *
+     * @param Order $order
+     *
+     * @return int[]
+     */
+    private function getAwbOrderStatusTransition(Order $order)
+    {
+        $configuredStatusId = (int) Configuration::get('SAMEDAY_AWB_ORDER_STATUS');
+        $initialStatusId = (int) $order->current_state;
+
+        if ($configuredStatusId <= 0 || $initialStatusId <= 0 || $initialStatusId === $configuredStatusId) {
+            return array(0, 0);
+        }
+
+        return array($initialStatusId, $configuredStatusId);
+    }
+
+    /**
+     * Restore the order status stored when the AWB was generated.
+     *
+     * @param int $orderId
+     * @param int $initialOrderStatus
+     *
+     * @return void
+     */
+    private function revertOrderStatusAfterAwbRemoval(int $orderId, int $initialOrderStatus)
+    {
+        if ($orderId <= 0 || $initialOrderStatus <= 0) {
+            return;
+        }
+
+        $order = new Order($orderId);
+        if (!Validate::isLoadedObject($order) || (int) $order->current_state === $initialOrderStatus) {
+            return;
+        }
+
+        $this->changeOrderStatus($order, $initialOrderStatus);
+    }
+
+    /**
+     * Change PrestaShop order status without sending a customer email.
+     *
+     * Failures must not abort AWB create/cancel (bulk ajax may lack Symfony kernel).
+     *
+     * @param Order $order
+     * @param int $orderStatusId
+     *
+     * @return void
+     */
+    private function changeOrderStatus(Order $order, int $orderStatusId)
+    {
+        if ($orderStatusId <= 0 || !Validate::isLoadedObject($order)) {
+            return;
+        }
+
+        $orderState = new OrderState($orderStatusId);
+        if (!Validate::isLoadedObject($orderState)) {
+            return;
+        }
+
+        $idEmployee = 0;
+        if (isset($this->context->employee) && Validate::isLoadedObject($this->context->employee)) {
+            $idEmployee = (int) $this->context->employee->id;
+        }
+
+        // Bulk ajax.php skips full admin/front init — currency must exist or invoice
+        // statuses fatally TypeError in Context::getComputingPrecision().
+        $this->ensureOrderStatusContext($order);
+
+        $history = new OrderHistory();
+        $history->id_order = (int) $order->id;
+        $history->id_employee = $idEmployee;
+        $history->date_add = $this->getShopDateTime();
+
+        try {
+            // add(true) sets date_add; do not use addWithemail(false) — first arg is $autodate.
+            $useExistingPayment = method_exists($order, 'hasInvoice') ? !$order->hasInvoice() : false;
+            $history->changeIdOrderState($orderStatusId, $order, $useExistingPayment);
+            $history->add(true);
+            $order->current_state = $orderStatusId;
+        } catch (Throwable $e) {
+            // TypeError extends Error, not Exception — must catch Throwable.
+            $this->log(
+                sprintf(
+                    'Order status change failed for order %d to status %d: %s',
+                    (int) $order->id,
+                    $orderStatusId,
+                    $e->getMessage()
+                ),
+                SamedayConstants::ERROR
+            );
+
+            $order->current_state = $orderStatusId;
+            if (property_exists($order, 'valid')) {
+                $order->valid = (bool) $orderState->logable;
+            }
+            $order->update();
+            $this->insertOrderHistoryRow((int) $order->id, $orderStatusId, $idEmployee);
+        }
+    }
+
+    /**
+     * Ensure Context fields required by OrderHistory::changeIdOrderState (e.g. invoice).
+     *
+     * @param Order $order
+     *
+     * @return void
+     */
+    private function ensureOrderStatusContext(Order $order)
+    {
+        $context = Context::getContext();
+
+        if ((!isset($context->currency) || !Validate::isLoadedObject($context->currency))
+            && (int) $order->id_currency > 0
+        ) {
+            $context->currency = new Currency((int) $order->id_currency);
+        }
+
+        if ((!isset($context->language) || !Validate::isLoadedObject($context->language))
+            && (int) $order->id_lang > 0
+        ) {
+            $context->language = new Language((int) $order->id_lang);
+        }
+
+        if ((!isset($context->customer) || !Validate::isLoadedObject($context->customer))
+            && (int) $order->id_customer > 0
+        ) {
+            $context->customer = new Customer((int) $order->id_customer);
+        }
+    }
+
+    /**
+     * Insert/repair order_history with shop-timezone date_add when OrderHistory hooks fail.
+     *
+     * @param int $orderId
+     * @param int $orderStatusId
+     * @param int $idEmployee
+     *
+     * @return void
+     */
+    private function insertOrderHistoryRow(int $orderId, int $orderStatusId, int $idEmployee)
+    {
+        $now = $this->getShopDateTime();
+        $last = Db::getInstance()->getRow(
+            'SELECT `id_order_history`, `id_order_state`
+            FROM `' . _DB_PREFIX_ . 'order_history`
+            WHERE `id_order` = ' . (int) $orderId . '
+            ORDER BY `id_order_history` DESC'
+        );
+
+        if (is_array($last) && (int) $last['id_order_state'] === $orderStatusId) {
+            Db::getInstance()->update(
+                'order_history',
+                array(
+                    'date_add' => $now,
+                    'id_employee' => (int) $idEmployee,
+                ),
+                'id_order_history = ' . (int) $last['id_order_history']
+            );
+
+            return;
+        }
+
+        Db::getInstance()->insert('order_history', array(
+            'id_order' => (int) $orderId,
+            'id_order_state' => (int) $orderStatusId,
+            'id_employee' => (int) $idEmployee,
+            'date_add' => $now,
+        ));
+    }
+
+    /**
+     * Current datetime in the shop timezone (PS_TIMEZONE).
+     *
+     * @return string
+     */
+    private function getShopDateTime()
+    {
+        $timezone = Configuration::get('PS_TIMEZONE');
+        if (!is_string($timezone) || $timezone === '') {
+            return date('Y-m-d H:i:s');
+        }
+
+        try {
+            return (new DateTime('now', new DateTimeZone($timezone)))->format('Y-m-d H:i:s');
+        } catch (Exception $e) {
+            return date('Y-m-d H:i:s');
+        }
     }
 
     /**
@@ -3105,6 +3385,55 @@ class SamedayCourier extends CarrierModule
             $this,
             $orderId
         );
+    }
+
+    /**
+     * Payload used to refresh the orders-list Status cell after AWB generate/remove.
+     *
+     * @param int $orderId
+     *
+     * @return array|null
+     */
+    public function getOrderListStatusPayload(int $orderId)
+    {
+        $order = new Order($orderId);
+        if (!Validate::isLoadedObject($order)) {
+            return null;
+        }
+
+        $orderState = new OrderState((int) $order->current_state, (int) $this->context->language->id);
+        if (!Validate::isLoadedObject($orderState)) {
+            return null;
+        }
+
+        $color = (string) $orderState->color;
+        $textColor = 'white';
+        if ($color !== '' && method_exists('Tools', 'getBrightness')) {
+            $textColor = Tools::getBrightness($color) < 128 ? 'white' : '#383838';
+        }
+
+        return array(
+            'id' => (int) $orderState->id,
+            'name' => (string) $orderState->name,
+            'color' => $color,
+            'text_color' => $textColor,
+        );
+    }
+
+    /**
+     * Attach list feedback + status payload used by bulk AJAX responses.
+     *
+     * @param array $result
+     * @param int $orderId
+     *
+     * @return array
+     */
+    public function enrichBulkAwbResult(array $result, int $orderId)
+    {
+        $result['feedback'] = $this->getBulkAwbGridFeedback($orderId);
+        $result['order_status'] = $this->getOrderListStatusPayload($orderId);
+
+        return $result;
     }
 
     /**
@@ -3781,6 +4110,10 @@ class SamedayCourier extends CarrierModule
             $samedayAwb->awb_cost = $response->getCost();
             $samedayAwb->awb_number = $response->getAwbNumber();
             $samedayAwb->created = date('Y-m-d H:i:s');
+            list($initialOrderStatus, $configuredOrderStatus) = $this->getAwbOrderStatusTransition($order);
+            if ($initialOrderStatus > 0) {
+                $samedayAwb->initial_order_status = $initialOrderStatus;
+            }
             if ($samedayAwb->save()) {
                 foreach ($response->getParcels() as $parcel) {
                     $samedayAwbParcel = new SamedayAwbParcel();
@@ -3788,6 +4121,9 @@ class SamedayCourier extends CarrierModule
                     $samedayAwbParcel->awb_number = $parcel->getAwbNumber();
                     $samedayAwbParcel->position = $parcel->getPosition();
                     $samedayAwbParcel->save();
+                }
+                if ($configuredOrderStatus > 0) {
+                    $this->changeOrderStatus($order, $configuredOrderStatus);
                 }
             }
 

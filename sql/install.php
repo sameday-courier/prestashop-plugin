@@ -52,6 +52,7 @@ $sql[] = "CREATE TABLE `". _DB_PREFIX_ . SamedayAwb::TABLE_NAME . "` (
           `awb_number` varchar(50) NOT NULL DEFAULT '',
           `awb_cost` decimal(10,2) DEFAULT NULL,
           `created` datetime DEFAULT NULL,
+          `initial_order_status` int(11) DEFAULT NULL,
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 

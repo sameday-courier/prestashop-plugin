@@ -315,24 +315,20 @@
         logEl.appendChild(row);
     }
 
-    function updateOrderFeedback(orderId, feedback) {
+    function findOrderRow(orderId) {
         var checkbox = document.querySelector(
             '#order_grid table.js-grid-table tbody input.js-bulk-action-checkbox[value="' + orderId + '"], ' +
             'table.order tbody input[name="orderBox[]"][value="' + orderId + '"]'
         );
-        if (!checkbox) {
-            var rowById = document.querySelector('#order_grid tbody tr[data-order-id="' + orderId + '"]');
-            if (rowById) {
-                var cellById = rowById.querySelector('td.column-sameday_feedback');
-                if (cellById) {
-                    cellById.innerHTML = feedback || '—';
-                }
-            }
-
-            return;
+        if (checkbox) {
+            return checkbox.closest('tr');
         }
 
-        var row = checkbox.closest('tr');
+        return document.querySelector('#order_grid tbody tr[data-order-id="' + orderId + '"]');
+    }
+
+    function updateOrderFeedback(orderId, feedback) {
+        var row = findOrderRow(orderId);
         if (!row) {
             return;
         }
@@ -340,6 +336,74 @@
         var cell = row.querySelector('td.column-sameday_feedback');
         if (cell) {
             cell.innerHTML = feedback || '—';
+        }
+    }
+
+    function updateOrderStatus(orderId, status) {
+        if (!status || !status.name) {
+            return;
+        }
+
+        var row = findOrderRow(orderId);
+        if (!row) {
+            return;
+        }
+
+        function applyColors(el) {
+            if (!status.color || !el) {
+                return;
+            }
+            el.style.backgroundColor = status.color;
+            el.style.color = status.text_color || 'white';
+        }
+
+        // Symfony order grid ChoiceColumn (PS 1.7.7+ / 8 / 9)
+        var choiceBtn = row.querySelector(
+            'td.column-osname .dropdown > button, td.column-osname button.dropdown-toggle'
+        );
+        if (choiceBtn) {
+            choiceBtn.textContent = status.name;
+            applyColors(choiceBtn);
+
+            var menu = row.querySelector('td.column-osname .js-choice-options');
+            if (menu && typeof status.id !== 'undefined') {
+                var items = menu.querySelectorAll('.js-dropdown-item');
+                for (var i = 0; i < items.length; i++) {
+                    if (String(items[i].getAttribute('data-value')) === String(status.id)) {
+                        items[i].parentNode.removeChild(items[i]);
+                    }
+                }
+            }
+
+            return;
+        }
+
+        // Legacy HelperList (PS 1.6 / early 1.7)
+        var legacyCell = row.querySelector('td.column-osname');
+        var badge = legacyCell
+            ? (legacyCell.querySelector('span.label.color_field, span.color_field, span.label') || legacyCell)
+            : row.querySelector('span.label.color_field, span.color_field');
+
+        if (!badge) {
+            return;
+        }
+
+        badge.textContent = status.name;
+        applyColors(badge);
+        if (status.color && !badge.style.padding) {
+            badge.style.padding = '2px 6px';
+        }
+    }
+
+    function applyBulkListUpdates(orderId, data) {
+        if (typeof data.feedback !== 'undefined') {
+            updateOrderFeedback(orderId, data.feedback);
+        } else if (data.error) {
+            updateOrderFeedback(orderId, data.error);
+        }
+
+        if (data.order_status) {
+            updateOrderStatus(orderId, data.order_status);
         }
     }
 
@@ -670,11 +734,7 @@
 
             var orderId = orderIds[processed];
             postAction(action, orderId).then(function (data) {
-                if (typeof data.feedback !== 'undefined') {
-                    updateOrderFeedback(orderId, data.feedback);
-                } else if (data.error) {
-                    updateOrderFeedback(orderId, data.error);
-                }
+                applyBulkListUpdates(orderId, data);
 
                 var entry = buildResultEntry(orderId, data, false);
                 bulkRunResults[resultsKey].push(entry);
@@ -991,11 +1051,7 @@
             removeBtn.disabled = true;
 
             postAction('bulk_remove_awb', orderId).then(function (data) {
-                if (typeof data.feedback !== 'undefined') {
-                    updateOrderFeedback(orderId, data.feedback);
-                } else if (data.error) {
-                    updateOrderFeedback(orderId, data.error);
-                }
+                applyBulkListUpdates(orderId, data);
 
                 if (!data.success) {
                     window.alert(data.error || labels.removeFailed || 'Could not remove AWB.');
