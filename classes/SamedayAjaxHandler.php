@@ -176,6 +176,7 @@ class SamedayAjaxHandler
 
             if (!empty($result['skipped'])) {
                 $result['feedback'] = $module->getBulkAwbGridFeedback($orderId);
+                $result['order_status'] = $module->getOrderListStatusPayload($orderId);
                 die(json_encode($result));
             }
 
@@ -190,6 +191,7 @@ class SamedayAjaxHandler
             }
 
             $result['feedback'] = $module->getBulkAwbGridFeedback($orderId);
+            $result['order_status'] = $module->getOrderListStatusPayload($orderId);
             die(json_encode($result));
         }
 
@@ -205,6 +207,7 @@ class SamedayAjaxHandler
             }
 
             $result['feedback'] = $module->getBulkAwbGridFeedback($orderId);
+            $result['order_status'] = $module->getOrderListStatusPayload($orderId);
             die(json_encode($result));
         }
 

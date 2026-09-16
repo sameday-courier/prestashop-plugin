@@ -315,24 +315,20 @@
         logEl.appendChild(row);
     }
 
-    function updateOrderFeedback(orderId, feedback) {
+    function findOrderRow(orderId) {
         var checkbox = document.querySelector(
             '#order_grid table.js-grid-table tbody input.js-bulk-action-checkbox[value="' + orderId + '"], ' +
             'table.order tbody input[name="orderBox[]"][value="' + orderId + '"]'
         );
-        if (!checkbox) {
-            var rowById = document.querySelector('#order_grid tbody tr[data-order-id="' + orderId + '"]');
-            if (rowById) {
-                var cellById = rowById.querySelector('td.column-sameday_feedback');
-                if (cellById) {
-                    cellById.innerHTML = feedback || '—';
-                }
-            }
-
-            return;
+        if (checkbox) {
+            return checkbox.closest('tr');
         }
 
-        var row = checkbox.closest('tr');
+        return document.querySelector('#order_grid tbody tr[data-order-id="' + orderId + '"]');
+    }
+
+    function updateOrderFeedback(orderId, feedback) {
+        var row = findOrderRow(orderId);
         if (!row) {
             return;
         }
@@ -340,6 +336,69 @@
         var cell = row.querySelector('td.column-sameday_feedback');
         if (cell) {
             cell.innerHTML = feedback || '—';
+        }
+    }
+
+    function updateOrderStatus(orderId, status) {
+        if (!status || !status.name) {
+            return;
+        }
+
+        var row = findOrderRow(orderId);
+        if (!row) {
+            return;
+        }
+
+        // Symfony order grid ChoiceColumn (PS 1.7.7+ / 8 / 9)
+        var choiceBtn = row.querySelector(
+            'td.column-osname .dropdown > button, td.column-osname button.dropdown-toggle'
+        );
+        if (choiceBtn) {
+            choiceBtn.textContent = status.name;
+            if (status.color) {
+                choiceBtn.style.backgroundColor = status.color;
+                choiceBtn.style.color = status.text_color || 'white';
+            }
+
+            var menu = row.querySelector('td.column-osname .js-choice-options');
+            if (menu && typeof status.id !== 'undefined') {
+                var items = menu.querySelectorAll('.js-dropdown-item');
+                for (var i = 0; i < items.length; i++) {
+                    if (String(items[i].getAttribute('data-value')) === String(status.id)) {
+                        items[i].parentNode.removeChild(items[i]);
+                    }
+                }
+            }
+
+            return;
+        }
+
+        // Legacy HelperList (PS 1.6 / early 1.7): colored label; td may lack column-osname
+        var legacyCell = row.querySelector('td.column-osname');
+        var badge = null;
+        if (legacyCell) {
+            badge = legacyCell.querySelector('span.label.color_field, span.color_field, span.label') || legacyCell;
+        } else {
+            badge = row.querySelector('span.label.color_field, span.color_field');
+        }
+
+        if (!badge) {
+            return;
+        }
+
+        // Keep only the status text node content when the label wraps the name.
+        if (badge.childNodes.length === 1 && badge.firstChild.nodeType === 3) {
+            badge.textContent = status.name;
+        } else {
+            badge.textContent = status.name;
+        }
+
+        if (status.color) {
+            badge.style.backgroundColor = status.color;
+            badge.style.color = status.text_color || 'white';
+            if (!badge.style.padding) {
+                badge.style.padding = '2px 6px';
+            }
         }
     }
 
@@ -676,6 +735,10 @@
                     updateOrderFeedback(orderId, data.error);
                 }
 
+                if (data.order_status) {
+                    updateOrderStatus(orderId, data.order_status);
+                }
+
                 var entry = buildResultEntry(orderId, data, false);
                 bulkRunResults[resultsKey].push(entry);
 
@@ -995,6 +1058,10 @@
                     updateOrderFeedback(orderId, data.feedback);
                 } else if (data.error) {
                     updateOrderFeedback(orderId, data.error);
+                }
+
+                if (data.order_status) {
+                    updateOrderStatus(orderId, data.order_status);
                 }
 
                 if (!data.success) {

@@ -4,6 +4,10 @@ If your are facing some issues when working with our solution our you want to le
 
 ## Changelog
 
+### 1.8.12
+- Added configurable order status change on AWB generation, with a "Do not change" option.
+- Store the previous order status on the AWB row and restore it when the AWB is removed.
+
 ### 1.8.11
 - Added a bulk AWB confirmation disclaimer for cross-border currency mismatches between storefront and destination currency.
 - Fixed bulk currency-alert AJAX bootstrapping so mismatch warnings load correctly on all supported PrestaShop versions.

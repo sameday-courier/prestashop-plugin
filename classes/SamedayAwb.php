@@ -32,6 +32,9 @@ class SamedayAwb extends ObjectModel
     /** @var DateTime */
     public $created;
 
+    /** @var int|null Order status before AWB generation (restored on AWB removal) */
+    public $initial_order_status;
+
     /** @var array */
     public static $definition = array(
         'table'          => self::TABLE_NAME,
@@ -39,10 +42,11 @@ class SamedayAwb extends ObjectModel
         'multilang'      => false,
         'multilang_shop' => false,
         'fields'         => array(
-            'id_order'   => array('type' => self::TYPE_INT, 'required' => true, 'validate' => 'isUnsignedInt'),
-            'awb_number' => array('type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'),
-            'awb_cost'   => array('type' => self::TYPE_FLOAT, 'required' => true, 'validate' => 'isFloat'),
-            'created'    => array('type' => self::TYPE_DATE, 'required' => false, 'validate' => 'isDate'),
+            'id_order'              => array('type' => self::TYPE_INT, 'required' => true, 'validate' => 'isUnsignedInt'),
+            'awb_number'            => array('type' => self::TYPE_STRING, 'required' => true, 'validate' => 'isCleanHtml'),
+            'awb_cost'              => array('type' => self::TYPE_FLOAT, 'required' => true, 'validate' => 'isFloat'),
+            'created'               => array('type' => self::TYPE_DATE, 'required' => false, 'validate' => 'isDate'),
+            'initial_order_status'  => array('type' => self::TYPE_INT, 'required' => false, 'validate' => 'isUnsignedInt', 'allow_null' => true),
         ),
     );
 
