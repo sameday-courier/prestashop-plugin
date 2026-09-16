@@ -3054,6 +3054,10 @@ class SamedayCourier extends CarrierModule
             $idEmployee = (int) $this->context->employee->id;
         }
 
+        // Bulk ajax.php skips full admin/front init — currency must exist or invoice
+        // statuses fatally TypeError in Context::getComputingPrecision().
+        $this->ensureOrderStatusContext($order);
+
         $history = new OrderHistory();
         $history->id_order = (int) $order->id;
         $history->id_employee = $idEmployee;
@@ -3065,7 +3069,8 @@ class SamedayCourier extends CarrierModule
             $history->changeIdOrderState($orderStatusId, $order, $useExistingPayment);
             $history->add(true);
             $order->current_state = $orderStatusId;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
+            // TypeError extends Error, not Exception — must catch Throwable.
             $this->log(
                 sprintf(
                     'Order status change failed for order %d to status %d: %s',
@@ -3082,6 +3087,36 @@ class SamedayCourier extends CarrierModule
             }
             $order->update();
             $this->insertOrderHistoryRow((int) $order->id, $orderStatusId, $idEmployee);
+        }
+    }
+
+    /**
+     * Ensure Context fields required by OrderHistory::changeIdOrderState (e.g. invoice).
+     *
+     * @param Order $order
+     *
+     * @return void
+     */
+    private function ensureOrderStatusContext(Order $order)
+    {
+        $context = Context::getContext();
+
+        if ((!isset($context->currency) || !Validate::isLoadedObject($context->currency))
+            && (int) $order->id_currency > 0
+        ) {
+            $context->currency = new Currency((int) $order->id_currency);
+        }
+
+        if ((!isset($context->language) || !Validate::isLoadedObject($context->language))
+            && (int) $order->id_lang > 0
+        ) {
+            $context->language = new Language((int) $order->id_lang);
+        }
+
+        if ((!isset($context->customer) || !Validate::isLoadedObject($context->customer))
+            && (int) $order->id_customer > 0
+        ) {
+            $context->customer = new Customer((int) $order->id_customer);
         }
     }
 
