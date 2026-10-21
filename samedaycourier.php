@@ -181,7 +181,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.8.12';
+        $this->version = '1.8.13';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -467,6 +467,8 @@ class SamedayCourier extends CarrierModule
 
         $remoteServices = [];
         $page = 1;
+        $lockerService = null;
+        $crossborderLockerService = null;
 
         do {
             $servicesRequest = new \Sameday\Requests\SamedayGetServicesRequest();
@@ -479,7 +481,6 @@ class SamedayCourier extends CarrierModule
 
             $sameday = new \Sameday\Sameday($client);
 
-            $lockerService = null;
             try {
                 $response = $sameday->getServices($servicesRequest);
                 SamedayService::deactivateAllServices();
@@ -509,11 +510,17 @@ class SamedayCourier extends CarrierModule
                         $samedayService->live_mode = (int) Configuration::get('SAMEDAY_LIVE_MODE', 0);
                         $samedayService->service_optional_taxes = $optionalTaxes;
                         $samedayService->save();
+                        $oldService = SamedayService::findByCode($service->getCode());
                     } else {
                         SamedayService::updateService($service->getCode(), $optionalTaxes, $oldService['id']);
+                    }
 
+                    if (is_array($oldService)) {
                         if ($oldService['code'] === SamedayConstants::LOCKER_NEXT_DAY_CODE) {
                             $lockerService = $oldService;
+                        }
+                        if ($oldService['code'] === SamedayConstants::LOCKER_NEXT_DAY_CROSSBORDER_CODE) {
+                            $crossborderLockerService = $oldService;
                         }
                     }
 
@@ -548,14 +555,11 @@ class SamedayCourier extends CarrierModule
             }
         }
 
-        // Update PUDO status to be same as Locker NextDay
-        if (null !== $lockerService) {
-            if (false !== $pudoService = SamedayService::findByCode(SamedayConstants::PUDO_CODE) ?? false) {
-                $pudoService['status'] = $lockerService['status'];
-
-                SamedayService::updateServiceStatus($pudoService);
-            }
-        }
+        $this->syncHiddenPudoServiceStatus($lockerService, SamedayConstants::PUDO_CODE);
+        $this->syncHiddenPudoServiceStatus(
+            $crossborderLockerService ?? null,
+            SamedayConstants::CROSSBORDER_PUDO_CODE
+        );
 
         $this->addMessage('success', $this->l('The services were successfully imported'));
     }
@@ -580,19 +584,44 @@ class SamedayCourier extends CarrierModule
         if (true === $service->validateFields()) {
             $service->save();
 
-            // Update PUDO status to be same as Locker NextDay
             if ($service->code === SamedayConstants::LOCKER_NEXT_DAY_CODE) {
-                if (false !== $pudoService = SamedayService::findByCode(SamedayConstants::PUDO_CODE) ?? false) {
-                    $pudoService['status'] = $service->status;
-
-                    SamedayService::updateServiceStatus($pudoService);
-                }
+                $this->syncHiddenPudoServiceStatus(
+                    ['status' => $service->status],
+                    SamedayConstants::PUDO_CODE
+                );
+            }
+            if ($service->code === SamedayConstants::LOCKER_NEXT_DAY_CROSSBORDER_CODE) {
+                $this->syncHiddenPudoServiceStatus(
+                    ['status' => $service->status],
+                    SamedayConstants::CROSSBORDER_PUDO_CODE
+                );
             }
 
             $this->html .= $this->displayConfirmation($this->l('Sameday service updated'));
         } else {
             $this->html .= $this->displayError($this->l('An error occurred while attempting to update Sameday service'));
         }
+    }
+
+    /**
+     * @param array|null $sourceService
+     * @param string $pudoCode
+     *
+     * @return void
+     */
+    private function syncHiddenPudoServiceStatus($sourceService, string $pudoCode)
+    {
+        if (!is_array($sourceService) || !isset($sourceService['status'])) {
+            return;
+        }
+
+        $pudoService = SamedayService::findByCode($pudoCode);
+        if (!is_array($pudoService)) {
+            return;
+        }
+
+        $pudoService['status'] = $sourceService['status'];
+        SamedayService::updateServiceStatus($pudoService);
     }
 
     /**
@@ -2038,10 +2067,9 @@ class SamedayCourier extends CarrierModule
                     $lockerId = $locker['id_locker'] ?? null;
                     $lockerName = $locker['name_locker'] ?? null;
                     $lockerAddress = $locker['address_locker'] ?? null;
-                    $lockerService = $locker['service_code'] ?? null;
-
-                    if (null !== $lockerService) {
-                        $serviceId = SamedayService::findByCode($lockerService)['id_service'];
+                    $remapped = $this->applyOohServiceRemapForAwb($service, (int) $order->id);
+                    if (is_array($remapped) && !empty($remapped['id_service'])) {
+                        $serviceId = $remapped['id_service'];
                     }
                 }
             }
@@ -2653,6 +2681,9 @@ class SamedayCourier extends CarrierModule
         }
 
         $service = SamedayService::findByIdService(Tools::getValue('sameday_service'));
+        if (is_array($service)) {
+            $service = $this->applyOohServiceRemapForAwb($service, (int) $order->id);
+        }
 
         $customer = new CustomerCore($order->id_customer);
         $address = new AddressCore($order->id_address_delivery);
@@ -2697,14 +2728,17 @@ class SamedayCourier extends CarrierModule
         $lockerName = null;
         $lockerAddress = null;
         if (
-            $this->isServiceEligibleToLocker($service['code'])
+            is_array($service)
+            && $this->isServiceEligibleToLocker($service['code'])
             && ('' !== Tools::getValue('locker_id'))
             && ('' !== Tools::getValue('locker_name'))
             && ('' !== Tools::getValue('locker_address'))
         ) {
-            $lockerLastMileId = (int) Tools::getValue('locker_id');
-            if ($service['code'] === SamedayConstants::PUDO_CODE) {
-                $oohLastMileId = (int) Tools::getValue('locker_id');
+            $locationId = (int) Tools::getValue('locker_id');
+            if ($this->generalHelper->isPudoServiceType($service['code'])) {
+                $oohLastMileId = $locationId;
+            } else {
+                $lockerLastMileId = $locationId;
             }
 
             $lockerName = Tools::getValue('locker_name');
@@ -2804,10 +2838,8 @@ class SamedayCourier extends CarrierModule
             $order->shipping_number = $samedayAwb->awb_number;
             $order->update();
 
-            if (
-                null !== $lockerLastMileId
-                && $service['code'] === SamedayConstants::LOCKER_NEXT_DAY_CODE
-            ) {
+            $locationId = $lockerLastMileId ?: $oohLastMileId;
+            if (null !== $locationId && $this->isServiceEligibleToLocker($service['code'])) {
                 $samedayOrderLockerId = Tools::getValue('samedayOrderLockerId');
                 if ('' === $samedayOrderLockerId) {
                     $orderLocker = new SamedayOrderLocker();
@@ -2816,7 +2848,7 @@ class SamedayCourier extends CarrierModule
                     $orderLocker = new SamedayOrderLocker($samedayOrderLockerId);
                 }
 
-                $orderLocker->id_locker = $lockerLastMileId;
+                $orderLocker->id_locker = $locationId;
                 $orderLocker->name_locker = $lockerName;
                 $orderLocker->address_locker = $lockerAddress;
                 $orderLocker->service_code = $service['code'];
@@ -3765,7 +3797,61 @@ class SamedayCourier extends CarrierModule
             $serviceCode === SamedayConstants::LOCKER_NEXT_DAY_CODE
             || $serviceCode === SamedayConstants::LOCKER_NEXT_DAY_CROSSBORDER_CODE
             || $serviceCode === SamedayConstants::PUDO_CODE
+            || $serviceCode === SamedayConstants::CROSSBORDER_PUDO_CODE
         );
+    }
+
+    /**
+     * @param array $service
+     * @param int $orderId
+     *
+     * @return array
+     */
+    private function applyOohServiceRemapForAwb(array $service, int $orderId): array
+    {
+        if (!$this->isServiceEligibleToLocker((string) ($service['code'] ?? ''))) {
+            return $service;
+        }
+
+        $locker = SamedayOrderLocker::getLockerForOrder($orderId);
+        if (!is_array($locker) || empty($locker['service_code'])) {
+            return $service;
+        }
+
+        $order = new Order($orderId);
+        $orderServiceCode = (string) $service['code'];
+        if (Validate::isLoadedObject($order)) {
+            $carrierService = SamedayService::findByCarrierId($order->id_carrier);
+            if (is_array($carrierService) && !empty($carrierService['code'])) {
+                $orderServiceCode = (string) $carrierService['code'];
+            }
+        }
+
+        $resolvedCode = $this->generalHelper->resolveAwbServiceCode(
+            $orderServiceCode,
+            (string) $locker['service_code']
+        );
+        if ($resolvedCode === (string) $service['code']) {
+            return $service;
+        }
+
+        $resolved = SamedayService::findByCode($resolvedCode);
+        if (!is_array($resolved) || empty($resolved['id_service'])) {
+            $this->log(
+                sprintf(
+                    'OOH AWB remap: service %s not found for order %d (from %s + locker %s)',
+                    $resolvedCode,
+                    $orderId,
+                    $orderServiceCode,
+                    $locker['service_code']
+                ),
+                SamedayConstants::ERROR
+            );
+
+            return $service;
+        }
+
+        return $resolved;
     }
 
     private function isServiceEligibleToPdo($serviceAdditionalTaxes): bool
@@ -3965,6 +4051,7 @@ class SamedayCourier extends CarrierModule
                 'error' => $this->l('Order carrier is not a Sameday service.'),
             ]);
         }
+        $service = $this->applyOohServiceRemapForAwb($service, $orderId);
 
         $pickupPoint = SamedayPickupPoint::resolveForAwb();
         if (empty($pickupPoint['id_pickup_point'])) {
@@ -4041,9 +4128,11 @@ class SamedayCourier extends CarrierModule
                 ]);
             }
 
-            $lockerLastMileId = (int) $locker['id_locker'];
-            if ($service['code'] === SamedayConstants::PUDO_CODE) {
-                $oohLastMileId = (int) $locker['id_locker'];
+            $locationId = (int) $locker['id_locker'];
+            if ($this->generalHelper->isPudoServiceType($service['code'])) {
+                $oohLastMileId = $locationId;
+            } else {
+                $lockerLastMileId = $locationId;
             }
 
             $lockerName = $locker['name_locker'] ?? '';
@@ -4135,10 +4224,8 @@ class SamedayCourier extends CarrierModule
             $order->shipping_number = $samedayAwb->awb_number;
             $order->update();
 
-            if (
-                null !== $lockerLastMileId
-                && $service['code'] === SamedayConstants::LOCKER_NEXT_DAY_CODE
-            ) {
+            $locationId = $lockerLastMileId ?: $oohLastMileId;
+            if (null !== $locationId && $this->isServiceEligibleToLocker($service['code'])) {
                 if (empty($samedayOrderLockerId)) {
                     $orderLocker = new SamedayOrderLocker();
                     $orderLocker->id_order = $order->id;
@@ -4146,7 +4233,7 @@ class SamedayCourier extends CarrierModule
                     $orderLocker = new SamedayOrderLocker((int) $samedayOrderLockerId);
                 }
 
-                $orderLocker->id_locker = $lockerLastMileId;
+                $orderLocker->id_locker = $locationId;
                 $orderLocker->name_locker = $lockerName;
                 $orderLocker->address_locker = $lockerAddress;
                 $orderLocker->service_code = $service['code'];
