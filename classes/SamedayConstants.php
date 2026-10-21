@@ -35,6 +35,7 @@ final class SamedayConstants
     const OOH_SERVICE = 'OOH';
     const STANDARD_CROSSBORDER_CODE = 'XB';
     const LOCKER_NEXT_DAY_CROSSBORDER_CODE = 'XL';
+    const CROSSBORDER_PUDO_CODE = 'XP';
 
     const ELIGIBLE_SERVICES = [
         self::SAMEDAY_6H_CODE,
@@ -45,6 +46,7 @@ final class SamedayConstants
     const ELIGIBLE_FOR_CROSSBORDER = [
         self::STANDARD_CROSSBORDER_CODE,
         self::LOCKER_NEXT_DAY_CROSSBORDER_CODE,
+        self::CROSSBORDER_PUDO_CODE,
     ];
 
     const ELIGIBLE_TO_6H_SERVICE = [
@@ -54,6 +56,16 @@ final class SamedayConstants
     const OOH_SERVICES = [
         self::LOCKER_NEXT_DAY_CODE,
         self::PUDO_CODE,
+    ];
+
+    const EASYBOX_TYPE_SERVICE = [
+        self::LOCKER_NEXT_DAY_CODE,
+        self::LOCKER_NEXT_DAY_CROSSBORDER_CODE,
+    ];
+
+    const PUDO_TYPE_SERVICE = [
+        self::PUDO_CODE,
+        self::CROSSBORDER_PUDO_CODE,
     ];
 
     const IN_USE_SERVICES = [

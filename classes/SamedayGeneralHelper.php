@@ -28,6 +28,38 @@ class SamedayGeneralHelper
         return in_array($samedayServiceCode, SamedayConstants::OOH_SERVICES, true);
     }
 
+    /**
+     * @param string $samedayServiceCode
+     *
+     * @return bool
+     */
+    public function isPudoServiceType(string $samedayServiceCode): bool
+    {
+        return in_array($samedayServiceCode, SamedayConstants::PUDO_TYPE_SERVICE, true);
+    }
+
+    /**
+     * @param string $orderServiceCode
+     * @param string|int|null $oohType
+     *
+     * @return string
+     */
+    public function resolveAwbServiceCode(string $orderServiceCode, $oohType): string
+    {
+        $serviceKeys = array_flip(SamedayConstants::EASYBOX_TYPE_SERVICE)
+            + array_flip(SamedayConstants::PUDO_TYPE_SERVICE);
+        if (!isset($serviceKeys[$orderServiceCode])) {
+            return $orderServiceCode;
+        }
+
+        $oohTypeCode = SamedayConstants::OOH_SERVICES[$oohType] ?? $oohType;
+        $targetServices = in_array($oohTypeCode, SamedayConstants::PUDO_TYPE_SERVICE, true)
+            ? SamedayConstants::PUDO_TYPE_SERVICE
+            : SamedayConstants::EASYBOX_TYPE_SERVICE;
+
+        return $targetServices[$serviceKeys[$orderServiceCode]] ?? $orderServiceCode;
+    }
+
     public function sanitizeInput(string $input): string
     {
         return stripslashes(
