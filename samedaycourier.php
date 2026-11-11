@@ -297,7 +297,6 @@ class SamedayCourier extends CarrierModule
         $hookHeader = 'displayHeader';
         if (($this->getMajorVersion() === 1) && ($this->getMinorVersion() === 6)) {
             $hookDisplayAdminOrder = 'displayAdminOrderContentShip';
-            // PS 1.6 renamed extraCarrier -> displayCarrierList (Hook::getIdByName aliases it).
             $hookExtraCarrier = 'displayCarrierList';
             $hookHeader = 'Header';
         }
@@ -389,7 +388,6 @@ class SamedayCourier extends CarrierModule
     {
         $this->html = '';
 
-        // Ensure DB schema for this release even if Module Manager cache hid the Upgrade action.
         $this->ensureAwbOrderStatusSchema();
 
         $this->postProcess();
@@ -1041,8 +1039,6 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * PS9 HelperList: relative admin gif paths break under deep configure URLs.
-     *
      * @param mixed $value
      * @param array $tr
      *
@@ -1977,8 +1973,6 @@ class SamedayCourier extends CarrierModule
     private function insertNewHeader()
     {
         if (($this->getMajorVersion() === 1) && ($this->getMinorVersion() === 6)) {
-            // Older installs registered "extraCarrier", which aliases to displayCarrierList but
-            // Hook::exec invokes hookDisplayCarrierList — ensure that hook stays registered.
             if (!$this->isRegisteredInHook('displayCarrierList')) {
                 $this->registerHook('displayCarrierList');
             }
@@ -3024,8 +3018,6 @@ class SamedayCourier extends CarrierModule
     }
 
     /**
-     * Whether SAMEDAY_AWB_ORDER_STATUS already exists in configuration.
-     *
      * @return bool
      */
     private function hasAwbOrderStatusConfig()
@@ -3220,7 +3212,6 @@ class SamedayCourier extends CarrierModule
             ORDER BY `id_order_history` DESC'
         );
 
-        // Partial success may have created the row with a wrong/empty timestamp.
         if (is_array($last) && (int) $last['id_order_state'] === $orderStatusId) {
             Db::getInstance()->update(
                 'order_history',

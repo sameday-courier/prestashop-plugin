@@ -1,7 +1,5 @@
 <?php
-/**
- * Reusable HelperList pagination (request/cookie state + SQL page fetch).
- */
+
 class SamedayHelperListPagination
 {
     const DEFAULT_LIMIT = 50;
@@ -10,8 +8,6 @@ class SamedayHelperListPagination
     public static $options = array(20, 50, 100, 300);
 
     /**
-     * Read page/limit/order from the same request + cookie keys HelperList uses.
-     *
      * @param string $listId
      * @param Context|null $context
      * @param int $defaultLimit
@@ -50,8 +46,6 @@ class SamedayHelperListPagination
     }
 
     /**
-     * Clamp page/offset when the requested page is past the last page.
-     *
      * @param array $state
      * @param int $listTotal
      *
@@ -78,8 +72,8 @@ class SamedayHelperListPagination
     }
 
     /**
-     * @param string $table Table name without DB prefix
-     * @param string $where SQL WHERE body (no leading WHERE)
+     * @param string $table
+     * @param string $where
      *
      * @return int
      */
@@ -91,10 +85,10 @@ class SamedayHelperListPagination
     }
 
     /**
-     * @param string $table Table name without DB prefix
-     * @param array $state From resolveState()/normalizeState()
-     * @param array $allowedOrderBy Whitelisted column names
-     * @param string $where SQL WHERE body (no leading WHERE)
+     * @param string $table
+     * @param array $state
+     * @param array $allowedOrderBy
+     * @param string $where
      * @param string $defaultOrderBy
      *
      * @return array
@@ -118,10 +112,8 @@ class SamedayHelperListPagination
     }
 
     /**
-     * Resolve state, count, clamp page, and fetch one page in a single call.
-     *
-     * @param string $listId HelperList list_id (usually table name)
-     * @param string $table Table name without DB prefix
+     * @param string $listId
+     * @param string $table
      * @param array $allowedOrderBy
      * @param string $where
      * @param string $defaultOrderBy
@@ -153,8 +145,6 @@ class SamedayHelperListPagination
     }
 
     /**
-     * Apply pagination metadata to a HelperList instance.
-     *
      * @param HelperList $helper
      * @param string $listId
      * @param array $state
@@ -173,8 +163,6 @@ class SamedayHelperListPagination
     }
 
     /**
-     * Live-mode filter used by lockers / pickup points tables.
-     *
      * @return string
      */
     public static function liveModeWhere()

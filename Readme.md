@@ -5,11 +5,11 @@ If your are facing some issues when working with our solution our you want to le
 ## Changelog
 
 ### 1.8.14
-- Paginated lockers and pickup-points lists on the module configure page via a reusable HelperList pagination helper (avoids loading thousands of rows into memory).
+- Paginated lockers and pickup-points lists on the module configure page via a reusable HelperList pagination helper.
 - Updated bundled Sameday PHP SDK (adds AWB status sync API support).
 
 ### 1.8.13
-- Fixed OOH AWB generation: remap LN/XL to LN/PP/XL/XP from the selected easybox vs PUDO location (cross-border PUDO uses XP, not XL).
+- Fixed OOH AWB generation: remap LN/XL to LN/PP/XL/XP from the selected easybox vs PUDO location.
 
 ### 1.8.12
 - Added configurable order status change on AWB generation, with a "Do not change" option.
