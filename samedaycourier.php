@@ -181,7 +181,7 @@ class SamedayCourier extends CarrierModule
         $this->name = 'samedaycourier';
         $this->tab = 'shipping_logistics';
 
-        $this->version = '1.8.13';
+        $this->version = '1.8.14';
         $this->author = 'Sameday Courier';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -1078,7 +1078,15 @@ class SamedayCourier extends CarrierModule
      */
     private function renderPickupPointsList()
     {
-        $pickupPoints = SamedayPickupPoint::getPickupPoints();
+        $page = SamedayHelperListPagination::loadPage(
+            SamedayPickupPoint::TABLE_NAME,
+            SamedayPickupPoint::TABLE_NAME,
+            array('id', 'id_pickup_point', 'sameday_alias', 'county', 'city', 'address'),
+            SamedayHelperListPagination::liveModeWhere(),
+            'id',
+            $this->context
+        );
+
         $fields = array(
             'id_pickup_point' => array(
                 'title'   => $this->l('Sameday Id'),
@@ -1114,7 +1122,12 @@ class SamedayCourier extends CarrierModule
             'desc' => $this->l('Import pickup-points assigned to your Sameday account'),
         );
         $helper->simple_header = false;
-        $helper->listTotal = count($pickupPoints);
+        SamedayHelperListPagination::configureHelper(
+            $helper,
+            $page['list_id'],
+            $page['state'],
+            $page['total']
+        );
         $helper->identifier = 'id_pickup_point';
         $helper->table = SamedayPickupPoint::TABLE_NAME;
         $helper->actions = array('delete');
@@ -1127,7 +1140,7 @@ class SamedayCourier extends CarrierModule
 
         $this->html .= $this->generateAddPickupPointForm();
 
-        $this->html .= $helper->generateList($pickupPoints, $fields);
+        $this->html .= $helper->generateList($page['rows'], $fields);
     }
 
     /**
@@ -1153,7 +1166,15 @@ class SamedayCourier extends CarrierModule
      */
     private function renderLockersList()
     {
-        $lockers = SamedayLocker::getLockers(false);
+        $page = SamedayHelperListPagination::loadPage(
+            SamedayLocker::TABLE_NAME,
+            SamedayLocker::TABLE_NAME,
+            array('id', 'id_locker', 'name', 'county', 'city', 'address', 'postal_code', 'lat', 'long'),
+            SamedayHelperListPagination::liveModeWhere(),
+            'id',
+            $this->context
+        );
+
         $fields = array(
             'id_locker' => array(
                 'title' => $this->l('Sameday Id'),
@@ -1204,7 +1225,12 @@ class SamedayCourier extends CarrierModule
             'desc' => $this->l('Local import of easybox. !Note: If you choose for easyBox map, you don\'t need anymore a local import.'),
         );
         $helper->simple_header = false;
-        $helper->listTotal = count($lockers);
+        SamedayHelperListPagination::configureHelper(
+            $helper,
+            $page['list_id'],
+            $page['state'],
+            $page['total']
+        );
         $helper->identifier = 'id_locker';
         $helper->table = SamedayLocker::TABLE_NAME;
         $helper->actions = array();
@@ -1215,7 +1241,7 @@ class SamedayCourier extends CarrierModule
         $helper->token = Tools::getAdminTokenLite('AdminModules');
         $helper->currentIndex = $this->currentIndex;
 
-        $this->html .= $helper->generateList($lockers, $fields);
+        $this->html .= $helper->generateList($page['rows'], $fields);
     }
 
     /**
@@ -1950,6 +1976,14 @@ class SamedayCourier extends CarrierModule
      */
     private function insertNewHeader()
     {
+        if (($this->getMajorVersion() === 1) && ($this->getMinorVersion() === 6)) {
+            // Older installs registered "extraCarrier", which aliases to displayCarrierList but
+            // Hook::exec invokes hookDisplayCarrierList — ensure that hook stays registered.
+            if (!$this->isRegisteredInHook('displayCarrierList')) {
+                $this->registerHook('displayCarrierList');
+            }
+        }
+
         if (!in_array($this->context->controller->php_self, ['address', 'checkout', 'order'], true)) {
             return;
         }
@@ -2984,16 +3018,29 @@ class SamedayCourier extends CarrierModule
             );
         }
 
-        // Missing key => false; stored "Do not change" (0) is not false.
-        if (Configuration::get('SAMEDAY_AWB_ORDER_STATUS') === false) {
+        if (!$this->hasAwbOrderStatusConfig()) {
             Configuration::updateValue('SAMEDAY_AWB_ORDER_STATUS', 0);
         }
     }
 
     /**
+     * Whether SAMEDAY_AWB_ORDER_STATUS already exists in configuration.
+     *
+     * @return bool
+     */
+    private function hasAwbOrderStatusConfig()
+    {
+        if (method_exists('Configuration', 'hasKey')) {
+            return (bool) Configuration::hasKey('SAMEDAY_AWB_ORDER_STATUS');
+        }
+
+        return Configuration::get('SAMEDAY_AWB_ORDER_STATUS') !== false;
+    }
+
+    /**
      * Options for the "Order status after AWB generation" config select.
      *
-     * @return array
+     * @return array<int, array{id: int, name: string}>
      */
     private function getAwbOrderStatusOptions()
     {
@@ -3004,7 +3051,8 @@ class SamedayCourier extends CarrierModule
             ),
         );
 
-        $orderStates = OrderState::getOrderStates((int) $this->context->language->id);
+        $idLang = (int) $this->context->language->id;
+        $orderStates = OrderState::getOrderStates($idLang);
         if (!is_array($orderStates)) {
             return $options;
         }
@@ -3152,6 +3200,7 @@ class SamedayCourier extends CarrierModule
         }
     }
 
+
     /**
      * Insert/repair order_history with shop-timezone date_add when OrderHistory hooks fail.
      *
@@ -3171,25 +3220,26 @@ class SamedayCourier extends CarrierModule
             ORDER BY `id_order_history` DESC'
         );
 
+        // Partial success may have created the row with a wrong/empty timestamp.
         if (is_array($last) && (int) $last['id_order_state'] === $orderStatusId) {
             Db::getInstance()->update(
                 'order_history',
-                array(
+                [
                     'date_add' => $now,
                     'id_employee' => (int) $idEmployee,
-                ),
+                ],
                 'id_order_history = ' . (int) $last['id_order_history']
             );
 
             return;
         }
 
-        Db::getInstance()->insert('order_history', array(
+        Db::getInstance()->insert('order_history', [
             'id_order' => (int) $orderId,
             'id_order_state' => (int) $orderStatusId,
             'id_employee' => (int) $idEmployee,
             'date_add' => $now,
-        ));
+        ]);
     }
 
     /**
@@ -3205,7 +3255,9 @@ class SamedayCourier extends CarrierModule
         }
 
         try {
-            return (new DateTime('now', new DateTimeZone($timezone)))->format('Y-m-d H:i:s');
+            $dateTime = new DateTime('now', new DateTimeZone($timezone));
+
+            return $dateTime->format('Y-m-d H:i:s');
         } catch (Exception $e) {
             return date('Y-m-d H:i:s');
         }
@@ -3424,7 +3476,7 @@ class SamedayCourier extends CarrierModule
      *
      * @param int $orderId
      *
-     * @return array|null
+     * @return array{id: int, name: string, color: string, text_color: string}|null
      */
     public function getOrderListStatusPayload(int $orderId)
     {
@@ -3433,7 +3485,8 @@ class SamedayCourier extends CarrierModule
             return null;
         }
 
-        $orderState = new OrderState((int) $order->current_state, (int) $this->context->language->id);
+        $idLang = (int) $this->context->language->id;
+        $orderState = new OrderState((int) $order->current_state, $idLang);
         if (!Validate::isLoadedObject($orderState)) {
             return null;
         }
@@ -3444,13 +3497,17 @@ class SamedayCourier extends CarrierModule
             $textColor = Tools::getBrightness($color) < 128 ? 'white' : '#383838';
         }
 
-        return array(
+        return [
             'id' => (int) $orderState->id,
             'name' => (string) $orderState->name,
             'color' => $color,
             'text_color' => $textColor,
-        );
+        ];
     }
+
+    /**
+     * @return array{summary: array, histories: array}
+     */
 
     /**
      * Attach list feedback + status payload used by bulk AJAX responses.
@@ -3468,9 +3525,6 @@ class SamedayCourier extends CarrierModule
         return $result;
     }
 
-    /**
-     * @return array{summary: array, histories: array}
-     */
     public function getAwbHistoryData(int $awbId): array
     {
         $awbId = (int) $awbId;
